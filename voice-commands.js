@@ -67,7 +67,8 @@
             .replace(/\bDESCENDED\b|\bDESCENDING\b/g, 'DESCEND')
             .replace(/\bTURN WRITE\b/g, 'TURN RIGHT')
             .replace(/\bTURN LIFT\b/g, 'TURN LEFT')
-            .replace(/\bHEAD IN\b|\bHONEY\b/g, 'HEADING')
+            // "Heading" is often heard as "hitting" or "heating".
+            .replace(/\bHEAD IN\b|\bHONEY\b|\bHITTING\b|\bHEATING\b|\bHEDDING\b|\bHEADED\b|\bHEADIN\b/g, 'HEADING')
             .replace(/\bFT\b/g, 'FEET')
             .replace(/\bTAKE OFF\b/g, 'TAKEOFF')
             .replace(/\bI L S\b/g, 'ILS');

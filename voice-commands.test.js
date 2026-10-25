@@ -155,3 +155,10 @@ test('handoff phrases map to the handoff command', () => {
     assert.equal(hear('Delta 228 contact Atlanta Center one three two point four seven').command, 'DAL228 HO');
     assert.equal(choose(['monitor tower one one niner point one'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 HO');
 });
+
+test('heading misheard as hitting or heating still parses', () => {
+    assert.equal(hear('Delta 228 turn left hitting two four zero').command, 'DAL228 TL 240');
+    assert.equal(hear('Delta 228 fly hitting two seven zero').command, 'DAL228 H 270');
+    assert.equal(hear('Delta 228 turn right heating one eight zero').command, 'DAL228 TR 180');
+    assert.equal(choose(['hitting three six zero'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 H 360');
+});
