@@ -183,3 +183,26 @@ test('an unrecognized instruction names the callsign that was heard', () => {
     assert.match(hear('Southwest 2532 banana split').error, /I heard SWA2532, but couldn't find an instruction in "banana split"/);
     assert.equal(hear('Southwest 2532').error, 'No instruction was recognized.');
 });
+
+test('direct-to accepts names split into words, navaid words and phonetic spelling', () => {
+    assert.equal(hear('Delta 228 proceed direct boy kin').command, 'DAL228 C BOYKIN');
+    assert.equal(hear('Delta 228 direct to Rome VOR').command, 'DAL228 C ROME');
+    assert.equal(hear('Delta 228 direct bravo oscar yankee kilo november').command, 'DAL228 C BOYKN');
+    assert.equal(hear('Delta 228 proceed direct chopper descend and maintain four thousand').command, 'DAL228 C CHOPPER A 4000');
+});
+
+test('spoken fix names match identifiers, sound-alikes and navaid place names', () => {
+    const { matchFix, soundKey } = require('./voice-commands.js');
+    const at = (name, lat, lon, title) => ({ name, lat, lon, ...(title ? { title, navaid: true } : {}) });
+    const fixes = [at('BOYKN', 33.7, -84.2), at('CHPPR', 34.1, -84.9), at('SHAKK', 33.6, -85.0), at('PHIIL', 33.8, -83.9),
+        at('HOBTT', 33.2, -84.8), at('RMG', 34.16, -85.12, 'Rome'), at('AHN', 33.95, -83.33, 'Athens'), at('LGC', 33.05, -85.21, 'Lagrange')];
+    assert.equal(soundKey('Boykin'), soundKey('BOYKN'));
+    for (const [heard, expected] of [['BOYKIN', 'BOYKN'], ['CHOPPER', 'CHPPR'], ['SHACK', 'SHAKK'], ['PHIL', 'PHIIL'],
+        ['HOBBIT', 'HOBTT'], ['ROME', 'RMG'], ['ATHENS', 'AHN'], ['LA GRANGE', 'LGC'], ['rmg', 'RMG']]) {
+        assert.equal(matchFix(heard, fixes)?.name, expected, heard);
+    }
+    assert.equal(matchFix('BANANA', fixes), null);
+    // Two sound-alikes: the one nearer the aircraft wins.
+    const twins = [at('BOYKN', 33.7, -84.2), at('BAKAN', 35.0, -81.0)];
+    assert.equal(matchFix('boykin', twins, { lat: 34.9, lon: -81.1 }).name, 'BAKAN');
+});

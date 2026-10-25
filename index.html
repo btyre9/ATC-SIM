@@ -258,6 +258,13 @@
                     <span>Map brightness</span><span id="map-brightness-value"></span>
                 </label>
                 <input id="map-brightness" type="range" min="25" max="100" step="5" class="w-full accent-sky-500 mb-4">
+                <label for="map-detail-select" class="block text-slate-300 font-bold mb-1">Map detail</label>
+                <select id="map-detail-select" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white mb-2">
+                    <option value="MINIMAL">Minimal: VORs and arrival/departure fixes</option>
+                    <option value="STANDARD">Standard: more fixes as you zoom in</option>
+                    <option value="FULL">Full: every navaid and fix at all zooms</option>
+                </select>
+                <p class="text-slate-400 mb-4">Names that would overlap a more important one are hidden; zoom in to see them.</p>
                 <label for="workload-select" class="block text-slate-300 font-bold mb-1">Workload</label>
                 <select id="workload-select" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white mb-2">
                     <option value="TRAINING">Training</option>
@@ -447,16 +454,6 @@
                     { name: "KPDK", lat: 33.876, lon: -84.302, rwyHeading: 206 },
                     { name: "KMGE", lat: 33.915, lon: -84.516, rwyHeading: 286 }
                 ],
-                waypoints: [
-                    { name: "RMG", lat: 34.162565, lon: -85.119407, type: "VOR" },
-                    { name: "LGC", lat: 33.049099, lon: -85.206200, type: "VOR" },
-                    { name: "AHN", lat: 33.948601, lon: -83.326302, type: "VOR" },
-                    { name: "CSG", lat: 32.516399, lon: -84.938896, type: "VOR" },
-                    { name: "MCN", lat: 32.698101, lon: -83.649002, type: "VOR" },
-                    { name: "HRS", lat: 34.648399, lon: -83.098701, type: "VOR" },
-                    { name: "ODF", lat: 34.716099, lon: -82.885399, type: "VOR" },
-                    { name: "GQO", lat: 35.027599, lon: -85.203796, type: "VOR" }
-                ],
                 schedule: [
                     { airline: "DAL", weight: 58, routes: [
                         { origin: "KJFK", gate: "NE_GATE", types: ["B752", "A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
@@ -508,12 +505,6 @@
                     { name: "KNZY", lat: 32.699, lon: -117.215, rwyHeading: 291 },
                     { name: "KMYF", lat: 32.815, lon: -117.139, rwyHeading: 280 }
                 ],
-                waypoints: [
-                    { name: "MZB", lat: 32.7822, lon: -117.2255, type: "VOR" },
-                    { name: "PGY", lat: 32.6103, lon: -116.9792, type: "VOR" },
-                    { name: "OCN", lat: 33.2406, lon: -117.4177, type: "VOR" },
-                    { name: "JLI", lat: 33.1405, lon: -116.5860, type: "VOR" }
-                ],
                 schedule: [
                     { airline: "SWA", weight: 38, routes: [
                         { origin: "KSJC", gate: "NW_GATE", types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
@@ -553,12 +544,6 @@
                 secondaryAirports: [
                     { name: "KJQF", lat: 35.388, lon: -80.709, rwyHeading: 200 },
                     { name: "KUZA", lat: 34.987, lon: -81.057, rwyHeading: 190 }
-                ],
-                waypoints: [
-                    { name: "SUG", lat: 35.4064, lon: -82.2686, type: "VOR" },
-                    { name: "SPA", lat: 35.0336, lon: -81.9270, type: "VOR" },
-                    { name: "CAE", lat: 33.8572, lon: -81.0539, type: "VOR" },
-                    { name: "GSO", lat: 36.0456, lon: -79.9764, type: "VOR" }
                 ],
                 schedule: [
                     { airline: "AAL", weight: 75, routes: [
@@ -745,15 +730,16 @@
 
         const gateLabel = gate => gate.name.replace('_GATE', '');
 
-        // VORs plus the real FAA procedure fixes generated into fixes-data.js.
+        // FAA navaids (VOR, VORTAC, TACAN, DME, NDB) and fixes for the sector, generated into fixes-data.js.
+        // Fixes carry a display tier: 1 gate, 2 STAR/SID, 3 approach, 4 enroute.
         function sectorWaypoints(sector) {
-            const fixes = (window.ATC_FIXES?.[sector.id]?.fixes || []).map(fix => ({ ...fix, type: fix.kind }));
-            return [...sector.waypoints, ...fixes];
+            const data = window.ATC_FIXES?.[sector.id] || {};
+            const navaids = (data.navaids || []).map(navaid => ({ ...navaid, navaid: true }));
+            // The fix list repeats navaids as points; keep the navaid.
+            const navaidNames = new Set(navaids.map(navaid => navaid.name));
+            const fixes = (data.fixes || []).filter(fix => !navaidNames.has(fix.name)).map(fix => ({ ...fix, type: fix.kind }));
+            return [...navaids, ...fixes];
         }
-
-        // Matches a spoken fix name to its five-letter code: "chopper" finds CHPPR, "hobbit" finds HOBTT.
-        const fixSkeleton = name => String(name).toUpperCase().replace(/[^A-Z0-9]/g, '')
-            .replace(/(?!^)[AEIOUY]/g, '').replace(/(.)\1+/g, '$1');
 
         function getAirlineLogo(icao) {
             const airline = AIRLINES.find(a => a.id === icao);
@@ -1217,6 +1203,7 @@
                 this.mapBrightness = Number(this.loadSetting('atcMapBrightness', '60',
                     Array.from({ length: 16 }, (_, i) => String(25 + i * 5))));
                 this.tintCache = new Map();
+                this.mapDetail = this.loadSetting('atcMapDetail', 'STANDARD', ['MINIMAL', 'STANDARD', 'FULL']);
                 this.workload = this.loadSetting('atcWorkload', 'STANDARD', Object.keys(WORKLOADS));
                 this.departureMode = this.loadSetting('atcDepartureMode', 'TOWER', ['TOWER', 'MANUAL']);
                 this.overflightsOn = this.loadSetting('atcOverflights', 'ON', ['ON', 'OFF']) === 'ON';
@@ -1532,6 +1519,12 @@
                 Object.entries(MAP_STYLES).forEach(([key, style]) => mapSelect.add(new Option(style.label, key)));
                 mapSelect.value = this.mapStyle;
                 mapSelect.onchange = () => this.setMapStyle(mapSelect.value);
+                const detailSelect = document.getElementById('map-detail-select');
+                detailSelect.value = this.mapDetail;
+                detailSelect.onchange = () => {
+                    this.mapDetail = detailSelect.value;
+                    this.saveSetting('atcMapDetail', this.mapDetail);
+                };
                 const brightness = document.getElementById('map-brightness');
                 brightness.value = String(this.mapBrightness);
                 brightness.oninput = () => {
@@ -2614,8 +2607,7 @@
                                 this.log(`${id} climb/descend ${alt}ft.`);
                                 readback(this.altitudeReadback(plane, alt));
                             } else {
-                                const wp = CONFIG.waypoints.find(w => w.name === val.toUpperCase()) ||
-                                    CONFIG.waypoints.find(w => fixSkeleton(w.name) === fixSkeleton(val));
+                                const wp = window.ATCVoice.matchFix(val, CONFIG.waypoints, plane);
                                 if (wp) {
                                     act(() => { plane.directTo = wp; });
                                     plane.lastStatus = `DCT ${wp.name}`;
@@ -3063,6 +3055,96 @@
                 this.activeLosses = current;
             }
 
+            // Navaids and fixes, more of them as you zoom in. Every symbol draws, but a label is skipped when
+            // it would overlap a more important one, so the scope stays readable.
+            drawNavigation(colors) {
+                const ctx = this.ctx;
+                const band = CONFIG.scale < 10 ? 'wide' : CONFIG.scale < 30 ? 'approach' : 'tower';
+                const detail = this.mapDetail;
+                const shows = wp => {
+                    if (wp.navaid) {
+                        if (detail === 'MINIMAL') return wp.type === 'VOR' || wp.type === 'VORTAC';
+                        return detail === 'FULL' || wp.type !== 'NDB' || band !== 'wide';
+                    }
+                    if (detail === 'MINIMAL') return wp.tier === 1;
+                    if (detail === 'FULL') return true;
+                    return band === 'wide' ? wp.tier <= 2 : true;
+                };
+                const priority = wp => wp.navaid ? ({ VORTAC: 0, VOR: 0, TACAN: 1, DME: 1, NDB: 2 }[wp.type] ?? 2) : 2 + wp.tier;
+                if (this.navOrderFor !== CONFIG.waypoints) {
+                    this.navOrderFor = CONFIG.waypoints;
+                    this.navOrder = [...CONFIG.waypoints].sort((a, b) => priority(a) - priority(b));
+                }
+                // The selected aircraft's route fix always shows, with its label first.
+                const selected = this.aircraft.find(ac => ac.id === this.selectedAircraftId);
+                const routeName = selected && (selected.exitFix?.name || selected.arrivalFix);
+                const items = this.navOrder.filter(wp => wp.name === routeName || shows(wp));
+                items.sort((a, b) => (b.name === routeName) - (a.name === routeName));
+
+                const taken = [];
+                const overlaps = (x, y, w, h) => taken.some(r => x < r.x + r.w && x + w > r.x && y < r.y + r.h && y + h > r.y);
+                const width = this.canvas.width, height = this.canvas.height;
+                ctx.textAlign = 'center';
+                for (const wp of items) {
+                    const pt = this.map.latLngToContainerPoint([wp.lat, wp.lon]);
+                    if (pt.x < -30 || pt.y < -30 || pt.x > width + 30 || pt.y > height + 30) continue;
+                    ctx.strokeStyle = ctx.fillStyle = colors.waypoint;
+                    const big = wp.navaid && wp.type !== 'NDB';
+                    this.drawNavSymbol(wp, pt);
+                    ctx.font = big ? 'bold 11px monospace' : wp.navaid || wp.tier <= 2 ? '9px monospace' : '8px monospace';
+                    const textWidth = ctx.measureText(wp.name).width;
+                    const labelY = pt.y + (big ? 20 : 14);
+                    // A label is checked against everything drawn so far except its own symbol.
+                    const label = [pt.x - textWidth / 2 - 2, labelY - 9, textWidth + 4, 11];
+                    const labelFits = !overlaps(...label);
+                    taken.push({ x: pt.x - 6, y: pt.y - 6, w: 12, h: 12 });
+                    if (!labelFits) continue;
+                    taken.push({ x: label[0], y: label[1], w: label[2], h: label[3] });
+                    ctx.strokeStyle = colors.halo; ctx.lineWidth = 3; ctx.fillStyle = colors.waypoint;
+                    ctx.strokeText(wp.name, pt.x, labelY); ctx.fillText(wp.name, pt.x, labelY);
+                }
+            }
+
+            drawNavSymbol(wp, pt) {
+                const ctx = this.ctx;
+                const polygon = (sides, radius, rotation = 0) => {
+                    ctx.beginPath();
+                    for (let i = 0; i < sides; i++) {
+                        const angle = rotation + i * Math.PI * 2 / sides;
+                        const x = pt.x + radius * Math.cos(angle), y = pt.y + radius * Math.sin(angle);
+                        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                    }
+                    ctx.closePath(); ctx.stroke();
+                };
+                const dot = radius => { ctx.beginPath(); ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2); ctx.fill(); };
+                ctx.lineWidth = 1.5;
+                if (!wp.navaid) {
+                    // Fixes: triangles, smaller for approach and enroute fixes.
+                    const r = wp.tier <= 2 ? 5 : 3.5;
+                    ctx.beginPath(); ctx.moveTo(pt.x, pt.y - r); ctx.lineTo(pt.x + r * 0.9, pt.y + r * 0.6); ctx.lineTo(pt.x - r * 0.9, pt.y + r * 0.6); ctx.closePath(); ctx.stroke();
+                } else if (wp.type === 'VOR' || wp.type === 'VORTAC') {
+                    polygon(6, 9); dot(2.2);
+                    if (wp.type === 'VORTAC') {
+                        // TACAN tabs on alternate sides of the hexagon.
+                        for (let i = 0; i < 3; i++) {
+                            const angle = Math.PI / 6 + i * Math.PI * 2 / 3;
+                            ctx.save(); ctx.translate(pt.x + 8.5 * Math.cos(angle), pt.y + 8.5 * Math.sin(angle)); ctx.rotate(angle + Math.PI / 2);
+                            ctx.fillRect(-4, -1.5, 8, 3); ctx.restore();
+                        }
+                    }
+                } else if (wp.type === 'TACAN' || wp.type === 'DME') {
+                    ctx.strokeRect(pt.x - 6, pt.y - 6, 12, 12);
+                    if (wp.type === 'TACAN') polygon(6, 4); else dot(2);
+                } else {
+                    // NDB: a ring of dots around a center dot.
+                    for (let i = 0; i < 10; i++) {
+                        const angle = i * Math.PI / 5;
+                        ctx.beginPath(); ctx.arc(pt.x + 7 * Math.cos(angle), pt.y + 7 * Math.sin(angle), 0.9, 0, Math.PI * 2); ctx.fill();
+                    }
+                    dot(2.2);
+                }
+            }
+
             drawScope(centerPt) {
                 const ctx = this.ctx;
                 const colors = this.scopeColors;
@@ -3123,29 +3205,7 @@
 
                 const colors = this.scopeColors;
                 this.ctx.textAlign = 'center';
-                CONFIG.waypoints.forEach(wp => {
-                    const pt = this.map.latLngToContainerPoint([wp.lat, wp.lon]);
-                    if (wp.type !== 'VOR') {
-                        // Procedure fixes: small triangles with compact labels.
-                        this.ctx.strokeStyle = colors.waypoint; this.ctx.lineWidth = 1.5;
-                        this.ctx.beginPath(); this.ctx.moveTo(pt.x, pt.y - 5); this.ctx.lineTo(pt.x + 4.5, pt.y + 3); this.ctx.lineTo(pt.x - 4.5, pt.y + 3); this.ctx.closePath(); this.ctx.stroke();
-                        this.ctx.font = '9px monospace'; this.ctx.strokeStyle = colors.halo; this.ctx.lineWidth = 3; this.ctx.fillStyle = colors.waypoint;
-                        this.ctx.strokeText(wp.name, pt.x, pt.y + 14); this.ctx.fillText(wp.name, pt.x, pt.y + 14);
-                        return;
-                    }
-                    this.ctx.fillStyle = colors.waypoint; this.ctx.strokeStyle = colors.waypoint; this.ctx.lineWidth = 2;
-                    this.ctx.beginPath();
-                    for (let i = 0; i < 6; i++) {
-                        const angle = toRad(i * 60);
-                        const x = pt.x + 10 * Math.cos(angle);
-                        const y = pt.y + 10 * Math.sin(angle);
-                        if (i === 0) this.ctx.moveTo(x, y); else this.ctx.lineTo(x, y);
-                    }
-                    this.ctx.closePath(); this.ctx.stroke();
-                    this.ctx.beginPath(); this.ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI*2); this.ctx.fill();
-                    this.ctx.font = 'bold 11px monospace'; this.ctx.strokeStyle = colors.halo; this.ctx.lineWidth = 3;
-                    this.ctx.strokeText(wp.name, pt.x, pt.y + 22); this.ctx.fillText(wp.name, pt.x, pt.y + 22);
-                });
+                this.drawNavigation(colors);
 
                 CONFIG.secondaryAirports.forEach(ap => {
                     const pt = this.map.latLngToContainerPoint([ap.lat, ap.lon]);

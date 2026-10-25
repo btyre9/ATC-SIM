@@ -19,6 +19,13 @@
         'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
+    const NATO = {
+        ALPHA: 'A', ALFA: 'A', BRAVO: 'B', CHARLIE: 'C', DELTA: 'D', ECHO: 'E', FOXTROT: 'F', GOLF: 'G',
+        HOTEL: 'H', INDIA: 'I', JULIET: 'J', JULIETT: 'J', KILO: 'K', LIMA: 'L', MIKE: 'M', NOVEMBER: 'N',
+        OSCAR: 'O', PAPA: 'P', QUEBEC: 'Q', ROMEO: 'R', SIERRA: 'S', TANGO: 'T', UNIFORM: 'U', VICTOR: 'V',
+        WHISKEY: 'W', WHISKY: 'W', XRAY: 'X', YANKEE: 'Y', ZULU: 'Z'
+    };
+    const NAVAID_WORDS = new Set(['VOR', 'VORTAC', 'TACAN', 'NDB', 'DME', 'INTERSECTION', 'WAYPOINT', 'FIX']);
     // "Flight" starts an instruction only in "flight level"; otherwise it is part of a callsign ("Delta flight 228").
     const findCommandStart = words => words.findIndex((word, i) =>
         COMMAND_START.has(word) || (word === 'FLIGHT' && words[i + 1] === 'LEVEL'));
@@ -186,8 +193,18 @@
             return { command: `S ${speed}` };
         }
 
-        match = phrase.match(/^(?:PROCEED )?DIRECT(?: TO)? ([A-Z0-9]+)$/);
-        if (match) return { command: `C ${match[1]}` };
+        // "Direct boy kin", "direct Rome VOR", "direct bravo oscar yankee kilo november". The simulator
+        // matches the heard name to a fix or navaid; here it only has to be one name, not more instructions.
+        match = phrase.match(/^(?:PROCEED )?DIRECT(?: TO)? (.+)$/);
+        if (match) {
+            let words = match[1].split(' ');
+            if (words.slice(-3).join('') === 'VOR' && words.length > 3) words = words.slice(0, -3);
+            while (words.length > 1 && NAVAID_WORDS.has(words.at(-1))) words.pop();
+            if (words.length <= 5 && !words.some(word => COMMAND_START.has(word) || word === 'FLIGHT')) {
+                const name = words.length > 1 && words.every(word => NATO[word]) ? words.map(word => NATO[word]).join('') : words.join('');
+                return { command: `C ${name}` };
+            }
+        }
 
         if (TAKEOFF.test(phrase)) return { command: 'CTO' };
         // A bare altitude such as "flight level one zero thousand" assigns it, like "maintain".
@@ -324,6 +341,45 @@
         return { ok: false, error: options.length ? resolveCallsign(options[0], aircraft, airlines).error : 'No speech was recognized.' };
     }
 
-    root.ATCVoice = { parse, choose, resolveCallsign, chooseCallsign };
-    if (typeof module !== 'undefined') module.exports = { parse, choose, resolveCallsign, chooseCallsign };
+    // Sound-alike key for fix names: C, K, Q and CK sound alike, PH is F, vowels and H drop after the
+    // first letter, and doubled letters collapse. "Boykin" and BOYKN both become BKN.
+    function soundKey(text) {
+        return String(text).toUpperCase().replace(/[^A-Z0-9]/g, '')
+            .replace(/PH/g, 'F').replace(/CK|Q|C/g, 'K').replace(/X/g, 'KS').replace(/Z/g, 'S')
+            .replace(/(?!^)[AEIOUYH]/g, '').replace(/(.)\1+/g, '$1');
+    }
+
+    function editDistance(a, b) {
+        const row = Array.from({ length: b.length + 1 }, (_, i) => i);
+        for (let i = 1; i <= a.length; i++) {
+            let previous = row[0];
+            row[0] = i;
+            for (let j = 1; j <= b.length; j++) {
+                const current = row[j];
+                row[j] = Math.min(row[j] + 1, row[j - 1] + 1, previous + (a[i - 1] === b[j - 1] ? 0 : 1));
+                previous = current;
+            }
+        }
+        return row[b.length];
+    }
+
+    /* Finds the fix or navaid meant by a typed or heard name: its identifier, a navaid's place name
+       ("Rome" for RMG), or a sound-alike ("chopper" for CHPPR). Ties go to the one nearest the aircraft. */
+    function matchFix(spoken, fixes, near) {
+        const word = String(spoken).toUpperCase().replace(/[^A-Z0-9]/g, '');
+        if (!word) return null;
+        const exact = fixes.find(fix => fix.name === word);
+        if (exact) return exact;
+        const key = soundKey(word);
+        const byPlace = fixes.filter(fix => fix.title && fix.title.toUpperCase().replace(/[^A-Z]/g, '') === word);
+        let matches = byPlace.length ? byPlace :
+            fixes.filter(fix => soundKey(fix.name) === key || (fix.title && soundKey(fix.title) === key));
+        if (!matches.length && key.length >= 3) matches = fixes.filter(fix => editDistance(soundKey(fix.name), key) === 1);
+        if (!matches.length) return null;
+        const distance = fix => near ? Math.hypot((fix.lat - near.lat) * 60, (fix.lon - near.lon) * 60 * Math.cos(near.lat * Math.PI / 180)) : 0;
+        return matches.reduce((best, fix) => distance(fix) < distance(best) ? fix : best);
+    }
+
+    root.ATCVoice = { parse, choose, resolveCallsign, chooseCallsign, matchFix, soundKey };
+    if (typeof module !== 'undefined') module.exports = root.ATCVoice;
 })(typeof window !== 'undefined' ? window : globalThis);
