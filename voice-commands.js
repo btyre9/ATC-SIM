@@ -75,7 +75,7 @@
             .replace(/\bMAINTAINED\b|\bMAINTAINING\b/g, 'MAINTAIN')
             // Recognition often drops or adds a tense ending: "clear for takeoff", "climbed to", "descending".
             .replace(/\bCLEAR(?= (?:FOR|TO|ILS|THE)\b)/g, 'CLEARED')
-            .replace(/\bCLIMBED\b|\bCLIMBING\b/g, 'CLIMB')
+            .replace(/\bCLIMBED IN\b|\bCLIMBED\b|\bCLIMBING\b|\bCLIMBIN\b|\bCLIMATE\b/g, 'CLIMB')
             .replace(/\bDESCENDED\b|\bDESCENDING\b/g, 'DESCEND')
             .replace(/\bTURN WRITE\b/g, 'TURN RIGHT')
             .replace(/\bTURN LIFT\b/g, 'TURN LEFT')

@@ -215,3 +215,9 @@ test('expect runway phrases give the runway to plan for', () => {
     assert.equal(hear('Delta 228 cleared ILS runway zero one center').command, 'DAL228 L 01C');
     assert.equal(hear('Delta 228 expect runway bananas').ok, false);
 });
+
+test('climb misheard as climate still parses', () => {
+    assert.equal(hear('Delta 228 climate and maintain one two thousand').command, 'DAL228 A 12000');
+    assert.equal(choose(['climate to one four thousand'], aircraft, airlines, 1026, 'DAL228').command, 'DAL228 A 14000');
+    assert.equal(hear('Delta 228 climbin and maintain one one thousand').command, 'DAL228 A 11000');
+});
