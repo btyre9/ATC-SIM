@@ -19,6 +19,9 @@
         'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
+    // "Flight" starts an instruction only in "flight level"; otherwise it is part of a callsign ("Delta flight 228").
+    const findCommandStart = words => words.findIndex((word, i) =>
+        COMMAND_START.has(word) || (word === 'FLIGHT' && words[i + 1] === 'LEVEL'));
     // Words that can follow RUNWAY in a takeoff clearance, so the clearance does not swallow the next instruction.
     const RUNWAY_WORD = '(?:\\d{1,2}[LCR]?|ZERO|OH|ONE|TWO|TO|TOO|THREE|FOUR|FOR|FIVE|SIX|SEVEN|EIGHT|NINE|NINER|LEFT|RIGHT|CENTER)';
     const TAKEOFF = new RegExp(`^(?:RUNWAY(?: ${RUNWAY_WORD})+ )?CLEARED (?:FOR )?TAKEOFF(?: RUNWAY(?: ${RUNWAY_WORD})+)?$`);
@@ -187,6 +190,11 @@
         if (match) return { command: `C ${match[1]}` };
 
         if (TAKEOFF.test(phrase)) return { command: 'CTO' };
+        // A bare altitude such as "flight level one zero thousand" assigns it, like "maintain".
+        if (phrase.startsWith('FLIGHT LEVEL ')) {
+            const altitude = parseAltitude(phrase, elevation);
+            return altitude.error ? { error: altitude.error } : { command: `A ${altitude.value}` };
+        }
         // "Contact tower", "contact Atlanta Center one three two point four seven", "monitor tower".
         if (/^(?:CONTACT|MONITOR)\b/.test(phrase) && phrase.split(' ').slice(1).every(word => !COMMAND_START.has(word))) {
             return { command: 'HO' };
@@ -233,8 +241,20 @@
 
     function parse(transcript, aircraft, airlines, elevation, allowApproximateCarrier = true) {
         const words = normalize(transcript).split(' ').filter(Boolean);
-        const commandIndex = words.findIndex(word => COMMAND_START.has(word));
-        if (commandIndex < 0) return { ok: false, error: 'No instruction was recognized.' };
+        const commandIndex = findCommandStart(words);
+        if (commandIndex < 0) {
+            // A callsign on its own selects that aircraft.
+            if (resolveCallsign(words.join(' '), aircraft, airlines, false).ok) return { ok: false, error: 'No instruction was recognized.' };
+            // Otherwise the callsign may be fine with an instruction we did not recognize; say which aircraft we heard.
+            for (let end = words.length - 1; end > 0; end--) {
+                const heard = resolveCallsign(words.slice(0, end).join(' '), aircraft, airlines, false);
+                if (heard.ok) {
+                    return { ok: false, error: `I heard ${heard.id}, but couldn't find an instruction in "${words.slice(end).join(' ').toLowerCase()}". ` +
+                        'Start with climb, descend, maintain, flight level, turn, heading, speed, direct, cleared, or contact.' };
+                }
+            }
+            return { ok: false, error: 'No instruction was recognized.' };
+        }
         const resolved = resolveCallsign(words.slice(0, commandIndex).join(' '), aircraft, airlines, allowApproximateCarrier);
         if (!resolved.ok) return resolved;
         const plane = aircraft.find(item => item.id === resolved.id);
@@ -274,7 +294,7 @@
         const parsed = options.map(transcript => {
             let result = parse(transcript, aircraft, airlines, elevation);
             const words = normalize(transcript).split(' ').filter(Boolean);
-            const commandIndex = words.findIndex(word => COMMAND_START.has(word));
+            const commandIndex = findCommandStart(words);
             if (!result.ok && selected && commandIndex >= 0 &&
                 words.slice(0, commandIndex).every(word => FILLER_WORDS.has(word))) {
                 result = parse(`${selected.id} ${words.slice(commandIndex).join(' ')}`, aircraft, airlines, elevation);

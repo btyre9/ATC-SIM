@@ -14,7 +14,7 @@ Click an aircraft strip, then type or say one instruction. Press **COMMANDS** in
 
 | Typed | Spoken example | Meaning |
 |---|---|---|
-| `A 3000` | "Descend and maintain three thousand" | Altitude |
+| `A 3000` | "Descend and maintain three thousand" or "flight level three thousand" | Altitude |
 | `H 270` / `TR 270` / `TL 240` | "Turn right heading two seven zero" | Heading |
 | `S 210` | "Reduce speed to two one zero" | Speed |
 | `C CHPPR` | "Proceed direct chopper" | Direct to a fix, tracked until overhead |

@@ -170,3 +170,16 @@ test('climb misheard as cline still parses, but the CLINE fix stays a fix', () =
     assert.equal(hear('Delta 228 proceed direct cline').command, 'DAL228 C CLINE');
     assert.equal(hear('Delta 228 direct to cline').command, 'DAL228 C CLINE');
 });
+
+test('a bare "flight level" altitude is an instruction, but "flight" in a callsign is not', () => {
+    assert.equal(hear('Southwest 2532 flight level 10000').command, 'SWA2532 A 10000');
+    assert.equal(hear('Delta 228 flight level one two thousand').command, 'DAL228 A 12000');
+    assert.equal(hear('Delta 228 turn left heading two four zero flight level five thousand').command, 'DAL228 TL 240 A 5000');
+    assert.equal(choose(['flight level five thousand'], aircraft, airlines, 1026, 'DAL228').command, 'DAL228 A 5000');
+    assert.equal(hear('Delta flight 228 descend and maintain 3000').command, 'DAL228 A 3000');
+});
+
+test('an unrecognized instruction names the callsign that was heard', () => {
+    assert.match(hear('Southwest 2532 banana split').error, /I heard SWA2532, but couldn't find an instruction in "banana split"/);
+    assert.equal(hear('Southwest 2532').error, 'No instruction was recognized.');
+});
