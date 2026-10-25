@@ -414,6 +414,7 @@
     <script src="traffic-logic.js"></script>
     <script src="weather-control.js"></script>
     <script src="fixes-data.js"></script>
+    <script src="runways-data.js"></script>
     <script src="aircraft-icons.js"></script>
     <script>
         /**
@@ -433,13 +434,8 @@
                     { name: "WEST", windDir: 270, arrRwys: ["26R", "27L", "28"], depRwys: ["26L", "27R"] },
                     { name: "EAST", windDir: 90,  arrRwys: ["08L", "09R", "10"], depRwys: ["08R", "09L"] }
                 ],
-                runways: [
-                    { name: "26R", recip: "08L", x1: 2.2, y1: -0.9, x2: -0.8, y2: -0.9, heading: 275 },
-                    { name: "26L", recip: "08R", x1: 2.2, y1: -0.7, x2: -0.8, y2: -0.7, heading: 275 },
-                    { name: "27R", recip: "09L", x1: 2.2, y1: 0.7,  x2: -0.8, y2: 0.7,  heading: 275 },
-                    { name: "27L", recip: "09R", x1: 2.2, y1: 0.9,  x2: -0.8, y2: 0.9,  heading: 275 },
-                    { name: "28",  recip: "10",  x1: 2.0, y1: 1.4,  x2: -1.0, y2: 1.4,  heading: 275 }
-                ],
+                // Surveyed runway ends from FAA data (runways-data.js).
+                runways: window.ATC_RUNWAYS?.KATL || [],
                 secondaryAirports: [
                     { name: "KFTY", lat: 33.778, lon: -84.522, rwyHeading: 265 },
                     { name: "KPDK", lat: 33.876, lon: -84.302, rwyHeading: 206 },
@@ -500,9 +496,8 @@
                     { name: "WEST", windDir: 275, arrRwys: ["27"], depRwys: ["27"] },
                     { name: "EAST", windDir: 95,  arrRwys: ["09"], depRwys: ["09"] }
                 ],
-                runways: [
-                    { name: "27", recip: "09", x1: 0.8, y1: 0.08, x2: -0.8, y2: -0.08, heading: 275 }
-                ],
+                // Surveyed runway ends from FAA data (runways-data.js).
+                runways: window.ATC_RUNWAYS?.KSAN || [],
                 secondaryAirports: [
                     { name: "KNZY", lat: 32.699, lon: -117.215, rwyHeading: 291 },
                     { name: "KMYF", lat: 32.815, lon: -117.139, rwyHeading: 280 }
@@ -544,14 +539,11 @@
                 lon: -80.9431,
                 elevation: 748,
                 flows: [
-                    { name: "SOUTH", windDir: 180, arrRwys: ["18R", "18C"], depRwys: ["18L", "18C"] },
-                    { name: "NORTH", windDir: 360, arrRwys: ["36L", "36C"], depRwys: ["36R", "36C"] }
+                    { name: "SOUTH", windDir: 180, arrRwys: ["19R", "19L"], depRwys: ["18", "19L"] },
+                    { name: "NORTH", windDir: 360, arrRwys: ["01L", "01R"], depRwys: ["36", "01R"] }
                 ],
-                runways: [
-                    { name: "18R", recip: "36L", x1: -1.1, y1: -1.0, x2: -1.1, y2: 0.6, heading: 180 },
-                    { name: "18C", recip: "36C", x1: -0.3, y1: -0.8, x2: -0.3, y2: 0.9, heading: 180 },
-                    { name: "18L", recip: "36R", x1:  0.4, y1: -0.7, x2:  0.4, y2: 0.8, heading: 180 }
-                ],
+                // Surveyed runway ends from FAA data (runways-data.js).
+                runways: window.ATC_RUNWAYS?.KCLT || [],
                 secondaryAirports: [
                     { name: "KJQF", lat: 35.388, lon: -80.709, rwyHeading: 200 },
                     { name: "KUZA", lat: 34.987, lon: -81.057, rwyHeading: 190 }
@@ -749,18 +741,13 @@
             return "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="24" viewBox="0 0 40 24"><rect width="40" height="24" rx="4" fill="${bgColor}"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="11" fill="${txtColor}">${icao}</text></svg>`);
         }
         
+        // Threshold position and true course for landing or departing on a runway.
         function getRunwayDetails(rwyName) {
             const rwyObj = CONFIG.airport.runways.find(r => r.name === rwyName || r.recip === rwyName);
             if(!rwyObj) return null;
-            let targetHeading, relX, relY;
-            if(rwyObj.name === rwyName) {
-                targetHeading = rwyObj.heading; relX = rwyObj.x1; relY = rwyObj.y1;
-            } else {
-                targetHeading = (rwyObj.heading + 180) % 360; relX = rwyObj.x2; relY = rwyObj.y2;
-            }
-            const lat = CONFIG.airport.lat - (relY / 60);
-            const lon = CONFIG.airport.lon + (relX / (60 * Math.cos(toRad(CONFIG.airport.lat))));
-            return { lat, lon, heading: targetHeading, name: rwyName };
+            return rwyObj.name === rwyName ?
+                { lat: rwyObj.lat1, lon: rwyObj.lon1, heading: rwyObj.heading, name: rwyName } :
+                { lat: rwyObj.lat2, lon: rwyObj.lon2, heading: (rwyObj.heading + 180) % 360, name: rwyName };
         }
 
         function createRadarEcho(seed, severity) {
@@ -2601,7 +2588,7 @@
                                 this.log(`${id}: Unable ${val} (Tailwind).`, 'error');
                                 this.pilotReadback(plane, `Unable runway ${this.radioRunway(val)} due tailwind`);
                             } else if (intercept > 35) {
-                                this.log(`${id}: intercept angle ${Math.round(intercept)}°. Vector to within 30° of the ${String(rwyInfo.heading).padStart(3, '0')}° final course first.`, 'error');
+                                this.log(`${id}: intercept angle ${Math.round(intercept)}°. Vector to within 30° of the ${String(Math.round(rwyInfo.heading) % 360).padStart(3, '0')}° final course first.`, 'error');
                                 this.pilotReadback(plane, 'Unable the approach from this heading, request vectors to final');
                             } else if (altitudeAfter > glideslope + 300) {
                                 this.log(`${id}: too high for the glideslope here (about ${(Math.round(glideslope / 100) * 100).toLocaleString('en-US')} ft). Descend first.`, 'error');
@@ -3016,12 +3003,21 @@
                 this.drawScope(centerPt);
 
                 this.ctx.strokeStyle = colors.runway; this.ctx.lineWidth = 2.5;
+                // Runways sit on their surveyed ends, so they line up with the map at every zoom.
                 CONFIG.airport.runways.forEach(r => {
-                    const x1 = centerPt.x + (r.x1 * CONFIG.scale), y1 = centerPt.y + (r.y1 * CONFIG.scale);
-                    const x2 = centerPt.x + (r.x2 * CONFIG.scale), y2 = centerPt.y + (r.y2 * CONFIG.scale);
-                    this.ctx.beginPath(); this.ctx.moveTo(x1, y1); this.ctx.lineTo(x2, y2); this.ctx.stroke();
-                    this.ctx.fillStyle = colors.runwayText; this.ctx.font = '10px monospace';
-                    this.ctx.fillText(r.name, x1, y1 - 5); this.ctx.fillText(r.recip, x2, y2 + 11);
+                    const a = this.map.latLngToContainerPoint([r.lat1, r.lon1]);
+                    const b = this.map.latLngToContainerPoint([r.lat2, r.lon2]);
+                    const widthPx = Math.max(2.5, r.widthFt / 6076.12 * CONFIG.scale);
+                    this.ctx.lineWidth = widthPx; this.ctx.lineCap = 'butt';
+                    this.ctx.beginPath(); this.ctx.moveTo(a.x, a.y); this.ctx.lineTo(b.x, b.y); this.ctx.stroke();
+                    // Labels just beyond each end; hidden when zoomed out too far to read them.
+                    if (CONFIG.scale < 12) return;
+                    const length = Math.hypot(b.x - a.x, b.y - a.y) || 1;
+                    const ux = (b.x - a.x) / length, uy = (b.y - a.y) / length, gap = 10 + widthPx / 2;
+                    this.ctx.fillStyle = colors.runwayText; this.ctx.font = 'bold 10px monospace'; this.ctx.textBaseline = 'middle';
+                    this.ctx.fillText(r.name, a.x - ux * gap, a.y - uy * gap);
+                    this.ctx.fillText(r.recip, b.x + ux * gap, b.y + uy * gap);
+                    this.ctx.textBaseline = 'alphabetic';
                 });
 
                 this.updateOverflights(dt, colors);
