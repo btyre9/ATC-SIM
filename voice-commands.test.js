@@ -121,8 +121,20 @@ test('ambiguous or conflicting instructions do not produce a command', () => {
     for (const text of [
         'Delta 229 descend and maintain 3000',
         'Delta 228 descend and maintain flight level 300',
-        'Delta 228 descend and maintain three thousand turn left heading two four zero'
+        'Delta 228 descend and maintain three thousand turn left heading two bananas'
     ]) assert.equal(hear(text).ok, false, text);
+});
+
+test('one transmission can carry several instructions', () => {
+    assert.equal(hear('Delta 228 descend and maintain three thousand turn left heading two four zero').command, 'DAL228 A 3000 TL 240');
+    assert.equal(hear('American 101 turn right heading two seven zero, then reduce speed to two one zero').command, 'AAL101 TR 270 S 210');
+    assert.equal(hear('Delta 228 cleared for takeoff runway two six left climb and maintain one zero thousand').command, 'DAL228 CTO A 10000');
+});
+
+test('recognition tense slips still parse', () => {
+    assert.equal(hear('American 101 clear for takeoff climbed to 10,000').command, 'AAL101 CTO A 10000');
+    assert.equal(hear('Delta 228 clear ILS runway two six right').command, 'DAL228 L 26R');
+    assert.equal(hear('Delta 228 descending and maintain four thousand').command, 'DAL228 A 4000');
 });
 
 test('speed, turns, and go around map to existing commands', () => {

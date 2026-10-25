@@ -1,4 +1,4 @@
-/* Converts one spoken ATC instruction into the simulator's existing short command. */
+/* Converts a spoken ATC transmission (one or more instructions) into the simulator's short commands. */
 (function (root) {
     'use strict';
 
@@ -19,6 +19,9 @@
         'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
+    // Words that can follow RUNWAY in a takeoff clearance, so the clearance does not swallow the next instruction.
+    const RUNWAY_WORD = '(?:\\d{1,2}[LCR]?|ZERO|OH|ONE|TWO|TO|TOO|THREE|FOUR|FOR|FIVE|SIX|SEVEN|EIGHT|NINE|NINER|LEFT|RIGHT|CENTER)';
+    const TAKEOFF = new RegExp(`^(?:RUNWAY(?: ${RUNWAY_WORD})+ )?CLEARED (?:FOR )?TAKEOFF(?: RUNWAY(?: ${RUNWAY_WORD})+)?$`);
 
     function numberFromWords(words) {
         if (!words.length) return null;
@@ -58,6 +61,10 @@
             .replace(/\bTHE SEND\b|\bDESCENT\b|\bDISSENT\b|\bDESEND\b/g, 'DESCEND')
             .replace(/\bCLIENT\b/g, 'CLIMB')
             .replace(/\bMAINTAINED\b|\bMAINTAINING\b/g, 'MAINTAIN')
+            // Recognition often drops or adds a tense ending: "clear for takeoff", "climbed to", "descending".
+            .replace(/\bCLEAR(?= (?:FOR|TO|ILS|THE)\b)/g, 'CLEARED')
+            .replace(/\bCLIMBED\b|\bCLIMBING\b/g, 'CLIMB')
+            .replace(/\bDESCENDED\b|\bDESCENDING\b/g, 'DESCEND')
             .replace(/\bTURN WRITE\b/g, 'TURN RIGHT')
             .replace(/\bTURN LIFT\b/g, 'TURN LEFT')
             .replace(/\bHEAD IN\b|\bHONEY\b/g, 'HEADING')
@@ -176,9 +183,11 @@
         match = phrase.match(/^(?:PROCEED )?DIRECT(?: TO)? ([A-Z0-9]+)$/);
         if (match) return { command: `C ${match[1]}` };
 
-        if (/^(?:RUNWAY .+ )?CLEARED (?:FOR )?TAKEOFF(?: RUNWAY .+)?$/.test(phrase)) return { command: 'CTO' };
+        if (TAKEOFF.test(phrase)) return { command: 'CTO' };
         // "Contact tower", "contact Atlanta Center one three two point four seven", "monitor tower".
-        if (/^(?:CONTACT|MONITOR)\b/.test(phrase)) return { command: 'HO' };
+        if (/^(?:CONTACT|MONITOR)\b/.test(phrase) && phrase.split(' ').slice(1).every(word => !COMMAND_START.has(word))) {
+            return { command: 'HO' };
+        }
 
         match = phrase.match(/^CLEARED (?:FOR (?:THE )?)?ILS(?: APPROACH)? RUNWAY (.+)$/);
         if (match) {
@@ -227,9 +236,32 @@
         if (!resolved.ok) return resolved;
         const plane = aircraft.find(item => item.id === resolved.id);
 
-        const instruction = parseInstruction(words.slice(commandIndex).join(' '), elevation, plane);
-        if (instruction.error) return { ok: false, error: instruction.error };
-        return { ok: true, command: `${plane.id} ${instruction.command}` };
+        const commands = parseInstructions(words.slice(commandIndex), elevation, plane);
+        if (commands.error) return { ok: false, error: commands.error };
+        return { ok: true, command: `${plane.id} ${commands.join(' ')}` };
+    }
+
+    /* Splits a transmission into instructions, taking the longest phrase that parses each time:
+       "cleared for takeoff climb to ten thousand" becomes ["CTO", "A 10000"]. */
+    function parseInstructions(words, elevation, plane) {
+        const commands = [];
+        let i = 0;
+        while (i < words.length) {
+            while (i < words.length && (FILLER_WORDS.has(words[i]) || words[i] === 'THEN')) i++;
+            if (i >= words.length) break;
+            let end = words.length, result = null;
+            for (; end > i; end--) {
+                result = parseInstruction(words.slice(i, end).join(' '), elevation, plane);
+                if (!result.error) break;
+            }
+            if (end === i) {
+                const error = parseInstruction(words.slice(i).join(' '), elevation, plane).error;
+                return { error: commands.length ? `${error} I understood the first part, but not "${words.slice(i).join(' ').toLowerCase()}".` : error };
+            }
+            commands.push(result.command);
+            i = end;
+        }
+        return commands;
     }
 
     function choose(transcripts, aircraft, airlines, elevation, selectedAircraftId = '') {

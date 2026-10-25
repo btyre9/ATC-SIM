@@ -1985,11 +1985,12 @@
                 plane.lastStatus = `WITH ${to}`;
                 this.stats.handedOff++;
                 this.addScore(to === 'TOWER' ? 10 : 20, `${plane.id} handed off to ${facility.name}`);
-                this.pilotReadback(plane, `${facility.name} ${this.radioFrequency(facility.freq)}, good day`);
+                const readback = `${facility.name} ${this.radioFrequency(facility.freq)}, good day`;
                 // Center then climbs the departure toward cruise.
                 if (to === 'CENTER') plane.pendingActions.push({ at: plane.simAge + 20, apply: () => {
                     plane.targetAltitude = Math.max(plane.targetAltitude, 23000);
                 } });
+                return readback;
             }
 
             startTakeoff(plane) {
@@ -2249,10 +2250,10 @@
                 this.pilotTransmission(plane, `${message}, ${this.radioCallsign(plane)}.`, true);
             }
 
-            pilotAltitudeReadback(plane, altitude) {
-                const verb = altitude > plane.altitude + 100 ? 'Climbing to' :
-                    altitude < plane.altitude - 100 ? 'Descending to' : 'Maintaining';
-                this.pilotReadback(plane, `${verb} ${this.radioAltitude(altitude)}`);
+            altitudeReadback(plane, altitude) {
+                const verb = altitude > plane.altitude + 100 ? 'climbing to' :
+                    altitude < plane.altitude - 100 ? 'descending to' : 'maintaining';
+                return `${verb} ${this.radioAltitude(altitude)}`;
             }
 
             initVoiceInput() {
@@ -2437,6 +2438,11 @@
                     plane.pendingActions.sort((a, b) => a.at - b.at);
                 };
                 let assignedAltitude = null;
+                // A transmission gets one readback covering all of its instructions, as pilots do.
+                const readbacks = [];
+                const readback = text => readbacks.push(text);
+                const altitudeInTransmission = tokens.some((token, k) => token === 'A' || token === 'ALT' ||
+                    (token === 'C' && /^\d+$/.test(tokens[k + 1] || '')));
                 let assignedHeading = null;
                 
                 let i = 1;
@@ -2456,14 +2462,14 @@
                         case 'MPH':
                             plane.lastStatus = "MAINT PRESENT HDG";
                             this.log(`${id} maintaining present heading, altitude, and speed.`, 'system');
-                            this.pilotReadback(plane, 'Maintaining present heading, altitude, and speed');
+                            readback('Maintaining present heading, altitude, and speed');
                             break;
                         case 'ABORT':
                         case 'GA':
                             plane.lastStatus = "GO AROUND";
                             act(() => plane.goAround(), 2);
                             this.log(`${id} GOING AROUND (4000ft AGL, 240kts, right turn).`, 'error');
-                            this.pilotReadback(plane, 'Going around');
+                            readback('Going around');
                             break;
                         case 'H': case 'HDG':
                             let deg = parseInt(val, 10);
@@ -2478,7 +2484,7 @@
                                 });
                                 plane.lastStatus = `HDG ${String(deg % 360).padStart(3, '0')}`;
                                 this.log(`${id} turning heading ${val}.`);
-                                this.pilotReadback(plane, `Heading ${this.radioDigits(deg % 360, 3)}`);
+                                readback(`Heading ${this.radioDigits(deg % 360, 3)}`);
                             }
                             break;
                         case 'TR':
@@ -2494,7 +2500,7 @@
                                 });
                                 plane.lastStatus = `RIGHT HDG ${String(degR % 360).padStart(3, '0')}`;
                                 this.log(`${id} turn right heading ${val}.`);
-                                this.pilotReadback(plane, `Right heading ${this.radioDigits(degR % 360, 3)}`);
+                                readback(`Right heading ${this.radioDigits(degR % 360, 3)}`);
                             }
                             break;
                         case 'TL':
@@ -2510,7 +2516,7 @@
                                 });
                                 plane.lastStatus = `LEFT HDG ${String(degL % 360).padStart(3, '0')}`;
                                 this.log(`${id} turn left heading ${val}.`);
-                                this.pilotReadback(plane, `Left heading ${this.radioDigits(degL % 360, 3)}`);
+                                readback(`Left heading ${this.radioDigits(degL % 360, 3)}`);
                             }
                             break;
                         case 'A': case 'ALT':
@@ -2521,7 +2527,7 @@
                                 assignedAltitude = alt;
                                 act(() => { plane.targetAltitude = alt; });
                                 this.log(`${id} climb/descend ${alt}ft.`);
-                                this.pilotAltitudeReadback(plane, alt);
+                                readback(this.altitudeReadback(plane, alt));
                             }
                             break;
                         case 'C':
@@ -2531,7 +2537,7 @@
                                 assignedAltitude = alt;
                                 act(() => { plane.targetAltitude = alt; });
                                 this.log(`${id} climb/descend ${alt}ft.`);
-                                this.pilotAltitudeReadback(plane, alt);
+                                readback(this.altitudeReadback(plane, alt));
                             } else {
                                 const wp = CONFIG.waypoints.find(w => w.name === val.toUpperCase()) ||
                                     CONFIG.waypoints.find(w => fixSkeleton(w.name) === fixSkeleton(val));
@@ -2539,7 +2545,7 @@
                                     act(() => { plane.directTo = wp; });
                                     plane.lastStatus = `DCT ${wp.name}`;
                                     this.log(`${id} proceeding direct ${wp.name}.`);
-                                    this.pilotReadback(plane, `Direct ${wp.name}`);
+                                    readback(`Direct ${wp.name}`);
                                 } else { this.log(`Unknown Waypoint '${val}'.`, 'error'); }
                             }
                             break;
@@ -2550,14 +2556,14 @@
                                 if (spd > 250 && plane.altitude < 9950) {
                                     // 14 CFR 91.117: 250 knots maximum below 10,000 ft MSL.
                                     this.log(`${id}: 250 kt is the limit below 10,000 ft.`, 'error');
-                                    this.pilotReadback(plane, 'Unable, two five zero knots is our limit below one zero thousand');
+                                    readback('Unable, two five zero knots is our limit below one zero thousand');
                                 } else if (spd < 160 && !plane.ilsCaptured) {
                                     this.log(`${id}: keep speed at 160 kt or more until established on final.`, 'error');
-                                    this.pilotReadback(plane, 'Unable, minimum one six zero knots until established');
+                                    readback('Unable, minimum one six zero knots until established');
                                 } else {
                                     act(() => { plane.targetSpeed = spd; });
                                     this.log(`${id} speed ${spd} knots.`);
-                                    this.pilotReadback(plane, `Speed ${spd} knots`);
+                                    readback(`Speed ${spd} knots`);
                                 }
                             }
                             break;
@@ -2565,7 +2571,7 @@
                             const rwyInfo = getRunwayDetails(val);
                             if (!rwyInfo) {
                                 this.log(`Unknown Runway '${val}'.`, 'error');
-                                this.pilotReadback(plane, 'Unable, that runway is not available');
+                                readback('Unable, that runway is not available');
                                 break;
                             }
                             
@@ -2573,7 +2579,7 @@
                             const dLon = (plane.lon - rwyInfo.lon) * 60 * Math.cos(toRad(plane.lat));
                             if (Math.sqrt(dLat*dLat + dLon*dLon) > 30) {
                                 this.log(`${id}: Threshold is >30 NM out (Max 30 NM).`, 'error');
-                                this.pilotReadback(plane, `Unable I L S runway ${this.radioRunway(val)}, still too far out`);
+                                readback(`Unable I L S runway ${this.radioRunway(val)}, still too far out`);
                                 break;
                             }
                             
@@ -2586,13 +2592,13 @@
                             const altitudeAfter = assignedAltitude ?? plane.targetAltitude;
                             if (diff > 90) {
                                 this.log(`${id}: Unable ${val} (Tailwind).`, 'error');
-                                this.pilotReadback(plane, `Unable runway ${this.radioRunway(val)} due tailwind`);
+                                readback(`Unable runway ${this.radioRunway(val)} due tailwind`);
                             } else if (intercept > 35) {
                                 this.log(`${id}: intercept angle ${Math.round(intercept)}°. Vector to within 30° of the ${String(Math.round(rwyInfo.heading) % 360).padStart(3, '0')}° final course first.`, 'error');
-                                this.pilotReadback(plane, 'Unable the approach from this heading, request vectors to final');
+                                readback('Unable the approach from this heading, request vectors to final');
                             } else if (altitudeAfter > glideslope + 300) {
                                 this.log(`${id}: too high for the glideslope here (about ${(Math.round(glideslope / 100) * 100).toLocaleString('en-US')} ft). Descend first.`, 'error');
-                                this.pilotReadback(plane, "Unable, we're too high for the approach, request lower");
+                                readback("Unable, we're too high for the approach, request lower");
                             } else {
                                 act(() => {
                                     plane.directTo = null;
@@ -2602,7 +2608,7 @@
                                 });
                                 plane.lastStatus = `CLR ILS ${val}`;
                                 this.log(`${id} cleared ILS runway ${val}.`);
-                                this.pilotReadback(plane, `Cleared I L S runway ${this.radioRunway(val)}`);
+                                readback(`Cleared I L S runway ${this.radioRunway(val)}`);
                             }
                             break;
                         case 'CTO': {
@@ -2615,20 +2621,21 @@
                             if (tailwind > 180) tailwind = 360 - tailwind;
                             if (tailwind > 90) {
                                 this.log(`${id}: Unable ${runway} (Tailwind).`, 'error');
-                                this.pilotReadback(plane, `Unable runway ${this.radioRunway(runway)} due tailwind`);
+                                readback(`Unable runway ${this.radioRunway(runway)} due tailwind`);
                                 break;
                             }
                             if (this.aircraft.some(other => other !== plane && runwayIsOccupiedBy(other, runway))) {
                                 this.log(`${id}: runway ${runway} is occupied.`, 'error');
-                                this.pilotReadback(plane, `Unable, runway ${this.radioRunway(runway)} is occupied`);
+                                readback(`Unable, runway ${this.radioRunway(runway)} is occupied`);
                                 break;
                             }
-                            const climbTo = assignedAltitude ?? (plane.targetAltitude > CONFIG.airport.elevation ? plane.targetAltitude : CONFIG.departureAltitude);
                             plane.holdingShort = false;
                             act(() => this.startTakeoff(plane));
                             plane.lastStatus = `TAKEOFF ${runway}`;
                             this.log(`${id} cleared for takeoff runway ${runway}.`);
-                            this.pilotReadback(plane, `Cleared for takeoff runway ${this.radioRunway(runway)}, climbing to ${this.radioAltitude(climbTo)}`);
+                            const climbTo = plane.targetAltitude > CONFIG.airport.elevation ? plane.targetAltitude : CONFIG.departureAltitude;
+                            readback(`Cleared for takeoff runway ${this.radioRunway(runway)}` +
+                                (altitudeInTransmission ? '' : `, climbing to ${this.radioAltitude(climbTo)}`));
                             break;
                         }
                         case 'HO': {
@@ -2641,19 +2648,24 @@
                                 this.log(`${id}: not ready for center: ${problem}.`, 'error');
                                 break;
                             }
-                            this.completeHandoff(plane, plane.isArrival ? 'TOWER' : 'CENTER');
+                            readback(this.completeHandoff(plane, plane.isArrival ? 'TOWER' : 'CENTER'));
                             break;
                         }
                         case 'X':
                             act(() => { plane.clearedForILS = false; plane.ilsCaptured = false; });
                             plane.lastStatus = "HOLDING VECTORS";
                             this.log(`${id} approach clearance cancelled.`);
-                            this.pilotReadback(plane, 'Approach clearance cancelled');
+                            readback('Approach clearance cancelled');
                             break;
                         default:
                             this.log(`Unknown cmd: ${cmd}`, 'error');
                     }
                     i += consumed;
+                }
+                if (readbacks.length) {
+                    // Join as one sentence: capital at the start only, acronyms such as "I L S" left alone.
+                    const sentence = readbacks.map(text => text.replace(/^[A-Z](?=[a-z])/, c => c.toLowerCase())).join(', ');
+                    this.pilotReadback(plane, sentence.replace(/^./, c => c.toUpperCase()));
                 }
                 this.updateStrips();
             }
