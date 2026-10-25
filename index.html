@@ -3167,7 +3167,7 @@
                     return;
                 }
                 const nameColor = alert === 'loss' ? 'db-loss' : alert === 'predicted' ? 'db-predicted' :
-                    ac.id === this.selectedAircraftId ? 'db-selected' : ac.handedOff ? 'db-dim' : 'db-callsign';
+                    ac.id === this.selectedAircraftId ? 'db-selected' : ac.handedOff === 'CENTER' ? 'db-dim' : 'db-callsign';
                 const tag = alert ? ` <span class="${alert === 'loss' ? 'db-loss' : 'db-predicted'}">CA</span>` : '';
                 let html;
                 if (ac.onGround && !ac.isArrival && !ac.takeoffCleared) {
@@ -3175,8 +3175,8 @@
                 } else {
                     const arrow = Math.abs(ac.targetAltitude - ac.altitude) <= 50 ? '=' : (ac.targetAltitude > ac.altitude ? '↑' : '↓');
                     const assigned = arrow === '=' ? '' : level(ac.targetAltitude);
-                    const detail = ac.handedOff ? 'db-dim' : 'db-alt';
-                    html = `<span class="font-bold ${nameColor}">${ac.id}</span>${tag}<br><span class="${detail}">${level(ac.altitude)}${arrow}${assigned}</span><br><span class="${ac.handedOff ? 'db-dim' : 'db-info'}">${Math.round(ac.speed)} ${ac.type}</span>`;
+                    const withCenter = ac.handedOff === 'CENTER';
+                    html = `<span class="font-bold ${nameColor}">${ac.id}</span>${tag}<br><span class="${withCenter ? 'db-dim' : 'db-alt'}">${level(ac.altitude)}${arrow}${assigned}</span><br><span class="${withCenter ? 'db-dim' : 'db-info'}">${Math.round(ac.speed)} ${ac.type}</span>`;
                 }
                 if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; }
             }
@@ -3466,8 +3466,8 @@
                     if (this.trailsOn && ac.id === this.selectedAircraftId) this.drawTrail(ac);
 
                     // The dark outline keeps the yellow readable on light and dark maps.
-                    // Handed off to center or tower: drawn gray, no longer your traffic.
-                    const sprite = this.aircraftSprite(ac.type, ac.handedOff ? colors.handedOff : colors.aircraft, colors.aircraftEdge);
+                    // Handed off to center: drawn gray, no longer your traffic. Arrivals with tower stay yellow.
+                    const sprite = this.aircraftSprite(ac.type, ac.handedOff === 'CENTER' ? colors.handedOff : colors.aircraft, colors.aircraftEdge);
                     const size = window.ATCAircraftIcons.screenSize(ac.type);
                     this.ctx.save();
                     this.ctx.translate(ac.x, ac.y);
