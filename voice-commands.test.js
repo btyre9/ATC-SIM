@@ -162,3 +162,11 @@ test('heading misheard as hitting or heating still parses', () => {
     assert.equal(hear('Delta 228 turn right heating one eight zero').command, 'DAL228 TR 180');
     assert.equal(choose(['hitting three six zero'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 H 360');
 });
+
+test('climb misheard as cline still parses, but the CLINE fix stays a fix', () => {
+    assert.equal(hear('Delta 228 cline and maintain one two thousand').command, 'DAL228 A 12000');
+    assert.equal(hear('Delta 228 kline to one one thousand').command, 'DAL228 A 11000');
+    assert.equal(choose(['cline and maintain one four thousand'], aircraft, airlines, 1026, 'DAL228').command, 'DAL228 A 14000');
+    assert.equal(hear('Delta 228 proceed direct cline').command, 'DAL228 C CLINE');
+    assert.equal(hear('Delta 228 direct to cline').command, 'DAL228 C CLINE');
+});

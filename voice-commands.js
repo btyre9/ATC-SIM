@@ -60,6 +60,8 @@
             .replace(/\bTO SEND\b/g, 'DESCEND')
             .replace(/\bTHE SEND\b|\bDESCENT\b|\bDISSENT\b|\bDESEND\b/g, 'DESCEND')
             .replace(/\bCLIENT\b/g, 'CLIMB')
+            // "Climb" is often heard as "cline"; CLINE is also a Charlotte fix, so keep it after "direct".
+            .replace(/(?<!\bDIRECT (?:TO )?)\b(?:CLINE|KLINE|CLIME|CLIMES)\b/g, 'CLIMB')
             .replace(/\bMAINTAINED\b|\bMAINTAINING\b/g, 'MAINTAIN')
             // Recognition often drops or adds a tense ending: "clear for takeoff", "climbed to", "descending".
             .replace(/\bCLEAR(?= (?:FOR|TO|ILS|THE)\b)/g, 'CLEARED')
