@@ -2612,7 +2612,7 @@
                                     act(() => { plane.directTo = wp; });
                                     plane.lastStatus = `DCT ${wp.name}`;
                                     this.log(`${id} proceeding direct ${wp.name}.`);
-                                    readback(`Direct ${wp.name}`);
+                                    readback(`Direct ${wp.navaid && wp.title ? wp.title : wp.name}`); // Pilots say a navaid by name: "direct Rome".
                                 } else { this.log(`Unknown Waypoint '${val}'.`, 'error'); }
                             }
                             break;

@@ -17,7 +17,7 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 | `A 3000` | "Descend and maintain three thousand" or "flight level three thousand" | Altitude |
 | `H 270` / `TR 270` / `TL 240` | "Turn right heading two seven zero" | Heading |
 | `S 210` | "Reduce speed to two one zero" | Speed |
-| `C CHPPR` | "Proceed direct chopper" | Direct to a fix, tracked until overhead |
+| `C CHPPR` | "Proceed direct chopper", "direct Rome VOR" | Direct to a fix or navaid, tracked until overhead; sound-alikes and navaid place names work |
 | `L 26R` | "Cleared ILS runway two six right" | ILS approach |
 | `HO` | "Contact tower" / "Contact center" | Handoff |
 | `GA` | "Go around" | Go around |
@@ -50,7 +50,7 @@ Each aircraft carries a real registration from its airline's fleet, shown on its
 ### Settings
 
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
-- **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
+- **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
 - **TRAILS** shows the history dots (one per radar sweep, the last ten) behind the aircraft you select, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
 
 ## Files
@@ -62,7 +62,7 @@ Each aircraft carries a real registration from its airline's fleet, shown on its
 | `weather-control.js` | Weather presets, NWS observation parsing, storm cells from NEXRAD pixels |
 | `weather-logic.js` | Pilot weather deviation requests |
 | `aircraft-icons.js` | Type-specific silhouettes from real dimensions and engine layouts |
-| `fixes-data.js` | Real FAA arrival, departure and procedure fixes (generated) |
+| `fixes-data.js` | Real FAA navaids (VOR, VORTAC, TACAN, DME, NDB) and fixes with display tiers (generated) |
 | `runways-data.js` | Surveyed runway ends, headings and widths from FAA data (generated) |
 | `photos-data.js` | Real registrations per airline and type, plus freely licensed fallback photos with credit (generated) |
 | `voice-commands.js` | Speech transcript to command parser |
