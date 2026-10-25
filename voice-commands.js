@@ -19,6 +19,8 @@
         'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR', 'EXPECT'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
+    // "Expedite" or "immediately" anywhere in a transmission asks for it to be carried out at once.
+    const EXPEDITE_WORDS = new Set(['EXPEDITE', 'EXPEDITED', 'EXPEDITING', 'IMMEDIATELY', 'IMMEDIATE']);
     const NATO = {
         ALPHA: 'A', ALFA: 'A', BRAVO: 'B', CHARLIE: 'C', DELTA: 'D', ECHO: 'E', FOXTROT: 'F', GOLF: 'G',
         HOTEL: 'H', INDIA: 'I', JULIET: 'J', JULIETT: 'J', KILO: 'K', LIMA: 'L', MIKE: 'M', NOVEMBER: 'N',
@@ -270,9 +272,22 @@
     }
 
     function parse(transcript, aircraft, airlines, elevation, allowApproximateCarrier = true) {
-        const words = normalize(transcript).split(' ').filter(Boolean);
+        let words = normalize(transcript).split(' ').filter(Boolean);
+        const expedite = words.some(word => EXPEDITE_WORDS.has(word));
+        if (expedite) {
+            words = words.filter(word => !EXPEDITE_WORDS.has(word));
+            // "Expedite your descent", "expedite climb": hurry the current clearance, no new value.
+            if (['CLIMB', 'DESCEND', 'TURN'].includes(words.at(-1))) {
+                words.pop();
+                if (['YOUR', 'THE'].includes(words.at(-1))) words.pop();
+            }
+        }
         const commandIndex = findCommandStart(words);
         if (commandIndex < 0) {
+            if (expedite) {
+                const alone = resolveCallsign(words.join(' '), aircraft, airlines, false);
+                if (alone.ok) return { ok: true, command: `${alone.id} XP` };
+            }
             // A callsign on its own selects that aircraft.
             if (resolveCallsign(words.join(' '), aircraft, airlines, false).ok) return { ok: false, error: 'No instruction was recognized.' };
             // Otherwise the callsign may be fine with an instruction we did not recognize; say which aircraft we heard.
@@ -291,7 +306,7 @@
 
         const commands = parseInstructions(words.slice(commandIndex), elevation, plane);
         if (commands.error) return { ok: false, error: commands.error };
-        return { ok: true, command: `${plane.id} ${commands.join(' ')}` };
+        return { ok: true, command: `${plane.id} ${expedite ? 'XP ' : ''}${commands.join(' ')}` };
     }
 
     /* Splits a transmission into instructions, taking the longest phrase that parses each time:
@@ -325,9 +340,11 @@
             let result = parse(transcript, aircraft, airlines, elevation);
             const words = normalize(transcript).split(' ').filter(Boolean);
             const commandIndex = findCommandStart(words);
+            const before = words.slice(0, Math.max(commandIndex, 0));
             if (!result.ok && selected && commandIndex >= 0 &&
-                words.slice(0, commandIndex).every(word => FILLER_WORDS.has(word))) {
-                result = parse(`${selected.id} ${words.slice(commandIndex).join(' ')}`, aircraft, airlines, elevation);
+                before.every(word => FILLER_WORDS.has(word) || EXPEDITE_WORDS.has(word) || word === 'YOUR' || word === 'THE')) {
+                const expedite = words.some(word => EXPEDITE_WORDS.has(word)) ? 'EXPEDITE ' : '';
+                result = parse(`${selected.id} ${expedite}${words.slice(commandIndex).join(' ')}`, aircraft, airlines, elevation);
             }
             return { transcript, result };
         });

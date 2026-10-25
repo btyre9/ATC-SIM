@@ -221,3 +221,14 @@ test('climb misheard as climate still parses', () => {
     assert.equal(choose(['climate to one four thousand'], aircraft, airlines, 1026, 'DAL228').command, 'DAL228 A 14000');
     assert.equal(hear('Delta 228 climbin and maintain one one thousand').command, 'DAL228 A 11000');
 });
+
+test('expedite or immediately marks a transmission to be carried out at once', () => {
+    assert.equal(hear('Delta 228 expedite descend and maintain four thousand').command, 'DAL228 XP A 4000');
+    assert.equal(hear('Delta 228 descend and maintain four thousand expedite').command, 'DAL228 XP A 4000');
+    assert.equal(hear('Delta 228 turn left immediately heading two four zero').command, 'DAL228 XP TL 240');
+    assert.equal(hear('Delta 228 expedite your descent').command, 'DAL228 XP');
+    assert.equal(choose(['expedite climb'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 XP');
+    assert.equal(choose(['expedite your descent'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 XP');
+    assert.equal(choose(['expedite climb and maintain one one thousand'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 XP A 11000');
+    assert.equal(hear('Delta 228 descend and maintain four thousand').command, 'DAL228 A 4000');
+});

@@ -20,6 +20,7 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 | `C CHPPR` | "Proceed direct chopper", "direct Rome VOR" | Direct to a fix or navaid, tracked until overhead; sound-alikes and navaid place names work |
 | `L 26R` | "Cleared ILS runway two six right" | ILS approach |
 | `HO` | "Contact tower" / "Contact center" | Handoff |
+| `XP A 4000` | "Expedite descend and maintain four thousand", "turn left immediately heading two four zero", "expedite your descent" | Carry it out at once: 1 s reaction, about 1.7x climb or descent rate, standard-rate turn |
 | `EXP 26R` | "Expect runway two six right" | Runway to plan for; arrivals on their own navigation fly to its final and line up |
 | `GA` | "Go around" | Go around |
 | `CTO` | "Cleared for takeoff" | Takeoff (manual departure mode) |
