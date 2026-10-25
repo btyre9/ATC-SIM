@@ -1,0 +1,272 @@
+/* Converts one spoken ATC instruction into the simulator's existing short command. */
+(function (root) {
+    'use strict';
+
+    const UNITS = {
+        ZERO: 0, OH: 0, ONE: 1, TWO: 2, THREE: 3, FOUR: 4,
+        FIVE: 5, SIX: 6, SEVEN: 7, EIGHT: 8, NINE: 9, NINER: 9,
+        TEN: 10, ELEVEN: 11, TWELVE: 12, THIRTEEN: 13,
+        FOURTEEN: 14, FIFTEEN: 15, SIXTEEN: 16, SEVENTEEN: 17,
+        EIGHTEEN: 18, NINETEEN: 19
+    };
+    const TENS = {
+        TWENTY: 20, THIRTY: 30, FORTY: 40, FIFTY: 50,
+        SIXTY: 60, SEVENTY: 70, EIGHTY: 80, NINETY: 90
+    };
+    const COMMAND_START = new Set([
+        'DESCEND', 'CLIMB', 'MAINTAIN', 'TURN', 'FLY', 'HEADING',
+        'REDUCE', 'INCREASE', 'SPEED', 'PROCEED', 'DIRECT',
+        'CLEARED', 'GO', 'ABORT', 'RUNWAY'
+    ]);
+    const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
+
+    function numberFromWords(words) {
+        if (!words.length) return null;
+        const thousand = words.indexOf('THOUSAND');
+        if (thousand >= 0) {
+            const high = numberFromWords(words.slice(0, thousand));
+            const low = thousand === words.length - 1 ? 0 : numberFromWords(words.slice(thousand + 1));
+            return high >= 1 && high <= 99 && low !== null && low < 1000 ? high * 1000 + low : null;
+        }
+        const hundred = words.indexOf('HUNDRED');
+        if (hundred >= 0) {
+            const high = numberFromWords(words.slice(0, hundred));
+            const low = hundred === words.length - 1 ? 0 : numberFromWords(words.slice(hundred + 1));
+            return high >= 1 && high <= 9 && low !== null && low < 100 ? high * 100 + low : null;
+        }
+
+        let digits = '';
+        for (let i = 0; i < words.length; i++) {
+            const word = words[i];
+            if (/^\d+$/.test(word)) { digits += word; continue; }
+            if (TENS[word] !== undefined) {
+                let value = TENS[word];
+                if (UNITS[words[i + 1]] > 0 && UNITS[words[i + 1]] < 10) {
+                    value += UNITS[words[++i]];
+                }
+                digits += String(value);
+            } else if (UNITS[word] !== undefined) {
+                digits += String(UNITS[word]);
+            } else return null;
+        }
+        return digits ? Number(digits) : null;
+    }
+
+    function normalize(text) {
+        return String(text).toUpperCase().replace(/[^A-Z0-9\s]/g, ' ').replace(/\s+/g, ' ').trim()
+            .replace(/\bTO SEND\b/g, 'DESCEND')
+            .replace(/\bTHE SEND\b|\bDESCENT\b|\bDISSENT\b|\bDESEND\b/g, 'DESCEND')
+            .replace(/\bCLIENT\b/g, 'CLIMB')
+            .replace(/\bMAINTAINED\b|\bMAINTAINING\b/g, 'MAINTAIN')
+            .replace(/\bTURN WRITE\b/g, 'TURN RIGHT')
+            .replace(/\bTURN LIFT\b/g, 'TURN LEFT')
+            .replace(/\bHEAD IN\b|\bHONEY\b/g, 'HEADING')
+            .replace(/\bFT\b/g, 'FEET')
+            .replace(/\bTAKE OFF\b/g, 'TAKEOFF')
+            .replace(/\bI L S\b/g, 'ILS');
+    }
+
+    function airlineAliases(code, airline) {
+        const aliases = [[code], code.split('')];
+        if (airline) {
+            const name = normalize(airline.name).split(' ');
+            aliases.push(name, [...name, 'AIRLINES']);
+            if (name.length === 1) aliases.push(name[0].split(''));
+            if (code === 'SWA') aliases.push(['SOUTH', 'WEST']);
+        }
+        return aliases;
+    }
+
+    function flightNumberFromWords(words) {
+        const heardDigits = { TO: 'TWO', TOO: 'TWO', FOR: 'FOUR', ATE: 'EIGHT', WON: 'ONE' };
+        return numberFromWords(words.map(word => heardDigits[word] || word));
+    }
+
+    function oneEditApart(left, right) {
+        if (Math.abs(left.length - right.length) > 1) return false;
+        let i = 0, j = 0, edits = 0;
+        while (i < left.length && j < right.length) {
+            if (left[i] === right[j]) { i++; j++; continue; }
+            if (++edits > 1) return false;
+            if (left.length >= right.length) i++;
+            if (right.length >= left.length) j++;
+        }
+        return edits + (left.length - i) + (right.length - j) === 1;
+    }
+
+    function matchesCallsign(callsignWords, plane, airline, approximateCarrier = false) {
+        if (callsignWords.length === 1 && callsignWords[0] === plane.id) return true;
+        const code = plane.id.slice(0, 3);
+        return airlineAliases(code, airline).some(alias => {
+            const heardCarrier = callsignWords.slice(0, alias.length);
+            const exact = heardCarrier.join(' ') === alias.join(' ');
+            const nearName = approximateCarrier && airline && alias[0] !== code &&
+                alias.length <= 2 && heardCarrier.length === alias.length &&
+                oneEditApart(heardCarrier.join(''), alias.join(''));
+            if (!exact && !nearName) return false;
+            let flightWords = callsignWords.slice(alias.length);
+            if (flightWords[0] === 'FLIGHT') flightWords = flightWords.slice(1);
+            if (flightWords[0] === 'NUMBER') flightWords = flightWords.slice(1);
+            if (!flightWords.length) return !approximateCarrier;
+            const number = flightNumberFromWords(flightWords);
+            return number !== null && String(number) === plane.id.slice(3);
+        });
+    }
+
+    function parseAltitude(phrase, elevation) {
+        let words = phrase.split(' ').filter(Boolean);
+        const flightLevel = words[0] === 'FLIGHT' && words[1] === 'LEVEL';
+        if (flightLevel) words = words.slice(2);
+        else if (words[0] === 'FL') words = words.slice(1);
+        words = words.filter(word => !['FEET', 'FOOT', 'AT', 'TO', 'THE', 'AND'].includes(word));
+        const number = numberFromWords(words);
+        if (number === null) return { error: 'I could not understand the altitude.' };
+        if (flightLevel || phrase.startsWith('FL ')) {
+            // This simulator also accepts a full altitude after "flight level":
+            // "flight level 3000" means 3,000 feet; "flight level 300" remains FL300.
+            if (number >= 1000 && number <= 60000) {
+                if (number < elevation) return { error: `I heard ${number.toLocaleString('en-US')} feet, below this sector’s usable range. Please repeat the altitude.` };
+                return { value: number };
+            }
+            if (number >= 180 && number <= 600) return { value: number * 100 };
+            return { error: 'Say a full altitude such as flight level three thousand, or a standard flight level such as flight level three zero zero.' };
+        }
+        if (number < elevation || number > 60000) {
+            return { error: `I heard ${number.toLocaleString('en-US')} feet, outside this sector’s usable range. Please repeat the altitude.` };
+        }
+        return { value: number };
+    }
+
+    function parseInstruction(phrase, elevation, plane) {
+        let match = phrase.match(/^(DESCEND|CLIMB)(?: TO)?(?: AND)?(?: MAINTAIN)?(?: AT)? (.+)$/);
+        const direction = match ? match[1] : null;
+        if (!match && !phrase.startsWith('MAINTAIN SPEED ')) match = phrase.match(/^MAINTAIN (.+)$/);
+        if (match) {
+            const altitude = parseAltitude(match[direction ? 2 : 1], elevation);
+            if (altitude.error) return { error: altitude.error };
+            if (direction === 'DESCEND' && altitude.value > plane.altitude + 100) {
+                return { error: `I heard ${altitude.value.toLocaleString('en-US')} feet, above the aircraft. Please repeat the altitude or use climb.` };
+            }
+            if (direction === 'CLIMB' && altitude.value < plane.altitude - 100) {
+                return { error: `I heard ${altitude.value.toLocaleString('en-US')} feet, below the aircraft. Please repeat the altitude or use descend.` };
+            }
+            return { command: `A ${altitude.value}` };
+        }
+
+        match = phrase.match(/^TURN (LEFT|RIGHT)(?: TO| AT)?(?: HEADING)? (.+)$/);
+        if (match) {
+            const heading = numberFromWords(match[2].split(' ').filter(word => !['DEGREES', 'DEGREE', 'AND'].includes(word)));
+            if (heading === null || heading < 0 || heading > 360) return { error: 'I could not understand the heading.' };
+            return { command: `${match[1] === 'LEFT' ? 'TL' : 'TR'} ${heading}` };
+        }
+        match = phrase.match(/^(?:FLY )?HEADING (.+)$/);
+        if (match) {
+            const heading = numberFromWords(match[1].split(' ').filter(word => !['DEGREES', 'DEGREE', 'AND'].includes(word)));
+            if (heading === null || heading < 0 || heading > 360) return { error: 'I could not understand the heading.' };
+            return { command: `H ${heading}` };
+        }
+
+        match = phrase.match(/^(?:(?:REDUCE|INCREASE|MAINTAIN) SPEED(?: TO)?|SPEED) (.+)$/);
+        if (match) {
+            const speed = numberFromWords(match[1].split(' ').filter(word => !['KNOTS', 'KNOT'].includes(word)));
+            if (speed === null || speed < 80 || speed > 450) return { error: 'I could not understand the speed.' };
+            return { command: `S ${speed}` };
+        }
+
+        match = phrase.match(/^(?:PROCEED )?DIRECT(?: TO)? ([A-Z0-9]+)$/);
+        if (match) return { command: `C ${match[1]}` };
+
+        if (/^(?:RUNWAY .+ )?CLEARED (?:FOR )?TAKEOFF(?: RUNWAY .+)?$/.test(phrase)) return { command: 'CTO' };
+
+        match = phrase.match(/^CLEARED (?:FOR (?:THE )?)?ILS(?: APPROACH)? RUNWAY (.+)$/);
+        if (match) {
+            const words = match[1].split(' ');
+            let side = '';
+            if (words.at(-1) === 'LEFT' || words.at(-1) === 'RIGHT') side = words.pop()[0];
+            if (/^\d{1,2}[LR]$/.test(words[0]) && words.length === 1) {
+                side = words[0].at(-1);
+                words[0] = words[0].slice(0, -1);
+            }
+            const runway = numberFromWords(words);
+            if (runway === null || runway < 1 || runway > 36) return { error: 'I could not understand the runway.' };
+            return { command: `L ${String(runway).padStart(2, '0')}${side}` };
+        }
+
+        if (phrase === 'GO AROUND' || phrase === 'ABORT') return { command: 'GA' };
+        return { error: 'I could not match that instruction. Try one clearance at a time.' };
+    }
+
+    function resolveCallsign(transcript, aircraft, airlines, allowApproximateCarrier = true) {
+        const callsignWords = normalize(transcript).split(' ').filter(word => word && word !== 'HEAVY');
+        if (!callsignWords.length) return { ok: false, error: 'No callsign was heard. Say the airline and flight number, or select an aircraft strip first.' };
+        const exactMatches = aircraft.filter(plane =>
+            matchesCallsign(callsignWords, plane, airlines.find(item => item.id === plane.id.slice(0, 3))));
+        const matches = exactMatches.length || !allowApproximateCarrier ? exactMatches : aircraft.filter(plane =>
+            matchesCallsign(callsignWords, plane, airlines.find(item => item.id === plane.id.slice(0, 3)), true));
+        if (matches.length !== 1) {
+            if (matches.length) return { ok: false, error: 'Several aircraft match. Say the airline and full flight number.' };
+            const carrier = airlines.find(item => airlineAliases(item.id, item).some(alias =>
+                callsignWords.slice(0, alias.length).join(' ') === alias.join(' ')));
+            const relevant = carrier ? aircraft.filter(plane => plane.id.startsWith(carrier.id)) : aircraft;
+            const available = relevant.slice(0, 8).map(plane => plane.id).join(', ');
+            const scope = carrier ? `${carrier.name} callsigns` : 'Active callsigns';
+            const guidance = available ? `${scope}: ${available}${relevant.length > 8 ? ', …' : ''}.` :
+                carrier ? `No ${carrier.name} aircraft are active.` : 'No aircraft are active yet.';
+            return { ok: false, error: `I heard "${callsignWords.join(' ')}", but no active aircraft matches. ${guidance}` };
+        }
+        return { ok: true, id: matches[0].id };
+    }
+
+    function parse(transcript, aircraft, airlines, elevation, allowApproximateCarrier = true) {
+        const words = normalize(transcript).split(' ').filter(Boolean);
+        const commandIndex = words.findIndex(word => COMMAND_START.has(word));
+        if (commandIndex < 0) return { ok: false, error: 'No instruction was recognized.' };
+        const resolved = resolveCallsign(words.slice(0, commandIndex).join(' '), aircraft, airlines, allowApproximateCarrier);
+        if (!resolved.ok) return resolved;
+        const plane = aircraft.find(item => item.id === resolved.id);
+
+        const instruction = parseInstruction(words.slice(commandIndex).join(' '), elevation, plane);
+        if (instruction.error) return { ok: false, error: instruction.error };
+        return { ok: true, command: `${plane.id} ${instruction.command}` };
+    }
+
+    function choose(transcripts, aircraft, airlines, elevation, selectedAircraftId = '') {
+        const options = [...new Set(transcripts.map(text => String(text).trim()).filter(Boolean))];
+        if (!options.length) return { ok: false, transcript: '', error: 'No speech was recognized.' };
+        const selected = aircraft.find(plane => plane.id === selectedAircraftId);
+        const parsed = options.map(transcript => {
+            let result = parse(transcript, aircraft, airlines, elevation);
+            const words = normalize(transcript).split(' ').filter(Boolean);
+            const commandIndex = words.findIndex(word => COMMAND_START.has(word));
+            if (!result.ok && selected && commandIndex >= 0 &&
+                words.slice(0, commandIndex).every(word => FILLER_WORDS.has(word))) {
+                result = parse(`${selected.id} ${words.slice(commandIndex).join(' ')}`, aircraft, airlines, elevation);
+            }
+            return { transcript, result };
+        });
+        const valid = parsed.filter(item => item.result.ok);
+        const commands = [...new Set(valid.map(item => item.result.command))];
+        if (commands.length > 1) {
+            return { ok: false, transcript: options[0], error: 'Recognition found different possible clearances. Please repeat the full callsign and instruction.' };
+        }
+        if (commands.length === 1) {
+            const matching = valid.filter(item => item.result.command === commands[0]);
+            const selected = matching.find(item => parse(item.transcript, aircraft, airlines, elevation, false).ok) || matching[0];
+            return { ok: true, transcript: selected.transcript, command: commands[0] };
+        }
+        return { ok: false, transcript: options[0], error: parsed[0].result.error };
+    }
+
+    function chooseCallsign(transcripts, aircraft, airlines) {
+        const options = [...new Set(transcripts.map(text => String(text).trim()).filter(Boolean))];
+        const matches = options.map(transcript => ({ transcript, result: resolveCallsign(transcript, aircraft, airlines) }))
+            .filter(item => item.result.ok);
+        const ids = [...new Set(matches.map(item => item.result.id))];
+        if (ids.length > 1) return { ok: false, error: 'Recognition heard different possible callsigns. Please repeat the flight number.' };
+        if (ids.length === 1) return { ok: true, id: ids[0], transcript: matches.find(item => item.result.id === ids[0]).transcript };
+        return { ok: false, error: options.length ? resolveCallsign(options[0], aircraft, airlines).error : 'No speech was recognized.' };
+    }
+
+    root.ATCVoice = { parse, choose, resolveCallsign, chooseCallsign };
+    if (typeof module !== 'undefined') module.exports = { parse, choose, resolveCallsign, chooseCallsign };
+})(typeof window !== 'undefined' ? window : globalThis);

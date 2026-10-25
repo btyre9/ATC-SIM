@@ -1,0 +1,2463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OpenATC Simulator - Multi-Sector & Weather</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Leaflet Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.css" />
+    <script src="https://unpkg.com/maplibre-gl@5.15.0/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+        
+        body {
+            font-family: 'JetBrains Mono', monospace;
+            background-color: #0f172a;
+            color: #e2e8f0;
+            overflow: hidden;
+        }
+
+        #radar-container {
+            position: relative;
+            background: #000;
+            border: 2px solid #334155;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+            cursor: crosshair;
+        }
+
+        #map-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            background: #020914;
+        }
+
+        #map-layer .leaflet-tile-pane { filter: brightness(0.75) contrast(1.2); }
+        #map-layer.radar-grid {
+            background-image: linear-gradient(rgba(34, 211, 238, 0.07) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(34, 211, 238, 0.07) 1px, transparent 1px);
+            background-size: 80px 80px;
+        }
+        #map-layer .leaflet-control-attribution {
+            background: rgba(15, 23, 42, 0.88);
+            color: #cbd5e1;
+            font-size: 10px;
+        }
+        #map-layer .leaflet-control-attribution a { color: #67e8f9; }
+
+        #radar {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100%;
+            z-index: 20;
+            background: linear-gradient(0deg, rgba(0,0,0,0) 50%, rgba(0, 255, 0, 0.02) 50%), linear-gradient(90deg, rgba(255,0,0,0.06), rgba(0,255,0,0.02));
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+
+        .strip-arrival {
+            border-left: 4px solid #fbbf24;
+            background-color: #1e293b;
+        }
+        .strip-departure {
+            border-left: 4px solid #38bdf8;
+            background-color: #1e293b;
+        }
+        
+        .aircraft-label {
+            position: absolute;
+            z-index: 30;
+            font-size: 11px;
+            color: #fff;
+            text-shadow: 2px 0 0 #000, -2px 0 0 #000, 0 2px 0 #000, 0 -2px 0 #000, 1px 1px #000, -1px -1px #000, 1px -1px #000, -1px 1px #000;
+            pointer-events: none;
+            line-height: 1.1;
+            white-space: pre;
+            transform: translate(10px, -10px);
+        }
+
+        .cmd-input:focus {
+            outline: none;
+            border-color: #22c55e;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen">
+
+    <!-- LEFT PANEL: Radar -->
+    <div class="flex-grow min-w-0 relative h-full flex flex-col" id="radar-area">
+        <!-- Top Bar -->
+        <div class="min-h-12 py-1.5 bg-slate-800 border-b border-slate-700 flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 justify-between select-none z-40 relative">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-green-500 font-bold text-lg tracking-wider">OPEN<span class="text-white">ATC</span></span>
+                
+                <!-- Airport Sector Dropdown -->
+                <div class="flex items-center space-x-1 bg-slate-900 px-2 py-1 rounded border border-slate-600">
+                    <span class="text-[10px] text-slate-400 font-bold">SECTOR:</span>
+                    <select id="sector-select" class="bg-slate-900 text-amber-400 text-xs font-bold focus:outline-none cursor-pointer">
+                        <option value="KATL">KATL - ATLANTA (5 RWY)</option>
+                        <option value="KSAN">KSAN - SAN DIEGO (1 RWY)</option>
+                        <option value="KCLT">KCLT - CHARLOTTE (3 RWY)</option>
+                    </select>
+                </div>
+
+                <!-- Day & Time Bank Selector -->
+                <div class="flex items-center space-x-1 bg-slate-900 px-2 py-1 rounded border border-slate-600">
+                    <span class="text-[10px] text-slate-400 font-bold">SCHED:</span>
+                    <select id="day-select" class="bg-slate-900 text-emerald-400 text-xs font-bold focus:outline-none cursor-pointer">
+                        <option value="0">SUN</option>
+                        <option value="1">MON</option>
+                        <option value="2">TUE</option>
+                        <option value="3">WED</option>
+                        <option value="4">THU</option>
+                        <option value="5">FRI</option>
+                        <option value="6">SAT</option>
+                    </select>
+                    <span class="text-slate-600">|</span>
+                    <select id="bank-select" class="bg-slate-900 text-sky-400 text-xs font-bold focus:outline-none cursor-pointer">
+                        <option value="MORNING">MORNING RUSH (0700-1000)</option>
+                        <option value="MIDDAY">MIDDAY BANK (1100-1400)</option>
+                        <option value="AFTERNOON" selected>INTL / PM RUSH (1500-1900)</option>
+                        <option value="NIGHT">CARGO / RED-EYE (2100-0500)</option>
+                    </select>
+                </div>
+
+                <!-- Zoom & Pause Controls -->
+                <div class="flex space-x-1 bg-slate-900 rounded p-1 border border-slate-600 items-center">
+                    <button id="zoom-wide" class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-700 text-white rounded hover:bg-slate-600 transition-colors border border-slate-500">WIDE</button>
+                    <button id="zoom-app" class="px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors">APP</button>
+                    <button id="zoom-twr" class="px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors">TWR</button>
+                    <button id="map-key-btn" class="px-2.5 py-0.5 text-[10px] font-bold text-cyan-300 hover:bg-slate-700 hover:text-white rounded transition-colors" title="Free OpenFreeMap background. Click to use a CARTO key instead">FREE</button>
+                    <div class="w-px h-4 bg-slate-700 mx-1"></div>
+                    <button id="speed-1" data-speed="1" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Real time">1×</button>
+                    <button id="speed-2" data-speed="2" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Double speed">2×</button>
+                    <button id="speed-4" data-speed="4" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Four times speed">4×</button>
+                    <div class="w-px h-4 bg-slate-700 mx-1"></div>
+                    <button id="pause-btn" class="px-2.5 py-0.5 text-[10px] font-bold bg-yellow-900 text-yellow-500 hover:bg-yellow-800 hover:text-white rounded transition-colors border border-yellow-800">PAUSE</button>
+                </div>
+            </div>
+
+            <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm items-center whitespace-nowrap">
+                <!-- WIND INDICATOR -->
+                <div class="flex items-center gap-2 text-cyan-400 font-bold font-mono bg-slate-900 px-3 py-1 rounded border border-slate-600 text-xs" title="Click to flip active wind flow" id="wind-box" style="cursor:pointer;">
+                    <div id="wind-arrow" style="transform: rotate(0deg); transition: transform 0.6s;">&uarr;</div>
+                    <span id="wind-display">CALM</span>
+                </div>
+
+                <div class="text-xs">SCORE: <span id="score-display" class="text-white font-bold text-sm">0</span></div>
+                <div class="text-xs text-slate-400">BEST: <span id="best-display" class="text-slate-200 font-bold">0</span></div>
+                <div class="text-xs">SEP: <span id="sep-display" class="text-green-400 font-bold">OK</span></div>
+                <button id="end-shift-btn" type="button" class="px-2.5 py-1 text-[10px] font-bold bg-slate-700 text-white hover:bg-slate-600 rounded border border-slate-500" title="End this shift and see your debrief">END SHIFT</button>
+            </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div id="radar-container" class="flex-grow w-full relative overflow-hidden">
+            <div id="map-layer"></div>
+            <div class="scanline"></div>
+            <canvas id="radar"></canvas>
+            <!-- HTML Overlay for aircraft labels -->
+            <div id="labels-layer" class="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden z-30"></div>
+            
+            <!-- Active Runways Banner -->
+            <div id="active-rwy-banner" class="absolute top-3 left-3 bg-slate-900/85 border border-slate-700 px-3 py-1.5 rounded text-[11px] font-mono text-slate-300 z-30 pointer-events-none">
+                ARR RWYS: <span id="active-rwy-list" class="text-green-400 font-bold">--</span>
+                <span class="text-slate-600 mx-1">|</span>
+                DEP RWYS: <span id="active-dep-list" class="text-sky-400 font-bold">--</span>
+            </div>
+            <div class="absolute top-3 right-3 bg-slate-900/85 border border-slate-700 px-2 py-1.5 rounded text-[10px] font-mono text-slate-300 z-30 pointer-events-none">
+                <span class="font-bold text-slate-100">SIM WX RADAR</span>
+                <span class="ml-2 text-green-400">■ LIGHT</span>
+                <span class="ml-1 text-yellow-300">■ MOD</span>
+                <span class="ml-1 text-red-400">■ HEAVY</span>
+                <span id="weather-motion" class="ml-2 text-sky-300">DRIFT --</span>
+            </div>
+
+            <!-- Pause Overlay -->
+            <div id="pause-overlay" class="hidden absolute top-0 left-0 w-full h-full bg-black bg-opacity-40 z-50 flex items-center justify-center pointer-events-none">
+                <div class="text-yellow-500 font-bold text-4xl tracking-widest border-4 border-yellow-500 p-4 bg-black bg-opacity-70 rounded">SIMULATION PAUSED</div>
+            </div>
+
+            <!-- Shift Debrief -->
+            <div id="debrief" class="hidden absolute inset-0 z-[60] flex items-center justify-center bg-black/60">
+                <div class="w-[min(440px,calc(100%-2rem))] rounded border border-amber-500 bg-slate-950/95 p-5 shadow-2xl text-xs">
+                    <h2 class="font-bold text-amber-300 text-base mb-1">Shift debrief</h2>
+                    <p id="debrief-subtitle" class="text-slate-400 mb-4"></p>
+                    <div id="debrief-stats" class="grid grid-cols-[1fr_auto] gap-x-6 gap-y-1.5 text-slate-300 mb-4"></div>
+                    <div class="flex items-baseline justify-between border-t border-slate-700 pt-3 mb-4">
+                        <span class="text-slate-400 font-bold">SCORE</span>
+                        <span><span id="debrief-score" class="text-white font-bold text-2xl"></span> <span id="debrief-best" class="text-slate-400 ml-2"></span></span>
+                    </div>
+                    <div class="flex justify-end gap-2">
+                        <button id="debrief-continue" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold">KEEP PLAYING</button>
+                        <button id="debrief-new" type="button" class="bg-amber-700 hover:bg-amber-600 text-white px-3 py-2 rounded font-bold">NEW SHIFT</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="command-help" class="hidden absolute bottom-16 left-4 z-50 w-[min(620px,calc(100%-2rem))] max-h-[75vh] overflow-y-auto rounded border border-cyan-600 bg-slate-950/95 p-4 shadow-2xl text-xs">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-cyan-300 text-sm">How to control an aircraft</h2>
+                <button id="close-command-help" type="button" class="text-slate-300 hover:text-white font-bold" aria-label="Close command help">CLOSE</button>
+            </div>
+            <p class="text-slate-300 mb-3">First click an aircraft strip on the right. Then click MIC and say just one short instruction. You do not need to say the callsign again. If Chrome hears a word incorrectly, edit the text in the command bar and press SEND. You can still say a callsign and instruction together if you prefer.</p>
+            <p id="help-aircraft" class="text-amber-300 font-bold mb-3">Waiting for an aircraft...</p>
+            <div class="grid grid-cols-[80px_1fr_125px] gap-2 text-slate-300">
+                <div class="font-bold text-slate-400">Action</div><div class="font-bold text-slate-400">Say after clicking MIC</div><div class="font-bold text-slate-400">Or type and SEND</div>
+                <div>Descend</div><div id="help-say-altitude"></div><code id="help-type-altitude" class="text-green-300"></code>
+                <div>Climb</div><div id="help-say-climb"></div><code id="help-type-climb" class="text-green-300"></code>
+                <div>Right turn</div><div id="help-say-heading"></div><code id="help-type-heading" class="text-green-300"></code>
+                <div>Left turn</div><div id="help-say-left"></div><code id="help-type-left" class="text-green-300"></code>
+                <div>Heading</div><div id="help-say-fly"></div><code id="help-type-fly" class="text-green-300"></code>
+                <div>Speed</div><div id="help-say-speed"></div><code id="help-type-speed" class="text-green-300"></code>
+                <div>Direct</div><div id="help-say-direct"></div><code id="help-type-direct" class="text-green-300"></code>
+                <div>Approach</div><div id="help-say-ils"></div><code id="help-type-ils" class="text-green-300"></code>
+                <div>Go around</div><div id="help-say-ga"></div><code id="help-type-ga" class="text-green-300"></code>
+                <div>Takeoff</div><div id="help-say-cto"></div><code id="help-type-cto" class="text-green-300"></code>
+            </div>
+            <p class="mt-3 text-sky-300">Departures (blue strips) wait short of the runway until you clear them for takeoff. They climb to 5,000 ft on runway heading. Climb them to 10,000 ft or higher and turn them toward the exit gate on their strip; they hand off automatically when they cross the dashed 40 NM boundary. Arrivals that leave the boundary are lost.</p>
+            <p class="mt-3 text-amber-300">In this simulator, “flight level three thousand” means 3,000 feet and “flight level twelve thousand” means 12,000 feet. “Flight level three zero zero” still means 30,000 feet. Say heading digits separately: “two seven zero” for 270°. ILS clearance requires an aircraft within 30 nautical miles of the runway.</p>
+        </div>
+
+        <div id="voice-settings" class="hidden absolute bottom-16 right-4 z-50 w-72 rounded border border-emerald-600 bg-slate-950/95 p-4 shadow-2xl text-xs">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-bold text-emerald-300 text-sm">Pilot voice</h2>
+                <button id="close-voice-settings" type="button" class="text-slate-300 hover:text-white font-bold" aria-label="Close pilot voice settings">CLOSE</button>
+            </div>
+            <label for="pilot-voice-engine" class="block text-slate-300 mb-2">Voice engine</label>
+            <select id="pilot-voice-engine" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white mb-3">
+                <option value="browser">Chrome voices</option>
+                <option value="kokoro">Kokoro neural voices (free)</option>
+            </select>
+            <div id="browser-voice-settings">
+                <label for="pilot-voice-select" class="block text-slate-300 mb-2">Choose a voice installed in Chrome</label>
+                <select id="pilot-voice-select" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white mb-3"><option value="">System default</option></select>
+            </div>
+            <div id="kokoro-voice-settings" class="hidden">
+                <label for="kokoro-voice-select" class="block text-slate-300 mb-2">Kokoro voice</label>
+                <select id="kokoro-voice-select" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white mb-2">
+                    <option value="random">Random per aircraft · all six voices</option>
+                    <option value="af_heart">Heart · feminine, US</option>
+                    <option value="af_bella">Bella · feminine, US</option>
+                    <option value="am_michael">Michael · masculine, US</option>
+                    <option value="am_fenrir">Fenrir · masculine, US</option>
+                    <option value="bf_emma">Emma · feminine, UK</option>
+                    <option value="bm_george">George · masculine, UK</option>
+                </select>
+                <p class="text-slate-400 mb-2">Each aircraft keeps its assigned voice throughout the session.</p>
+                <button id="kokoro-load" type="button" class="bg-cyan-800 hover:bg-cyan-700 text-white px-3 py-2 rounded font-bold mb-2">START KOKORO</button>
+                <p class="text-slate-400 mb-2">First use downloads about 100 MB. Chrome keeps the model and voices in its site cache; later visits load them into memory from there. If you clear site data or use another browser address, they may download again.</p>
+                <p id="kokoro-status" role="status" class="text-amber-300 mb-3">Press START KOKORO, or turn PILOTS on.</p>
+            </div>
+            <button id="pilot-voice-test" type="button" class="bg-emerald-700 hover:bg-emerald-600 text-white px-3 py-2 rounded font-bold">TEST VOICE</button>
+            <p class="mt-3 text-slate-400">Pilot audio must be on to hear transmissions. Press TEST VOICE to hear your selection.</p>
+        </div>
+
+        <!-- Command Bar -->
+        <div class="h-14 bg-slate-800 border-t border-slate-700 flex items-center px-4 space-x-2 z-40 relative">
+            <span id="selected-aircraft-label" class="text-green-500 font-bold whitespace-nowrap">></span>
+            <input type="text" id="command-input" class="cmd-input flex-grow bg-slate-900 border border-slate-600 rounded px-3 py-2 text-white uppercase tracking-widest font-bold" placeholder="SELECT AN AIRCRAFT, THEN SAY: DESCEND AND MAINTAIN FLIGHT LEVEL 3000" autocomplete="off">
+            <button id="command-help-btn" type="button" class="bg-cyan-900 hover:bg-cyan-800 text-cyan-100 px-3 py-2 rounded font-bold text-xs border border-cyan-700">COMMANDS</button>
+            <button id="pilot-audio-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" aria-label="Toggle pilot audio" aria-pressed="false" title="Turn on spoken pilot check-ins and readbacks">PILOTS: OFF</button>
+            <button id="pilot-voice-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" title="Choose and test a pilot voice">VOICE</button>
+            <button id="voice-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" aria-label="Speak ATC command" aria-pressed="false" title="Select an aircraft strip, then say one short instruction">MIC</button>
+            <button id="send-btn" class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded font-bold text-xs">SEND</button>
+        </div>
+        <div id="msg-area" class="absolute bottom-16 left-4 text-yellow-400 text-sm font-bold pointer-events-none drop-shadow-md z-40"></div>
+    </div>
+
+    <!-- RIGHT PANEL: Strips -->
+    <div class="w-80 bg-slate-900 border-l border-slate-700 flex flex-col h-full shrink-0 z-40 relative">
+        
+        <!-- Tab Headers -->
+        <div class="flex border-b border-slate-700 text-xs font-bold text-center select-none">
+            <div class="w-1/2 p-2 bg-slate-800 text-amber-300">ARRIVALS (<span id="arr-count">0</span>)</div>
+            <div class="w-1/2 p-2 bg-slate-800 text-sky-300 border-l border-slate-700">DEPARTURES (<span id="dep-count">0</span>)</div>
+        </div>
+        <div class="px-2 py-1 bg-slate-900 border-b border-slate-800 text-[10px] font-bold text-slate-500 text-center select-none" id="sched-rate-label">RATE: NORMAL</div>
+
+        <!-- Strips Container -->
+        <div class="flex-grow overflow-y-auto p-2 space-y-2" id="strips-container">
+            <!-- Strips injected by JS -->
+        </div>
+
+        <!-- Info Panel -->
+        <div class="h-1/3 border-t border-slate-700 bg-slate-800 p-4 text-xs space-y-2 overflow-y-auto">
+            <h3 class="text-slate-400 font-bold uppercase mb-2 border-b border-slate-600 pb-1">Radio Log</h3>
+            <div id="radio-log" class="space-y-1 font-mono text-slate-300">
+                <div class="text-green-500">SYSTEM: Simulator Ready (Weather Enabled).</div>
+                <div class="text-slate-500">Select an aircraft strip, then click MIC and say a short instruction.</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="voice-commands.js"></script>
+    <script src="pilot-radio.js"></script>
+    <script src="kokoro-radio.js"></script>
+    <script src="weather-logic.js"></script>
+    <script src="traffic-logic.js"></script>
+    <script>
+        /**
+         * MULTI-AIRPORT SECTOR DATABASE
+         */
+        const SECTORS = {
+            KATL: {
+                id: "KATL",
+                name: "Atlanta Approach",
+                lat: 33.6407,
+                lon: -84.4277,
+                elevation: 1026,
+                flows: [
+                    { name: "WEST", windDir: 270, arrRwys: ["26R", "27L", "28"], depRwys: ["26L", "27R"] },
+                    { name: "EAST", windDir: 90,  arrRwys: ["08L", "09R", "10"], depRwys: ["08R", "09L"] }
+                ],
+                runways: [
+                    { name: "26R", recip: "08L", x1: 2.2, y1: -0.9, x2: -0.8, y2: -0.9, heading: 275 },
+                    { name: "26L", recip: "08R", x1: 2.2, y1: -0.7, x2: -0.8, y2: -0.7, heading: 275 },
+                    { name: "27R", recip: "09L", x1: 2.2, y1: 0.7,  x2: -0.8, y2: 0.7,  heading: 275 },
+                    { name: "27L", recip: "09R", x1: 2.2, y1: 0.9,  x2: -0.8, y2: 0.9,  heading: 275 },
+                    { name: "28",  recip: "10",  x1: 2.0, y1: 1.4,  x2: -1.0, y2: 1.4,  heading: 275 }
+                ],
+                secondaryAirports: [
+                    { name: "KFTY", lat: 33.778, lon: -84.522, rwyHeading: 265 },
+                    { name: "KPDK", lat: 33.876, lon: -84.302, rwyHeading: 206 },
+                    { name: "KMGE", lat: 33.915, lon: -84.516, rwyHeading: 286 }
+                ],
+                waypoints: [
+                    { name: "RMG", lat: 34.162565, lon: -85.119407, type: "VOR" },
+                    { name: "LGC", lat: 33.049099, lon: -85.206200, type: "VOR" },
+                    { name: "AHN", lat: 33.948601, lon: -83.326302, type: "VOR" },
+                    { name: "CSG", lat: 32.516399, lon: -84.938896, type: "VOR" },
+                    { name: "MCN", lat: 32.698101, lon: -83.649002, type: "VOR" },
+                    { name: "HRS", lat: 34.648399, lon: -83.098701, type: "VOR" },
+                    { name: "ODF", lat: 34.716099, lon: -82.885399, type: "VOR" },
+                    { name: "GQO", lat: 35.027599, lon: -85.203796, type: "VOR" }
+                ],
+                schedule: [
+                    { airline: "DAL", weight: 58, routes: [
+                        { origin: "KJFK", gate: "NE_GATE", types: ["B752", "A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KLGA", gate: "NE_GATE", types: ["A320", "B738", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KBOS", gate: "NE_GATE", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDCA", gate: "NE_GATE", types: ["B717", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KMCO", gate: "SE_GATE", types: ["B752", "A321", "B763"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMIA", gate: "SE_GATE", types: ["B739", "A321", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDFW", gate: "W_GATE",  types: ["A320", "B739", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KORD", gate: "NW_GATE", types: ["B717", "B738", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KLAX", gate: "W_GATE",  types: ["A359", "B763", "B752", "A321"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "KSFO", gate: "W_GATE",  types: ["B752", "A321", "B763"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGLL", gate: "NE_GATE", types: ["A333", "A359", "B764"], banks: ["AFTERNOON"] },
+                        { origin: "LFPG", gate: "NE_GATE", types: ["A333", "A359"], banks: ["AFTERNOON"] }
+                    ]},
+                    { airline: "SWA", weight: 14, routes: [
+                        { origin: "KBWI", gate: "NE_GATE", types: ["B738", "B38M", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMDW", gate: "NW_GATE", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDAL", gate: "W_GATE",  types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "AAL", weight: 6, routes: [
+                        { origin: "KDFW", gate: "W_GATE",  types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCLT", gate: "NE_GATE", types: ["A319", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "FDX", weight: 4, routes: [
+                        { origin: "KMEM", gate: "NW_GATE", types: ["B763", "MD11", "B77L"], banks: ["MORNING", "NIGHT"] }
+                    ]},
+                    { airline: "UPS", weight: 3, routes: [
+                        { origin: "KSDF", gate: "NW_GATE", types: ["B752", "B763", "MD11"], banks: ["MORNING", "NIGHT"] }
+                    ]}
+                ]
+            },
+
+            KSAN: {
+                id: "KSAN",
+                name: "SoCal Approach (San Diego)",
+                lat: 32.7336,
+                lon: -117.1897,
+                elevation: 17,
+                flows: [
+                    { name: "WEST", windDir: 275, arrRwys: ["27"], depRwys: ["27"] },
+                    { name: "EAST", windDir: 95,  arrRwys: ["09"], depRwys: ["09"] }
+                ],
+                runways: [
+                    { name: "27", recip: "09", x1: 0.8, y1: 0.08, x2: -0.8, y2: -0.08, heading: 275 }
+                ],
+                secondaryAirports: [
+                    { name: "KNZY", lat: 32.699, lon: -117.215, rwyHeading: 291 },
+                    { name: "KMYF", lat: 32.815, lon: -117.139, rwyHeading: 280 }
+                ],
+                waypoints: [
+                    { name: "MZB", lat: 32.7822, lon: -117.2255, type: "VOR" },
+                    { name: "PGY", lat: 32.6103, lon: -116.9792, type: "VOR" },
+                    { name: "OCN", lat: 33.2406, lon: -117.4177, type: "VOR" },
+                    { name: "JLI", lat: 33.1405, lon: -116.5860, type: "VOR" }
+                ],
+                schedule: [
+                    { airline: "SWA", weight: 38, routes: [
+                        { origin: "KSJC", gate: "NW_GATE", types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KOAK", gate: "NW_GATE", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KLAS", gate: "NE_GATE", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KPHX", gate: "E_GATE",  types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] }
+                    ]},
+                    { airline: "ASA", weight: 24, routes: [
+                        { origin: "KSEA", gate: "NW_GATE", types: ["B739", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KPDX", gate: "NW_GATE", types: ["B738", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "UAL", weight: 14, routes: [
+                        { origin: "KSFO", gate: "NW_GATE", types: ["B738", "B739", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KDEN", gate: "NE_GATE", types: ["B739", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "DAL", weight: 12, routes: [
+                        { origin: "KATL", gate: "E_GATE",  types: ["B752", "A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSLC", gate: "NE_GATE", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]}
+                ]
+            },
+
+            KCLT: {
+                id: "KCLT",
+                name: "Charlotte Approach",
+                lat: 35.2140,
+                lon: -80.9431,
+                elevation: 748,
+                flows: [
+                    { name: "SOUTH", windDir: 180, arrRwys: ["18R", "18C"], depRwys: ["18L", "18C"] },
+                    { name: "NORTH", windDir: 360, arrRwys: ["36L", "36C"], depRwys: ["36R", "36C"] }
+                ],
+                runways: [
+                    { name: "18R", recip: "36L", x1: -1.1, y1: -1.0, x2: -1.1, y2: 0.6, heading: 180 },
+                    { name: "18C", recip: "36C", x1: -0.3, y1: -0.8, x2: -0.3, y2: 0.9, heading: 180 },
+                    { name: "18L", recip: "36R", x1:  0.4, y1: -0.7, x2:  0.4, y2: 0.8, heading: 180 }
+                ],
+                secondaryAirports: [
+                    { name: "KJQF", lat: 35.388, lon: -80.709, rwyHeading: 200 },
+                    { name: "KUZA", lat: 34.987, lon: -81.057, rwyHeading: 190 }
+                ],
+                waypoints: [
+                    { name: "SUG", lat: 35.4064, lon: -82.2686, type: "VOR" },
+                    { name: "SPA", lat: 35.0336, lon: -81.9270, type: "VOR" },
+                    { name: "CAE", lat: 33.8572, lon: -81.0539, type: "VOR" },
+                    { name: "GSO", lat: 36.0456, lon: -79.9764, type: "VOR" }
+                ],
+                schedule: [
+                    { airline: "AAL", weight: 75, routes: [
+                        { origin: "KJFK", gate: "NE_GATE", types: ["A321", "B738", "A319"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KLGA", gate: "NE_GATE", types: ["A319", "B738", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KBOS", gate: "NE_GATE", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPHL", gate: "NE_GATE", types: ["A321", "A319"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDCA", gate: "NE_GATE", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KMCO", gate: "SE_GATE", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMIA", gate: "SE_GATE", types: ["A321", "B738", "B772"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDFW", gate: "W_GATE",  types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGLL", gate: "NE_GATE", types: ["B772", "B789"], banks: ["AFTERNOON"] }
+                    ]},
+                    { airline: "DAL", weight: 9, routes: [
+                        { origin: "KATL", gate: "SW_GATE", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]}
+                ]
+            }
+        };
+
+        /**
+         * CORE SIMULATOR CONFIGURATION
+         */
+        const CONFIG = {
+            scale: 1, 
+            timeMultiplier: 1, 
+            refreshRate: 30, 
+            // FAA terminal radar minimum: 3 NM lateral or 1000 ft vertical.
+            separation: { lateralNM: 3, verticalFt: 1000 },
+            // New arrivals start at least this far from all traffic, and never on a short conflict course.
+            spawnSafetyBuffer: 8,
+            entryAltitudes: [10000, 11000, 12000, 13000, 14000],
+            sectorRadiusNM: 40,
+            departureAltitude: 5000,
+            handoffAltitude: 10000,
+            wind: { dir: 270, speed: 10 },
+            currentSectorId: "KATL",
+            airport: SECTORS.KATL,
+            secondaryAirports: SECTORS.KATL.secondaryAirports,
+            waypoints: SECTORS.KATL.waypoints,
+            entryGates: [
+                { name: "NE_GATE", angle: 45,  dist: 38 },
+                { name: "E_GATE",  angle: 90,  dist: 38 },
+                { name: "SE_GATE", angle: 135, dist: 38 },
+                { name: "SW_GATE", angle: 225, dist: 38 },
+                { name: "W_GATE",  angle: 270, dist: 38 },
+                { name: "NW_GATE", angle: 315, dist: 38 }
+            ],
+            zoomLevels: { WIDE: 65, APP: 20, TWR: 6 }
+        };
+
+        const AIRLINES = [
+            { id: "DAL", name: "Delta",       color: "#003a70", text: "#ffffff" },
+            { id: "SWA", name: "Southwest",   color: "#1b4596", text: "#fcb514" },
+            { id: "AAL", name: "American",    color: "#36495d", text: "#ffffff" },
+            { id: "UAL", name: "United",      color: "#005da4", text: "#ffffff" },
+            { id: "ASA", name: "Alaska",      color: "#01426a", text: "#4cde80" },
+            { id: "JBU", name: "JetBlue",     color: "#0033a0", text: "#ffffff" },
+            { id: "FFT", name: "Frontier",    color: "#006643", text: "#ffffff" },
+            { id: "NKS", name: "Spirit",      color: "#fff200", text: "#000000" },
+            { id: "FDX", name: "FedEx",       color: "#4d148c", text: "#ff6600" },
+            { id: "UPS", name: "UPS",         color: "#351c15", text: "#d4af37" },
+            { id: "BAW", name: "Speedbird",   color: "#075aaa", text: "#eb2226" },
+            { id: "AFR", name: "Air France",  color: "#002157", text: "#ffffff" },
+            { id: "DLH", name: "Lufthansa",   color: "#ffb81c", text: "#000000" },
+            { id: "KAL", name: "Korean Air",  color: "#0065a1", text: "#ffffff" }
+        ];
+
+        const DAY_MODIFIERS = {
+            0: { name: "SUN", rateMultiplier: 1.0,  bizBoost: 0.7 },
+            1: { name: "MON", rateMultiplier: 1.25, bizBoost: 1.4 },
+            2: { name: "TUE", rateMultiplier: 0.85, bizBoost: 1.0 },
+            3: { name: "WED", rateMultiplier: 0.90, bizBoost: 1.0 },
+            4: { name: "THU", rateMultiplier: 1.25, bizBoost: 1.3 },
+            5: { name: "FRI", rateMultiplier: 1.30, bizBoost: 1.2 },
+            6: { name: "SAT", rateMultiplier: 0.80, bizBoost: 0.6 }
+        };
+
+        const BANK_MODIFIERS = {
+            MORNING:   { baseIntervalMs: 11000, maxAircraft: 11, departureShare: 0.5,  label: "HIGH (AM RUSH)" },
+            MIDDAY:    { baseIntervalMs: 14000, maxAircraft: 9,  departureShare: 0.4,  label: "MODERATE (MIDDAY)" },
+            AFTERNOON: { baseIntervalMs: 10000, maxAircraft: 12, departureShare: 0.4,  label: "PEAK (PM + INTL)" },
+            NIGHT:     { baseIntervalMs: 17000, maxAircraft: 7,  departureShare: 0.35, label: "LOW (CARGO/REDEYE)" }
+        };
+
+        const TYPE_REGIONAL = ["B717", "E190", "CRJ7", "CRJ9"];
+        const TYPE_JUMBO = ["B748", "A388"];
+        const TYPE_WIDE = ["A333", "A343", "A359", "B763", "B764", "B772", "B77W", "B77L", "B789", "MD11", "A300"];
+        const HEAVY_TYPES = [...TYPE_JUMBO, ...TYPE_WIDE];
+
+        const ICON_REGIONAL = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHN0cm9rZT0ibm9uZSI+PHBhdGggZD0iTTEyIDJjLS41IDAtMSAuNS0xIDF2M2wtNCA0djJsNCAxLjVWMTlsLTIgMS41VjIybDMuNS0xIDMuNSAxdi0xLjVMMTQgMTl2LTUuNWw0LTEuNVY2bC00LTRWMyBjMC0uNS0uNS0xLTEtMXoiLz48L3N2Zz4=";
+        const ICON_NARROW = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHN0cm9rZT0ibm9uZSI+PHBhdGggZD0iTTEyIDJjLS41IDAtMSAuNS0xIDF2NGwtNiA1djJsNi0xLjVWMTlsLTIgMS41VjIybDMuNS0xIDMuNSAxdi0xLjVMMTQgMTl2LTUuNWw2IDEuNVYxMmwtNi01VjNjMC0uNS0uNS0xLTEtMXoiLz48L3N2Zz4=";
+        const ICON_WIDE = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHN0cm9rZT0ibm9uZSI+PHBhdGggZD0iTTEyIDJjLS44IDAtMS41LjctMS41IDEuNVY4bC04IDd2Mmw4LTIuNVYxOWwtMi41IDEuNVYyMmw0LTEgNCAxdi0xLjVMMTQgMTl2LTUuNWw4IDIuNVYxNWwtOC03VjMuNWMwLS44LS43LTEuNS0xLjUtMS41eiIvPjwvc3ZnPg==";
+        const ICON_JUMBO = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0id2hpdGUiIHN0cm9rZT0ibm9uZSI+PHBhdGggZD0iTTEyIDEuNWMtMSAwLTIgMS0yIDJ2NC41TDQgMTN2MmwyLS41IDEuNS0uNVYxOWwtMyAxLjVWMjJsNS41LTEuNSA1LjUgMS41di0xLjVMMTYgMTl2LTVsMS41LjVMMjAgMTV2LTJsLTYtNXYtNC41YzAtMS0xLTItMi0yeiIvPjwvc3ZnPg==";
+
+        const AIRCRAFT_ICONS = { "REGIONAL": ICON_REGIONAL, "NARROW": ICON_NARROW, "WIDE": ICON_WIDE, "JUMBO": ICON_JUMBO };
+
+        const toRad = (deg) => deg * Math.PI / 180;
+        const toDeg = (rad) => rad * 180 / Math.PI;
+
+        function movePoint(x, y, heading, distancePx) {
+            return {
+                x: x + Math.sin(toRad(heading)) * distancePx,
+                y: y - Math.cos(toRad(heading)) * distancePx
+            };
+        }
+
+        function moveLatLng(lat, lon, heading, distNM) {
+            const R = 3440.065; 
+            const brng = toRad(heading);
+            const lat1 = toRad(lat);
+            const lon1 = toRad(lon);
+
+            const lat2 = Math.asin( Math.sin(lat1)*Math.cos(distNM/R) + Math.cos(lat1)*Math.sin(distNM/R)*Math.cos(brng) );
+            const lon2 = lon1 + Math.atan2(Math.sin(brng)*Math.sin(distNM/R)*Math.cos(lat1), Math.cos(distNM/R)-Math.sin(lat1)*Math.sin(lat2));
+
+            return { lat: toDeg(lat2), lon: toDeg(lon2) };
+        }
+        
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const y = Math.sin(toRad(lon2 - lon1)) * Math.cos(toRad(lat2));
+            const x = Math.cos(toRad(lat1)) * Math.sin(toRad(lat2)) - Math.sin(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.cos(toRad(lon2 - lon1));
+            return (toDeg(Math.atan2(y, x)) + 360) % 360;
+        }
+
+        const gateLabel = gate => gate.name.replace('_GATE', '');
+
+        function getAirlineLogo(icao) {
+            const airline = AIRLINES.find(a => a.id === icao);
+            const bgColor = airline ? airline.color : "#334155";
+            const txtColor = airline ? airline.text : "#ffffff";
+            return "data:image/svg+xml;base64," + btoa(`<svg xmlns="http://www.w3.org/2000/svg" width="40" height="24" viewBox="0 0 40 24"><rect width="40" height="24" rx="4" fill="${bgColor}"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-family="sans-serif" font-weight="bold" font-size="11" fill="${txtColor}">${icao}</text></svg>`);
+        }
+        
+        function getRunwayDetails(rwyName) {
+            const rwyObj = CONFIG.airport.runways.find(r => r.name === rwyName || r.recip === rwyName);
+            if(!rwyObj) return null;
+            let targetHeading, relX, relY;
+            if(rwyObj.name === rwyName) {
+                targetHeading = rwyObj.heading; relX = rwyObj.x1; relY = rwyObj.y1;
+            } else {
+                targetHeading = (rwyObj.heading + 180) % 360; relX = rwyObj.x2; relY = rwyObj.y2;
+            }
+            const lat = CONFIG.airport.lat - (relY / 60);
+            const lon = CONFIG.airport.lon + (relX / (60 * Math.cos(toRad(CONFIG.airport.lat))));
+            return { lat, lon, heading: targetHeading, name: rwyName };
+        }
+
+        function createRadarEcho(seed, severity) {
+            const size = 144;
+            const canvas = document.createElement('canvas');
+            canvas.width = canvas.height = size;
+            const context = canvas.getContext('2d');
+            const pixels = context.createImageData(size, size);
+            let state = seed >>> 0 || 1;
+            const random = () => {
+                state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
+                return state / 4294967296;
+            };
+            const axis = random() * Math.PI * 2;
+            const phase = random() * Math.PI * 2;
+            const lobes = [];
+            for (let i = 0; i < 7; i++) {
+                const along = (i - 3) * 0.23 + (random() - 0.5) * 0.16;
+                const across = (random() - 0.5) * 0.35;
+                lobes.push({
+                    x: Math.cos(axis) * along - Math.sin(axis) * across,
+                    y: Math.sin(axis) * along + Math.cos(axis) * across,
+                    width: 0.28 + random() * 0.20,
+                    height: 0.28 + random() * 0.20,
+                    power: i === 3 ? 1 : 0.60 + random() * 0.35
+                });
+            }
+            const gridSize = 15;
+            const noise = Array.from({ length: gridSize * gridSize }, random);
+            const sampleNoise = (x, y) => {
+                const gx = Math.min(gridSize - 1.001, Math.max(0, (x + 1) * (gridSize - 1) / 2));
+                const gy = Math.min(gridSize - 1.001, Math.max(0, (y + 1) * (gridSize - 1) / 2));
+                const ix = Math.floor(gx), iy = Math.floor(gy), fx = gx - ix, fy = gy - iy;
+                const a = noise[iy * gridSize + ix] * (1 - fx) + noise[iy * gridSize + ix + 1] * fx;
+                const b = noise[(iy + 1) * gridSize + ix] * (1 - fx) + noise[(iy + 1) * gridSize + ix + 1] * fx;
+                return a * (1 - fy) + b * fy;
+            };
+            const colors = [
+                [34, 120, 74, 75], [34, 197, 94, 145],
+                [234, 179, 8, 180], [249, 115, 22, 205], [239, 68, 68, 225]
+            ];
+            const pixelSize = 2;
+            for (let y = 0; y < size; y += pixelSize) {
+                for (let x = 0; x < size; x += pixelSize) {
+                    const nx = (x - size / 2) / (size / 2);
+                    const ny = (y - size / 2) / (size / 2);
+                    const radius = Math.hypot(nx, ny);
+                    if (radius > 1.12) continue;
+                    let lobe = 0;
+                    for (const patch of lobes) {
+                        const dx = (nx - patch.x) / patch.width;
+                        const dy = (ny - patch.y) / patch.height;
+                        lobe = Math.max(lobe, patch.power * Math.exp(-(dx * dx + dy * dy) / 2));
+                    }
+                    const along = nx * Math.cos(axis) + ny * Math.sin(axis);
+                    const across = -nx * Math.sin(axis) + ny * Math.cos(axis);
+                    const ribbon = Math.exp(-Math.pow((across - 0.14 * Math.sin(along * 5 + phase)) / 0.40, 2) / 2) *
+                        Math.exp(-Math.pow(along / 0.85, 2) / 2);
+                    let strength = lobe * 0.62 + ribbon * 0.25 +
+                        Math.exp(-radius * radius * 1.3) * 0.52 +
+                        (sampleNoise(nx, ny) - 0.45) * 0.34 + (random() - 0.5) * 0.22 - radius * 0.08;
+                    if (severity < 3) strength = Math.min(strength * 0.76, 0.67);
+                    if (strength < 0.22) continue;
+                    const color = colors[strength < 0.42 ? 0 : strength < 0.65 ? 1 :
+                        strength < 0.84 ? 2 : strength < 1.05 ? 3 : 4];
+                    for (let by = 0; by < pixelSize; by++) for (let bx = 0; bx < pixelSize; bx++) {
+                        const index = ((y + by) * size + x + bx) * 4;
+                        pixels.data.set(color, index);
+                    }
+                }
+            }
+            context.putImageData(pixels, 0, 0);
+            return canvas;
+        }
+
+        /**
+         * WEATHER STORM CELL CLASS
+         */
+        class StormCell {
+            constructor(lat, lon, radiusNM, severity) {
+                this.lat = lat;
+                this.lon = lon;
+                this.radiusNM = radiusNM;
+                this.severity = severity;
+                this.driftBearing = (CONFIG.wind.dir + 180) % 360;
+                this.driftSpeedKts = 35 + CONFIG.wind.speed;
+                this.echo = createRadarEcho(Math.round(lat * 100000) ^ Math.round(lon * 100000), severity);
+            }
+
+            update(dt) {
+                this.driftBearing = (CONFIG.wind.dir + 180) % 360;
+                this.driftSpeedKts = 35 + CONFIG.wind.speed;
+                const pos = moveLatLng(this.lat, this.lon, this.driftBearing,
+                    this.driftSpeedKts / 3600 * dt * CONFIG.timeMultiplier);
+                this.lat = pos.lat;
+                this.lon = pos.lon;
+            }
+
+            draw(context, point, scale) {
+                // Light rain echoes extend beyond the hazardous core used for deviation planning.
+                const radius = this.radiusNM * scale * 1.35;
+                context.save();
+                context.imageSmoothingEnabled = false;
+                context.drawImage(this.echo, point.x - radius, point.y - radius, radius * 2, radius * 2);
+                if (this.severity >= 3) {
+                    const angle = toRad(this.driftBearing);
+                    const length = Math.max(16, Math.min(28, radius * 0.8));
+                    const endX = point.x + Math.sin(angle) * length;
+                    const endY = point.y - Math.cos(angle) * length;
+                    context.strokeStyle = 'rgba(125, 211, 252, 0.9)';
+                    context.lineWidth = 1.5;
+                    context.setLineDash([3, 3]);
+                    context.beginPath();
+                    context.moveTo(point.x, point.y);
+                    context.lineTo(endX, endY);
+                    context.stroke();
+                    context.setLineDash([]);
+                    context.beginPath();
+                    context.moveTo(endX, endY);
+                    context.lineTo(endX - Math.sin(angle - 0.6) * 6, endY + Math.cos(angle - 0.6) * 6);
+                    context.moveTo(endX, endY);
+                    context.lineTo(endX - Math.sin(angle + 0.6) * 6, endY + Math.cos(angle + 0.6) * 6);
+                    context.stroke();
+                }
+                context.restore();
+            }
+        }
+
+        /**
+         * AIRCRAFT CLASS
+         */
+        class Aircraft {
+            constructor(id, type, lat, lon, heading, altitude, speed, isArrival, origin, dest) {
+                this.id = id;
+                this.type = type;
+                this.origin = origin;
+                this.dest = dest;
+                this.lat = lat;
+                this.lon = lon;
+                this.x = 0; this.y = 0;
+                this.heading = heading;
+                this.targetHeading = heading;
+                this.turnDirection = 'shortest'; 
+                this.altitude = altitude;
+                this.targetAltitude = altitude;
+                this.speed = speed; 
+                this.targetSpeed = speed;
+                this.isArrival = isArrival;
+                this.clearedForILS = false;
+                this.clearedRunway = null;
+                this.onGround = !isArrival;
+                this.takeoffCleared = false;
+                this.ilsCaptured = false;
+                this.rollout = false;
+                this.removeMe = false;
+                this.trail = []; 
+                this.historyCounter = 0;
+                this.lastStatus = "INBOUND";
+                this.contactEstablished = false;
+                this.nextAnnounceTime = 0;
+                this.hasCheckedIn = false;
+                this.weatherRequested = false;
+                this.weatherCheckTimer = 0;
+                this.weatherRequestCooldown = 0;
+                this.weatherDeviationDirection = null;
+                this.weatherDeviationHeading = null;
+                this.holdingShort = false;
+                this.departureRunway = null;
+                this.exitGate = null;
+                this.simAge = 0;
+
+                if (TYPE_JUMBO.includes(type)) this.iconType = "JUMBO";
+                else if (TYPE_WIDE.includes(type)) this.iconType = "WIDE";
+                else if (TYPE_REGIONAL.includes(type)) this.iconType = "REGIONAL";
+                else this.iconType = "NARROW";
+                
+                const airlineCode = id.substring(0, 3);
+                const flightNum = id.substring(3);
+                const airlineObj = AIRLINES.find(a => a.id === airlineCode);
+                const airlineName = airlineObj ? airlineObj.name : airlineCode;
+                this.spokenCallsign = airlineName + " " + flightNum + (HEAVY_TYPES.includes(type) ? " Heavy" : "");
+            }
+
+            goAround() {
+                this.targetAltitude = CONFIG.airport.elevation + 4000;
+                this.targetSpeed = 240;
+                this.targetHeading = (this.heading + 20) % 360;
+                this.clearedForILS = false;
+                this.ilsCaptured = false;
+                this.lastStatus = "GO AROUND";
+                this.turnDirection = 'right';
+            }
+
+            update(dt, map, allAircraft, storms) {
+                this.simAge += dt * CONFIG.timeMultiplier;
+                const agl = this.altitude - CONFIG.airport.elevation;
+                const canTurn = !this.onGround && (agl >= 1000 || this.lastStatus.includes("ILS"));
+
+                if (this.heading !== this.targetHeading && canTurn) {
+                    let diff = this.targetHeading - this.heading;
+                    if (diff < -180) diff += 360;
+                    if (diff > 180) diff -= 360;
+
+                    if (this.turnDirection === 'right' && diff < 0) diff += 360;
+                    if (this.turnDirection === 'left' && diff > 0) diff -= 360;
+                    
+                    const turnRate = 1.5 * CONFIG.timeMultiplier * dt; 
+                    if (Math.abs(diff) < turnRate) {
+                        this.heading = this.targetHeading;
+                        this.turnDirection = 'shortest'; 
+                    } else {
+                        this.heading += (diff > 0 ? turnRate : -turnRate);
+                    }
+                    if (this.heading < 0) this.heading += 360;
+                    if (this.heading >= 360) this.heading -= 360;
+                }
+
+                if (!this.onGround && this.altitude !== this.targetAltitude) {
+                    const climbRate = 35 * CONFIG.timeMultiplier * dt; 
+                    if (Math.abs(this.targetAltitude - this.altitude) < climbRate) this.altitude = this.targetAltitude;
+                    else this.altitude += (this.targetAltitude > this.altitude ? climbRate : -climbRate);
+                }
+
+                if (this.speed !== this.targetSpeed) {
+                    let accRate = 0.8 * CONFIG.timeMultiplier * dt; 
+                    if (this.onGround && this.takeoffCleared) accRate = 4.0 * CONFIG.timeMultiplier * dt;
+                    if (this.rollout) accRate = 5.0 * CONFIG.timeMultiplier * dt;
+
+                    if (Math.abs(this.targetSpeed - this.speed) < accRate) this.speed = this.targetSpeed;
+                    else this.speed += (this.targetSpeed > this.speed ? accRate : -accRate);
+                }
+
+                if (!this.onGround || (this.onGround && this.takeoffCleared) || this.rollout) {
+                    if(this.onGround && this.takeoffCleared && this.speed < 160) this.targetSpeed = 250;
+                    if(this.onGround && this.speed > 140 && !this.rollout) {
+                        this.onGround = false;
+                        this.lastStatus = "AIRBORNE";
+                    }
+
+                    const distNM = (this.speed / 3600) * dt * CONFIG.timeMultiplier;
+                    const newPos = moveLatLng(this.lat, this.lon, this.heading, distNM);
+                    this.lat = newPos.lat;
+                    this.lon = newPos.lon;
+                }
+
+                const screenPos = map.latLngToContainerPoint([this.lat, this.lon]);
+                this.x = screenPos.x;
+                this.y = screenPos.y;
+
+                // Check the projected track, including storm drift, once per second.
+                this.weatherCheckTimer -= dt;
+                this.weatherRequestCooldown = Math.max(0, this.weatherRequestCooldown - dt);
+                if (!this.onGround && this.weatherCheckTimer <= 0) {
+                    this.weatherCheckTimer = 1;
+                    const deviation = window.ATCWeather.chooseDeviation(this, storms);
+                    if (!deviation) this.weatherRequested = false;
+                    else if (!this.weatherRequested && this.weatherRequestCooldown === 0) {
+                        this.weatherRequested = true;
+                        this.weatherRequestCooldown = 45;
+                        this.weatherDeviationDirection = deviation.direction;
+                        this.weatherDeviationHeading = deviation.heading;
+                        this.lastStatus = deviation.direction ?
+                            `WX DEV ${deviation.direction.toUpperCase()} REQ` : 'WX VECTORS REQ';
+                        return "WEATHER_ALERT";
+                    }
+                }
+
+                // --- ILS & LANDING LOGIC ---
+                if (this.clearedForILS && this.clearedRunway && !this.onGround) {
+                    const rwyInfo = getRunwayDetails(this.clearedRunway);
+                    if(rwyInfo) {
+                        const dLat = (this.lat - rwyInfo.lat) * 60;
+                        const dLon = (this.lon - rwyInfo.lon) * 60 * Math.cos(toRad(this.lat));
+                        const distToThresh = Math.sqrt(dLat*dLat + dLon*dLon);
+
+                        if (distToThresh < 0.5) {
+                            const runwayOccupied = allAircraft.some(other => other !== this && runwayIsOccupiedBy(other, this.clearedRunway));
+
+                            if (runwayOccupied) {
+                                this.goAround();
+                                this.lastStatus = "GO AROUND (RWY OCCUPIED)";
+                                return "GO_AROUND";
+                            }
+                        }
+
+                        if (!this.ilsCaptured) {
+                            const bearing = calculateBearing(this.lat, this.lon, rwyInfo.lat, rwyInfo.lon);
+                            let angleDiff = bearing - rwyInfo.heading;
+                            if(angleDiff > 180) angleDiff -= 360;
+                            if(angleDiff < -180) angleDiff += 360;
+                            
+                            const interceptAngle = Math.max(-30, Math.min(30, angleDiff));
+                            this.targetHeading = (rwyInfo.heading + interceptAngle + 360) % 360;
+                            this.turnDirection = 'shortest';
+                            
+                            if (this.targetSpeed > 180) this.targetSpeed = 180;
+
+                            const headingDiff = Math.abs(this.heading - rwyInfo.heading);
+                            if (distToThresh < 18 && (headingDiff < 10 || headingDiff > 350)) {
+                                this.ilsCaptured = true;
+                                this.lastStatus = `ILS ${rwyInfo.name} LOC CAPTURED`;
+                                this.targetHeading = rwyInfo.heading;
+                            }
+                        } 
+                        
+                        if (this.ilsCaptured) {
+                            const gsAltitude = CONFIG.airport.elevation + (distToThresh * 318);
+                            if (distToThresh < 6) this.targetSpeed = 150; 
+                            if (distToThresh < 2) this.targetSpeed = 135; 
+
+                            if (this.altitude > gsAltitude - 200) {
+                                this.targetAltitude = gsAltitude;
+                                this.lastStatus = `ILS ${rwyInfo.name} GS ACTIVE`;
+                            } else {
+                                this.lastStatus = `ILS ${rwyInfo.name} LOC CAPTURED`;
+                            }
+                            
+                            if(this.targetAltitude < CONFIG.airport.elevation) this.targetAltitude = CONFIG.airport.elevation;
+                            
+                            if (distToThresh < 0.25 && this.altitude <= CONFIG.airport.elevation + 100) {
+                                this.onGround = true;
+                                this.altitude = CONFIG.airport.elevation;
+                                this.rollout = true;
+                                this.targetSpeed = 10;
+                                this.lastStatus = "ROLLOUT";
+                            }
+                        }
+                    }
+                }
+
+                this.historyCounter++;
+                if (this.historyCounter > 20) { 
+                    this.trail.push({lat: this.lat, lon: this.lon});
+                    if (this.trail.length > 8) this.trail.shift();
+                    this.historyCounter = 0;
+                }
+
+                return "FLYING";
+            }
+        }
+
+        // Rolling out after landing, or rolling for takeoff, on that runway.
+        function runwayIsOccupiedBy(plane, runway) {
+            if (!plane.onGround || plane.holdingShort) return false;
+            return plane.rollout ? plane.clearedRunway === runway :
+                plane.takeoffCleared && plane.departureRunway === runway;
+        }
+
+        /**
+         * MAIN GAME CONTROLLER
+         */
+        class Game {
+            constructor() {
+                this.canvas = document.getElementById('radar');
+                this.ctx = this.canvas.getContext('2d');
+                this.aircraft = [];
+                this.selectedAircraftId = null;
+                this.storms = [];
+                this.lastTime = 0;
+                this.currentZoom = 'WIDE';
+                this.isPaused = false;
+                this.activeFlowIndex = 0;
+                
+                this.currentDay = new Date().getDay();
+                this.currentBank = 'AFTERNOON';
+
+                this.score = 0;
+                this.best = 0;
+                this.stats = this.newStats();
+                this.activeLosses = new Set();
+                this.conflicts = { losses: [], predicted: [] };
+                this.conflictClock = 0;
+                this.stripClock = 0;
+                this.spawnClock = 0;
+                this.spawnIntervalSec = 10;
+                this.labelEls = new Map();
+                this.stripEls = new Map();
+                
+                this.images = {};
+                this.preloadAssets();
+
+                this.input = document.getElementById('command-input');
+                this.voiceButton = document.getElementById('voice-btn');
+                this.pilotAudioButton = document.getElementById('pilot-audio-btn');
+                this.stripContainer = document.getElementById('strips-container');
+                this.logContainer = document.getElementById('radio-log');
+                this.browserPilotRadio = new window.PilotRadio(window.speechSynthesis, window.SpeechSynthesisUtterance,
+                    message => this.log(message, 'error'));
+                this.kokoroRadio = new window.KokoroRadio(
+                    message => { document.getElementById('kokoro-status').textContent = message; },
+                    (message, item) => {
+                        this.log(`${message} Switched to Chrome voices.`, 'error');
+                        this.usePilotEngine('browser');
+                        if (item && this.pilotRadio.enabled) this.pilotRadio.say(item.text, item.callsign, true);
+                    });
+                this.pilotRadio = this.browserPilotRadio;
+                this.initPilotAudio();
+                this.initCommandHelp();
+                this.initVoiceSettings();
+                this.initVoiceInput();
+
+                const daySelect = document.getElementById('day-select');
+                daySelect.value = String(this.currentDay);
+
+                this.initMap();
+                this.applyWindFlow(Math.random() > 0.5 ? 0 : 1);
+                this.initStormCells();
+                this.resetSpawnTimer();
+
+                this.resize();
+                window.addEventListener('resize', () => {
+                    this.resize();
+                    this.updateScale();
+                });
+                
+                this.input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') this.processCommand();
+                });
+                document.getElementById('send-btn').addEventListener('click', () => this.processCommand());
+                
+                document.getElementById('zoom-wide').onclick = () => this.setZoom('WIDE');
+                document.getElementById('zoom-app').onclick = () => this.setZoom('APP');
+                document.getElementById('zoom-twr').onclick = () => this.setZoom('TWR');
+                document.getElementById('pause-btn').onclick = () => this.togglePause();
+                document.querySelectorAll('.sim-speed').forEach(btn => {
+                    btn.onclick = () => this.setSimSpeed(Number(btn.dataset.speed));
+                });
+                this.setSimSpeed(1);
+                document.getElementById('end-shift-btn').onclick = () => this.showDebrief();
+                document.getElementById('debrief-continue').onclick = () => this.hideDebrief();
+                document.getElementById('debrief-new').onclick = () => { this.hideDebrief(); this.newShift(); };
+                this.loadBest();
+                document.getElementById('map-key-btn').onclick = () => this.configureMapKey();
+
+                document.getElementById('sector-select').addEventListener('change', (e) => {
+                    this.switchSector(e.target.value);
+                });
+
+                daySelect.addEventListener('change', (e) => {
+                    this.currentDay = parseInt(e.target.value, 10);
+                    this.resetSpawnTimer();
+                });
+
+                document.getElementById('bank-select').addEventListener('change', (e) => {
+                    this.currentBank = e.target.value;
+                    this.resetSpawnTimer();
+                });
+
+                document.getElementById('wind-box').addEventListener('click', () => {
+                    this.applyWindFlow(this.activeFlowIndex === 0 ? 1 : 0);
+                    this.log(`Wind shifted! Active runways updated.`, 'system');
+                });
+
+                requestAnimationFrame((t) => this.loop(t));
+            }
+
+            newStats() {
+                return { landed: 0, handedOff: 0, badHandoffs: 0, goArounds: 0, losses: 0,
+                    collisions: 0, lost: 0, minutesInSector: [], simSeconds: 0 };
+            }
+
+            initStormCells() {
+                this.storms = [];
+                for (let i = 0; i < 3; i++) {
+                    const pos = moveLatLng(CONFIG.airport.lat, CONFIG.airport.lon, Math.random() * 360, 16 + Math.random() * 9);
+                    this.storms.push(this.createStorm(pos, i === 0 ? 3 : (Math.random() > 0.5 ? 3 : 2)));
+                }
+            }
+
+            createStorm(pos, severity) {
+                return new StormCell(pos.lat, pos.lon, 8 + Math.random() * 4, severity);
+            }
+
+            // Storms drift downwind; replace any that leave the scope with a new cell upwind.
+            recycleStorms() {
+                this.storms = this.storms.map(storm => {
+                    if (window.ATCTraffic.distanceNM(storm, CONFIG.airport) < CONFIG.sectorRadiusNM + 12) return storm;
+                    const bearing = CONFIG.wind.dir + (Math.random() * 100 - 50);
+                    const pos = moveLatLng(CONFIG.airport.lat, CONFIG.airport.lon, bearing, CONFIG.sectorRadiusNM - 5 + Math.random() * 8);
+                    return this.createStorm(pos, Math.random() > 0.4 ? 3 : 2);
+                });
+            }
+
+            clearTraffic() {
+                this.pilotRadio.clear();
+                this.aircraft = [];
+                this.selectedAircraftId = null;
+                this.input.placeholder = 'SELECT AN AIRCRAFT, THEN SAY: DESCEND AND MAINTAIN FLIGHT LEVEL 3000';
+                document.getElementById('selected-aircraft-label').textContent = '>';
+                this.labelEls.forEach(el => el.remove());
+                this.labelEls.clear();
+                this.updateStrips();
+            }
+
+            resetShift() {
+                this.score = 0;
+                this.stats = this.newStats();
+                this.activeLosses.clear();
+                this.conflicts = { losses: [], predicted: [] };
+                this.spawnClock = 0;
+                document.getElementById('score-display').textContent = '0';
+                this.loadBest();
+            }
+
+            newShift() {
+                this.clearTraffic();
+                this.resetShift();
+                this.initStormCells();
+                this.spawnInitialTraffic();
+                this.log(`New shift started at ${CONFIG.airport.id}.`, 'system');
+            }
+
+            spawnInitialTraffic() {
+                this.updateScale();
+                for (let i = 0; i < 3; i++) this.spawnArrival();
+                this.spawnDeparture();
+            }
+
+            switchSector(sectorId) {
+                const newSector = SECTORS[sectorId];
+                if (!newSector) return;
+
+                CONFIG.currentSectorId = sectorId;
+                CONFIG.airport = newSector;
+                CONFIG.secondaryAirports = newSector.secondaryAirports;
+                CONFIG.waypoints = newSector.waypoints;
+
+                this.clearTraffic();
+                this.resetShift();
+                this.applyWindFlow(Math.random() > 0.5 ? 0 : 1);
+                this.initStormCells();
+                this.setZoom(this.currentZoom);
+                this.log(`Switched sector to ${newSector.id} (${newSector.name}).`, 'system');
+
+                setTimeout(() => this.spawnInitialTraffic(), 600);
+            }
+
+            applyWindFlow(flowIndex) {
+                this.activeFlowIndex = flowIndex;
+                const flow = CONFIG.airport.flows[flowIndex] || CONFIG.airport.flows[0];
+                const jitter = Math.floor(Math.random() * 14 - 7);
+                CONFIG.wind.dir = (flow.windDir + jitter + 360) % 360;
+                CONFIG.wind.speed = Math.floor(6 + Math.random() * 10);
+
+                document.getElementById('wind-display').textContent = `${String(Math.floor(CONFIG.wind.dir)).padStart(3, '0')} @ ${CONFIG.wind.speed}KT`;
+                document.getElementById('wind-arrow').style.transform = `rotate(${CONFIG.wind.dir + 180}deg)`;
+                document.getElementById('active-rwy-list').textContent = flow.arrRwys.join(', ');
+                document.getElementById('active-dep-list').textContent = flow.depRwys.join(', ');
+                document.getElementById('weather-motion').textContent =
+                    `DRIFT ${String(Math.round((CONFIG.wind.dir + 180) % 360)).padStart(3, '0')}° ${35 + CONFIG.wind.speed}KT`;
+
+                // Departures still waiting move to a runway in the new flow.
+                this.aircraft.filter(ac => ac.holdingShort).forEach(ac => {
+                    ac.departureRunway = null;
+                    const runway = this.pickDepartureRunway();
+                    if (runway) this.positionDeparture(ac, runway);
+                    else ac.removeMe = true;
+                });
+            }
+
+            resetSpawnTimer() {
+                const dayMod = DAY_MODIFIERS[this.currentDay] || DAY_MODIFIERS[1];
+                const bankMod = BANK_MODIFIERS[this.currentBank] || BANK_MODIFIERS.AFTERNOON;
+                this.spawnIntervalSec = bankMod.baseIntervalMs / dayMod.rateMultiplier / 1000;
+                this.spawnClock = 0;
+                document.getElementById('sched-rate-label').textContent = `${dayMod.name}: ${bankMod.label}`;
+            }
+
+            initMap() {
+                const lat = CONFIG.airport.lat;
+                const lng = CONFIG.airport.lon;
+                
+                this.map = L.map('map-layer', {
+                    center: [lat, lng],
+                    zoom: 10, 
+                    zoomControl: false,
+                    attributionControl: true,
+                    dragging: false,       
+                    doubleClickZoom: false,
+                    scrollWheelZoom: false,
+                    boxZoom: false,
+                    keyboard: false,
+                    touchZoom: false
+                });
+
+                try { this.cartoApiKey = localStorage.getItem('atcCartoBasemapKey') || ''; }
+                catch (_) { this.cartoApiKey = ''; }
+                this.setMapTiles();
+
+                this.setZoom('WIDE');
+                this.map.on('zoomend', () => this.updateScale());
+                this.map.on('mousedown', (e) => this.handleMapClick(e));
+
+                setTimeout(() => this.spawnInitialTraffic(), 500);
+            }
+
+            setMapTiles() {
+                if (this.tileLayer) this.map.removeLayer(this.tileLayer);
+                this.tileLayer = null;
+                if (this.freeMapAttribution) this.map.attributionControl.removeAttribution(this.freeMapAttribution);
+                this.freeMapAttribution = null;
+                const mapLayer = document.getElementById('map-layer');
+                const mapButton = document.getElementById('map-key-btn');
+                if (this.cartoApiKey) {
+                    mapLayer.classList.remove('radar-grid');
+                    this.tileLayer = L.tileLayer(`https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}{r}.png?key=${encodeURIComponent(this.cartoApiKey)}`, {
+                        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, © <a href="https://carto.com/attribution/">CARTO</a>',
+                        maxNativeZoom: 18,
+                        maxZoom: 20
+                    });
+                    this.tileLayer.addTo(this.map);
+                    mapButton.textContent = 'CARTO';
+                    mapButton.title = 'Map background: CARTO Dark Matter. Click to change or clear the key';
+                } else {
+                    mapLayer.classList.add('radar-grid');
+                    const maplibreLayer = window.MaplibreGLLeaflet?.maplibreGL || L.maplibreGL;
+                    if (window.maplibregl && typeof maplibreLayer === 'function') {
+                        try {
+                            this.tileLayer = maplibreLayer({
+                                style: 'https://tiles.openfreemap.org/styles/dark',
+                                interactive: false,
+                                attributionControl: false
+                            }).addTo(this.map);
+                            this.freeMapAttribution = '<a href="https://openfreemap.org/">OpenFreeMap</a> © <a href="https://openmaptiles.org/">OpenMapTiles</a> Data from <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+                            this.map.attributionControl.addAttribution(this.freeMapAttribution);
+                            mapButton.textContent = 'FREE';
+                            mapButton.title = 'Map background: OpenFreeMap. Click to use a CARTO key instead';
+                        } catch (error) {
+                            console.warn('OpenFreeMap unavailable; using radar grid.', error);
+                        }
+                    }
+                    if (!this.tileLayer) {
+                        mapButton.textContent = 'RADAR';
+                        mapButton.title = 'Map background: local radar grid. Click to add a CARTO key';
+                    }
+                }
+            }
+
+            configureMapKey() {
+                const entered = window.prompt('Paste your free CARTO Basemaps key for the Dark Matter map. Leave blank to use the free OpenFreeMap background.', this.cartoApiKey);
+                if (entered === null) return;
+                this.cartoApiKey = entered.trim();
+                try {
+                    if (this.cartoApiKey) localStorage.setItem('atcCartoBasemapKey', this.cartoApiKey);
+                    else localStorage.removeItem('atcCartoBasemapKey');
+                } catch (_) { /* The map still works for this session. */ }
+                this.setMapTiles();
+            }
+
+            setZoom(level) {
+                this.currentZoom = level;
+                ['wide', 'app', 'twr'].forEach(l => {
+                    const btn = document.getElementById(`zoom-${l}`);
+                    btn.className = (l === level.toLowerCase()) 
+                        ? "px-2.5 py-0.5 text-[10px] font-bold bg-slate-600 text-white rounded shadow-inner border border-slate-500 transition-colors"
+                        : "px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors";
+                });
+
+                const rangeMiles = CONFIG.zoomLevels[level];
+                const lat = CONFIG.airport.lat;
+                const lng = CONFIG.airport.lon;
+                const rangeDeg = rangeMiles / 69.0;
+                
+                this.map.fitBounds([[lat - rangeDeg, lng - rangeDeg], [lat + rangeDeg, lng + rangeDeg]], { padding: [0,0], animate: true });
+                setTimeout(() => this.updateScale(), 500); 
+            }
+
+            togglePause() {
+                this.isPaused = !this.isPaused;
+                const btn = document.getElementById('pause-btn');
+                const overlay = document.getElementById('pause-overlay');
+                
+                if (this.isPaused) {
+                    this.pilotRadio.clear();
+                    btn.textContent = "RESUME";
+                    btn.className = "px-2.5 py-0.5 text-[10px] font-bold bg-green-700 text-white hover:bg-green-600 rounded transition-colors border border-green-600";
+                    overlay.classList.remove('hidden');
+                } else {
+                    btn.textContent = "PAUSE";
+                    btn.className = "px-2.5 py-0.5 text-[10px] font-bold bg-yellow-900 text-yellow-500 hover:bg-yellow-800 hover:text-white rounded transition-colors border border-yellow-800";
+                    overlay.classList.add('hidden');
+                    this.lastTime = performance.now();
+                }
+            }
+
+            preloadAssets() {
+                for (const [key, src] of Object.entries(AIRCRAFT_ICONS)) {
+                    const img = new Image();
+                    img.src = src;
+                    this.images[key] = img;
+                }
+            }
+
+            updateScale() {
+                if(!this.map) return;
+                const centerPt = this.map.getSize().divideBy(2);
+                const centerLatLng = this.map.containerPointToLatLng(centerPt);
+                const rightPt = centerPt.add([100, 0]);
+                const rightLatLng = this.map.containerPointToLatLng(rightPt);
+                const distNM = this.map.distance(centerLatLng, rightLatLng) / 1852; 
+                CONFIG.scale = 100 / distNM;
+                this.resize();
+            }
+
+            resize() {
+                const parent = document.getElementById('radar-container');
+                this.canvas.width = parent.clientWidth;
+                this.canvas.height = parent.clientHeight;
+                this.centerX = this.canvas.width / 2;
+                this.centerY = this.canvas.height / 2;
+                if(this.map) this.map.invalidateSize();
+            }
+
+            log(msg, type='normal') {
+                const div = document.createElement('div');
+                div.textContent = `> ${msg}`;
+                div.className = (type === 'error') ? 'text-red-400 font-bold' : (type === 'system' ? 'text-amber-300' : 'text-green-400');
+                this.logContainer.prepend(div);
+                while (this.logContainer.childElementCount > 100) this.logContainer.lastElementChild.remove();
+            }
+
+            spawnTraffic() {
+                const bankMod = BANK_MODIFIERS[this.currentBank] || BANK_MODIFIERS.AFTERNOON;
+                if (this.aircraft.length >= bankMod.maxAircraft) return false;
+                return Math.random() < bankMod.departureShare ?
+                    this.spawnDeparture() || this.spawnArrival() :
+                    this.spawnArrival() || this.spawnDeparture();
+            }
+
+            pickScheduledFlight() {
+                const dayMod = DAY_MODIFIERS[this.currentDay] || DAY_MODIFIERS[1];
+                const candidatePool = [];
+                CONFIG.airport.schedule.forEach(entry => {
+                    entry.routes.forEach(route => {
+                        if (route.banks.includes(this.currentBank)) {
+                            let w = entry.weight / entry.routes.length;
+                            if (route.bizHeavy) w *= dayMod.bizBoost;
+                            candidatePool.push({ airline: entry.airline, origin: route.origin, gateName: route.gate, types: route.types, weight: w });
+                        }
+                    });
+                });
+                if (candidatePool.length === 0) return null;
+
+                const totalWeight = candidatePool.reduce((sum, item) => sum + item.weight, 0);
+                let r = Math.random() * totalWeight;
+                for (const item of candidatePool) {
+                    if (r < item.weight) return item;
+                    r -= item.weight;
+                }
+                return candidatePool[0];
+            }
+
+            newFlightId(airline) {
+                for (let attempt = 0; attempt < 5; attempt++) {
+                    const id = airline + Math.floor(Math.random() * 2800 + 100);
+                    if (!this.aircraft.some(a => a.id === id)) return id;
+                }
+                return null;
+            }
+
+            spawnArrival() {
+                const chosen = this.pickScheduledFlight();
+                const id = chosen && this.newFlightId(chosen.airline);
+                if (!id) return false;
+
+                const preferredGate = CONFIG.entryGates.find(g => g.name === chosen.gateName) || CONFIG.entryGates[0];
+                const orderedGates = [preferredGate, ...CONFIG.entryGates.filter(g => g.name !== preferredGate.name)];
+                // Vary the usual STAR crossing altitudes, keeping higher ones as overflow levels.
+                const altitudes = [...CONFIG.entryAltitudes.slice(0, 3).sort(() => Math.random() - 0.5), ...CONFIG.entryAltitudes.slice(3)];
+                const airborne = this.aircraft.filter(ac => !ac.onGround);
+
+                for (const gate of orderedGates) {
+                    for (let attempt = 0; attempt < 3; attempt++) {
+                        const angle = gate.angle + (Math.random() * 14 - 7);
+                        const start = moveLatLng(CONFIG.airport.lat, CONFIG.airport.lon, angle, gate.dist);
+                        const heading = (angle + 180 + (Math.random() * 16 - 8) + 360) % 360;
+                        const altitude = altitudes.find(alt => window.ATCTraffic.entryIsClear(
+                            { lat: start.lat, lon: start.lon, heading, speed: 250, altitude: alt, targetAltitude: alt },
+                            airborne, { minLateralNM: CONFIG.spawnSafetyBuffer, verticalFt: CONFIG.separation.verticalFt }));
+                        if (!altitude) continue;
+
+                        const type = chosen.types[Math.floor(Math.random() * chosen.types.length)];
+                        const plane = new Aircraft(id, type, start.lat, start.lon, heading, altitude, 250, true, chosen.origin, CONFIG.airport.id);
+                        plane.nextAnnounceTime = performance.now() + 2000;
+                        this.log(`${id} (${type}) inbound from ${chosen.origin} at ${altitude.toLocaleString('en-US')} ft.`);
+                        this.aircraft.push(plane);
+                        this.updateStrips();
+                        return true;
+                    }
+                }
+                return false;
+            }
+
+            pickDepartureRunway() {
+                const flow = CONFIG.airport.flows[this.activeFlowIndex] || CONFIG.airport.flows[0];
+                const busy = new Set(this.aircraft.filter(ac => !ac.isArrival && ac.onGround).map(ac => ac.departureRunway));
+                const free = flow.depRwys.filter(runway => !busy.has(runway));
+                return free.length ? free[Math.floor(Math.random() * free.length)] : null;
+            }
+
+            positionDeparture(plane, runway) {
+                const rwy = getRunwayDetails(runway);
+                plane.lat = rwy.lat;
+                plane.lon = rwy.lon;
+                plane.heading = plane.targetHeading = rwy.heading;
+                plane.departureRunway = runway;
+                plane.holdingShort = true;
+                plane.lastStatus = `HOLD SHORT ${runway}`;
+            }
+
+            spawnDeparture() {
+                const runway = this.pickDepartureRunway();
+                const chosen = runway && this.pickScheduledFlight();
+                const id = chosen && this.newFlightId(chosen.airline);
+                if (!id) return false;
+
+                const type = chosen.types[Math.floor(Math.random() * chosen.types.length)];
+                const plane = new Aircraft(id, type, CONFIG.airport.lat, CONFIG.airport.lon, 0, CONFIG.airport.elevation, 0, false, CONFIG.airport.id, chosen.origin);
+                plane.exitGate = CONFIG.entryGates.find(g => g.name === chosen.gateName) || CONFIG.entryGates[0];
+                this.positionDeparture(plane, runway);
+                plane.nextAnnounceTime = performance.now() + 2500;
+                this.log(`${id} (${type}) ready at runway ${runway} for ${chosen.origin}, exit ${gateLabel(plane.exitGate)}.`);
+                this.aircraft.push(plane);
+                this.updateStrips();
+                return true;
+            }
+
+            handleMapClick(e) {
+                const mx = e.containerPoint.x;
+                const my = e.containerPoint.y;
+                let closest = null, minDist = 50;
+                this.aircraft.forEach(ac => {
+                    const d = Math.sqrt((ac.x - mx)**2 + (ac.y - my)**2);
+                    if (d < minDist) { minDist = d; closest = ac; }
+                });
+                
+                if (closest) {
+                    e.originalEvent.preventDefault();
+                    this.selectAircraft(closest.id, true);
+                    setTimeout(() => {
+                        this.input.focus();
+                        const len = this.input.value.length;
+                        this.input.setSelectionRange(len, len);
+                    }, 10);
+                }
+            }
+
+            selectAircraft(id, fillInput = false) {
+                if (!this.aircraft.some(plane => plane.id === id)) return false;
+                this.selectedAircraftId = id;
+                this.input.placeholder = `SELECTED ${id} — SAY “DESCEND AND MAINTAIN FLIGHT LEVEL 3000”`;
+                document.getElementById('selected-aircraft-label').textContent = `> ${id}`;
+                if (fillInput) this.input.value = `${id} `;
+                this.updateStrips();
+                return true;
+            }
+
+            initPilotAudio() {
+                if (!this.pilotRadio.supported) {
+                    this.pilotAudioButton.disabled = true;
+                    this.pilotAudioButton.title = 'This browser has no speech synthesis voice available';
+                    this.pilotAudioButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    return;
+                }
+                this.pilotAudioButton.addEventListener('click', async () => {
+                    const enable = !this.pilotRadio.enabled;
+                    if (enable && document.getElementById('pilot-voice-engine').value === 'kokoro' && !this.kokoroRadio.ready) {
+                        this.pilotAudioButton.disabled = true;
+                        this.pilotAudioButton.textContent = 'LOADING KOKORO…';
+                        await this.loadKokoro();
+                        this.pilotAudioButton.disabled = false;
+                    }
+                    this.setPilotAudioEnabled(enable);
+                });
+            }
+
+            setPilotAudioEnabled(enabled, playSample = true) {
+                const active = this.pilotRadio.setEnabled(enabled);
+                this.pilotAudioButton.textContent = active ? 'PILOTS: ON' : 'PILOTS: OFF';
+                this.pilotAudioButton.setAttribute('aria-pressed', String(active));
+                this.pilotAudioButton.classList.toggle('bg-emerald-700', active);
+                this.pilotAudioButton.classList.toggle('bg-slate-700', !active);
+                this.log(`Pilot audio ${active ? 'enabled' : 'muted'}.`, 'system');
+                if (active && playSample) this.pilotRadio.say('Pilot radio on.');
+            }
+
+            usePilotEngine(engine) {
+                const next = engine === 'kokoro' && this.kokoroRadio.ready ? this.kokoroRadio : this.browserPilotRadio;
+                if (this.pilotRadio === next) return;
+                const enabled = this.pilotRadio.enabled;
+                const listening = this.pilotRadio.listening;
+                this.pilotRadio.setEnabled(false);
+                this.pilotRadio = next;
+                this.pilotRadio.setListening(listening);
+                this.pilotRadio.setEnabled(enabled);
+            }
+
+            initVoiceSettings() {
+                const panel = document.getElementById('voice-settings');
+                const select = document.getElementById('pilot-voice-select');
+                const engineSelect = document.getElementById('pilot-voice-engine');
+                const kokoroSelect = document.getElementById('kokoro-voice-select');
+                const loadButton = document.getElementById('kokoro-load');
+                const status = document.getElementById('kokoro-status');
+                const button = document.getElementById('pilot-voice-btn');
+                let savedVoice = '';
+                try { savedVoice = localStorage.getItem('atcPilotVoiceURI') || ''; }
+                catch (_) { /* Voice choice stays available for this session. */ }
+                this.browserPilotRadio.setVoice(savedVoice);
+                try { kokoroSelect.value = localStorage.getItem('atcKokoroVoice') || 'random'; }
+                catch (_) { /* Voice choice stays available for this session. */ }
+                this.kokoroRadio.setVoice(kokoroSelect.value);
+                const updateEnginePanel = () => {
+                    const neural = engineSelect.value === 'kokoro';
+                    document.getElementById('browser-voice-settings').classList.toggle('hidden', neural);
+                    document.getElementById('kokoro-voice-settings').classList.toggle('hidden', !neural);
+                };
+                try { engineSelect.value = localStorage.getItem('atcPilotVoiceEngine') || 'browser'; }
+                catch (_) { /* Engine choice stays available for this session. */ }
+                updateEnginePanel();
+
+                const populate = () => {
+                    const chosen = select.value || this.browserPilotRadio.voiceURI;
+                    select.replaceChildren(new Option('System default', ''));
+                    const voices = this.browserPilotRadio.availableVoices().sort((a, b) => a.name.localeCompare(b.name));
+                    voices.forEach(voice => select.add(new Option(`${voice.name} (${voice.lang})${voice.default ? ' — default' : ''}`, voice.voiceURI)));
+                    select.value = voices.some(voice => voice.voiceURI === chosen) ? chosen : '';
+                };
+                populate();
+                if (this.browserPilotRadio.supported) window.speechSynthesis.addEventListener('voiceschanged', populate);
+
+                select.addEventListener('change', () => {
+                    this.browserPilotRadio.clear();
+                    this.browserPilotRadio.setVoice(select.value);
+                    try { localStorage.setItem('atcPilotVoiceURI', select.value); }
+                    catch (_) { /* The selected voice still works for this session. */ }
+                });
+                engineSelect.addEventListener('change', () => {
+                    updateEnginePanel();
+                    if (engineSelect.value === 'browser') this.usePilotEngine('browser');
+                    else if (this.kokoroRadio.ready) this.usePilotEngine('kokoro');
+                    else status.textContent = 'Press START KOKORO, or turn PILOTS on. Cached files are reused.';
+                    try { localStorage.setItem('atcPilotVoiceEngine', engineSelect.value); }
+                    catch (_) { /* Engine choice stays available for this session. */ }
+                });
+                kokoroSelect.addEventListener('change', () => {
+                    this.kokoroRadio.clear();
+                    this.kokoroRadio.setVoice(kokoroSelect.value);
+                    try { localStorage.setItem('atcKokoroVoice', kokoroSelect.value); }
+                    catch (_) { /* Voice choice stays available for this session. */ }
+                });
+                const loadKokoro = async () => {
+                    loadButton.disabled = true;
+                    loadButton.textContent = 'LOADING…';
+                    try {
+                        await this.kokoroRadio.load();
+                        if (engineSelect.value === 'kokoro') this.usePilotEngine('kokoro');
+                        loadButton.textContent = 'KOKORO READY';
+                    } catch (error) {
+                        this.log(`Kokoro could not load: ${error.message}. Chrome voices remain available.`, 'error');
+                        loadButton.textContent = 'RETRY KOKORO';
+                        loadButton.disabled = false;
+                    }
+                };
+                this.loadKokoro = loadKokoro;
+                loadButton.addEventListener('click', loadKokoro);
+                button.addEventListener('click', () => {
+                    document.getElementById('command-help').classList.add('hidden');
+                    panel.classList.toggle('hidden');
+                });
+                document.getElementById('close-voice-settings').addEventListener('click', () => panel.classList.add('hidden'));
+                document.getElementById('pilot-voice-test').addEventListener('click', async () => {
+                    if (engineSelect.value === 'kokoro' && !this.kokoroRadio.ready) await loadKokoro();
+                    if (engineSelect.value === 'kokoro' && !this.kokoroRadio.ready) return;
+                    if (!this.pilotRadio.enabled) this.setPilotAudioEnabled(true, false);
+                    this.pilotRadio.clear();
+                    const plane = this.aircraft[0];
+                    const sample = plane ? `Radio check, ${this.radioCallsign(plane)}. Descending to three thousand feet.` :
+                        'Radio check. Descending to three thousand feet.';
+                    this.pilotRadio.say(sample, plane?.id || '', true);
+                });
+            }
+
+            initCommandHelp() {
+                const panel = document.getElementById('command-help');
+                document.getElementById('command-help-btn').addEventListener('click', () => {
+                    this.showCommandHelp();
+                    document.getElementById('voice-settings').classList.add('hidden');
+                    panel.classList.toggle('hidden');
+                });
+                document.getElementById('close-command-help').addEventListener('click', () => panel.classList.add('hidden'));
+                document.addEventListener('keydown', event => {
+                    if (event.key === 'Escape') {
+                        panel.classList.add('hidden');
+                        document.getElementById('voice-settings').classList.add('hidden');
+                    }
+                });
+            }
+
+            showCommandHelp() {
+                const plane = this.aircraft.find(item => item.id === this.selectedAircraftId) || this.aircraft[0];
+                const id = plane?.id || 'DAL228';
+                const airline = AIRLINES.find(item => item.id === id.slice(0, 3));
+                const spoken = `${airline?.name || 'Delta'} ${id.slice(3)}`;
+                const waypoint = CONFIG.waypoints[0]?.name || 'RMG';
+                const runway = CONFIG.airport.flows[this.activeFlowIndex]?.arrRwys[0] || CONFIG.airport.runways[0].name;
+                document.getElementById('help-aircraft').textContent = plane ?
+                    `Current example: ${spoken} (${id})` : 'Example below: wait for an aircraft to appear before sending a clearance.';
+                const examples = {
+                    altitude: ['Descend and maintain flight level three thousand', `${id} A 3000`],
+                    climb: ['Climb and maintain flight level twelve thousand', `${id} A 12000`],
+                    heading: ['Turn right heading two seven zero', `${id} TR 270`],
+                    left: ['Turn left heading two four zero', `${id} TL 240`],
+                    fly: ['Heading one eight zero', `${id} H 180`],
+                    speed: ['Reduce speed to two one zero knots', `${id} S 210`],
+                    direct: [`Proceed direct ${waypoint}`, `${id} C ${waypoint}`],
+                    ils: [`Cleared ILS runway ${this.radioRunway(runway)}`, `${id} L ${runway}`],
+                    ga: ['Go around', `${id} GA`],
+                    cto: ['Cleared for takeoff', `${id} CTO`]
+                };
+                Object.entries(examples).forEach(([action, [said, typed]]) => {
+                    document.getElementById(`help-say-${action}`).textContent = said;
+                    document.getElementById(`help-type-${action}`).textContent = typed;
+                });
+            }
+
+            radioDigits(value, width = 0) {
+                const names = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'niner'];
+                return String(value).padStart(width, '0').split('').map(digit => names[Number(digit)]).join(' ');
+            }
+
+            radioCallsign(plane) {
+                const airline = AIRLINES.find(item => item.id === plane.id.slice(0, 3));
+                return `${airline ? airline.name : plane.id.slice(0, 3)} ${this.radioDigits(plane.id.slice(3))}${HEAVY_TYPES.includes(plane.type) ? ' heavy' : ''}`;
+            }
+
+            radioAltitude(altitude) {
+                if (altitude >= 18000 && altitude % 100 === 0) return `flight level ${this.radioDigits(altitude / 100, 3)}`;
+                if (altitude % 100 !== 0) return `${altitude} feet`;
+                // ATC style: 11,000 is "one one thousand", 2,500 is "two thousand five hundred".
+                const thousands = Math.floor(altitude / 1000), hundreds = (altitude % 1000) / 100;
+                return [thousands ? `${this.radioDigits(thousands)} thousand` : '',
+                    hundreds ? `${this.radioDigits(hundreds)} hundred` : ''].filter(Boolean).join(' ');
+            }
+
+            radioRunway(runway) {
+                const match = String(runway).match(/^(\d{1,2})([LRC])?$/);
+                if (!match) return String(runway);
+                return `${this.radioDigits(match[1], 2)}${{ L: ' left', R: ' right', C: ' center' }[match[2]] || ''}`;
+            }
+
+            pilotTransmission(plane, message, priority = false) {
+                this.log(`${plane.id}: "${message}"`, 'system');
+                this.pilotRadio.say(message, plane.id, priority);
+            }
+
+            pilotReadback(plane, message) {
+                this.pilotTransmission(plane, `${message}, ${this.radioCallsign(plane)}.`, true);
+            }
+
+            pilotAltitudeReadback(plane, altitude) {
+                const verb = altitude > plane.altitude + 100 ? 'Climbing to' :
+                    altitude < plane.altitude - 100 ? 'Descending to' : 'Maintaining';
+                this.pilotReadback(plane, `${verb} ${this.radioAltitude(altitude)}`);
+            }
+
+            initVoiceInput() {
+                const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!Recognition) {
+                    this.voiceButton.disabled = true;
+                    this.voiceButton.title = 'Speech recognition is unavailable in this browser. Typed commands still work.';
+                    this.voiceButton.classList.add('opacity-50', 'cursor-not-allowed');
+                    return;
+                }
+
+                this.recognition = new Recognition();
+                this.recognition.lang = 'en-US';
+                this.recognition.continuous = false;
+                this.recognition.interimResults = true;
+                this.recognition.maxAlternatives = 5;
+                this.recognitionHintsActive = false;
+                const Phrase = window.SpeechRecognitionPhrase;
+                if (Phrase && 'phrases' in this.recognition) {
+                    try {
+                        this.recognition.phrases = [
+                            ['descend and maintain', 4], ['climb and maintain', 4],
+                            ['flight level', 4], ['turn right heading', 4],
+                            ['turn left heading', 4], ['heading', 4],
+                            ['three thousand', 3], ['twelve thousand', 3]
+                        ].map(([phrase, boost]) => new Phrase(phrase, boost));
+                        this.recognitionHintsActive = true;
+                    } catch (_) { /* Chrome may expose the API without supporting speech hints. */ }
+                }
+                this.voiceListening = false;
+                this.voiceStartRequested = false;
+                this.voiceOriginalInput = '';
+                this.voiceHandled = false;
+
+                if (window.location.protocol === 'file:') {
+                    this.log('VOICE SETUP: Open start-atc.command to use a stable localhost address, then choose “Allow while visiting” in Chrome.', 'system');
+                    this.voiceButton.title = 'Open start-atc.command so Chrome can remember microphone permission';
+                }
+
+                this.voiceButton.addEventListener('click', () => {
+                    if (this.voiceListening) { this.recognition.stop(); return; }
+                    this.voiceOriginalInput = this.input.value;
+                    this.pilotRadio.setListening(true);
+                    this.voiceStartRequested = true;
+                    try { this.recognition.start(); }
+                    catch (error) {
+                        this.voiceStartRequested = false;
+                        this.pilotRadio.setListening(false);
+                        this.log(`Microphone could not start: ${error.message}`, 'error');
+                    }
+                });
+
+                this.recognition.onstart = () => {
+                    this.voiceListening = true;
+                    this.voiceHandled = false;
+                    this.voiceButton.textContent = 'LISTENING';
+                    this.voiceButton.classList.remove('bg-slate-700');
+                    this.voiceButton.classList.add('bg-red-700', 'animate-pulse');
+                    this.voiceButton.setAttribute('aria-pressed', 'true');
+                };
+                this.recognition.onresult = (event) => {
+                    const results = Array.from(event.results);
+                    let transcripts = [''];
+                    for (const result of results) {
+                        const alternatives = Array.from(result).slice(0, 5).map(item => item.transcript.trim());
+                        transcripts = transcripts.flatMap(prefix => alternatives.map(text => `${prefix} ${text}`.trim())).slice(0, 20);
+                    }
+                    const transcript = transcripts[0] || '';
+                    if (!transcript) return;
+                    this.input.value = transcript.toUpperCase();
+                    if (this.voiceHandled || !results.every(result => result.isFinal)) return;
+                    this.voiceHandled = true;
+
+                    const inputId = this.voiceOriginalInput.trim().split(/\s+/)[0]?.toUpperCase();
+                    const selectedId = this.aircraft.some(plane => plane.id === inputId) ? inputId : this.selectedAircraftId;
+                    const parsed = window.ATCVoice.choose(transcripts, this.aircraft, AIRLINES, CONFIG.airport.elevation, selectedId);
+                    if (!parsed.ok) {
+                        let error = parsed.error;
+                        if (parsed.error === 'No instruction was recognized.') {
+                            const callsign = window.ATCVoice.chooseCallsign(transcripts, this.aircraft, AIRLINES);
+                            if (callsign.ok) {
+                                this.selectAircraft(callsign.id, true);
+                                this.log(`VOICE: "${transcript}" → ${callsign.id} selected. Now say a clearance.`, 'system');
+                                const plane = this.aircraft.find(item => item.id === callsign.id);
+                                this.pilotTransmission(plane, `${this.radioCallsign(plane)}, go ahead.`, true);
+                                return;
+                            }
+                            error = callsign.error;
+                        }
+                        this.log(`VOICE: "${transcript}" — ${error} Edit the text in the command bar and press SEND.`, 'error');
+                        return;
+                    }
+                    const correction = parsed.transcript === transcript ? '' : ` (matched "${parsed.transcript}")`;
+                    this.log(`VOICE: "${transcript}"${correction} → ${parsed.command}`, 'system');
+                    this.processCommand(parsed.command);
+                };
+                this.recognition.onerror = (event) => {
+                    if (event.error === 'phrases-not-supported') {
+                        if (this.recognitionHintsActive) {
+                            this.recognitionHintsActive = false;
+                            try { this.recognition.phrases = []; } catch (_) { /* Retry without hints. */ }
+                            if (this.voiceStartRequested) {
+                                this.log('ATC speech hints are unavailable in this Chrome session. Click MIC and try again.', 'system');
+                            }
+                        }
+                        return;
+                    }
+                    const messages = {
+                        'not-allowed': 'Microphone access was denied.',
+                        'audio-capture': 'No microphone was found.',
+                        'no-speech': 'No speech was heard. Try again.',
+                        'network': 'Speech recognition needs a network connection in this browser.'
+                    };
+                    this.log(messages[event.error] || `Speech recognition error: ${event.error}`, 'error');
+                };
+                this.recognition.onend = () => {
+                    if (!this.voiceHandled) this.input.value = this.voiceOriginalInput;
+                    this.voiceListening = false;
+                    this.voiceStartRequested = false;
+                    this.pilotRadio.setListening(false);
+                    this.voiceButton.textContent = 'MIC';
+                    this.voiceButton.classList.remove('bg-red-700', 'animate-pulse');
+                    this.voiceButton.classList.add('bg-slate-700');
+                    this.voiceButton.setAttribute('aria-pressed', 'false');
+                };
+            }
+
+            processCommand(commandText) {
+                let raw = (commandText ?? this.input.value).trim().toUpperCase();
+                this.input.value = "";
+                if (!raw) return;
+                
+                let tokens = raw.split(/\s+/);
+                let id = tokens[0];
+                
+                if (id === "HELP" || id === "?") {
+                    this.showCommandHelp();
+                    document.getElementById('command-help').classList.remove('hidden');
+                    return;
+                }
+
+                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO'];
+                if (shortCommands.includes(id) && this.aircraft.some(plane => plane.id === this.selectedAircraftId)) {
+                    raw = `${this.selectedAircraftId} ${raw}`;
+                    tokens = raw.split(/\s+/);
+                    id = tokens[0];
+                }
+                if (!this.aircraft.some(a => a.id === id) || (tokens.length > 1 && !shortCommands.includes(tokens[1]))) {
+                    const callsignOnly = window.ATCVoice.resolveCallsign(raw, this.aircraft, AIRLINES);
+                    if (callsignOnly.ok) raw = callsignOnly.id;
+                    else {
+                        const spoken = window.ATCVoice.choose([raw], this.aircraft, AIRLINES,
+                            CONFIG.airport.elevation, this.selectedAircraftId);
+                        if (!spoken.ok) { this.log(spoken.error, 'error'); return; }
+                        raw = spoken.command;
+                    }
+                    tokens = raw.split(/\s+/);
+                    id = tokens[0];
+                    if (tokens.length > 1) this.log(`INTERPRETED: ${raw}`, 'system');
+                }
+
+                const plane = this.aircraft.find(a => a.id === id);
+                if (!plane) { this.log(`Unknown ID: ${id}`, 'error'); return; }
+                this.selectAircraft(id);
+                if (tokens.length === 1) { this.log(`${id} Selected.`); return; }
+
+                this.executeCommand(plane, tokens);
+            }
+
+            executeCommand(plane, tokens) {
+                const id = plane.id;
+                plane.contactEstablished = true;
+                
+                let i = 1;
+                while (i < tokens.length) {
+                    const cmd = tokens[i];
+                    let val = null;
+                    let consumed = 1;
+
+                    const needsArg = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS'].includes(cmd);
+                    if (needsArg) {
+                        if (i + 1 >= tokens.length) { this.log(`Missing value for command ${cmd}`, 'error'); break; }
+                        val = tokens[i+1];
+                        consumed = 2;
+                    }
+
+                    switch(cmd) {
+                        case 'MPH':
+                            plane.lastStatus = "MAINT PRESENT HDG";
+                            this.log(`${id} maintaining present heading, altitude, and speed.`, 'system');
+                            this.pilotReadback(plane, 'Maintaining present heading, altitude, and speed');
+                            break;
+                        case 'ABORT':
+                        case 'GA':
+                            plane.goAround();
+                            this.log(`${id} GOING AROUND (4000ft AGL, 240kts, right turn).`, 'error');
+                            this.pilotReadback(plane, 'Going around');
+                            break;
+                        case 'H': case 'HDG':
+                            let deg = parseInt(val, 10);
+                            if(isNaN(deg)) this.log(`Invalid heading '${val}'.`, 'error');
+                            else {
+                                plane.targetHeading = deg % 360;
+                                plane.turnDirection = 'shortest';
+                                plane.clearedForILS = false; plane.ilsCaptured = false;
+                                plane.lastStatus = `HDG ${String(deg % 360).padStart(3, '0')}`;
+                                this.log(`${id} turning heading ${val}.`);
+                                this.pilotReadback(plane, `Heading ${this.radioDigits(deg % 360, 3)}`);
+                            }
+                            break;
+                        case 'TR':
+                            let degR = parseInt(val, 10);
+                            if(isNaN(degR)) this.log(`Invalid heading '${val}'.`, 'error');
+                            else {
+                                plane.targetHeading = degR % 360;
+                                plane.turnDirection = 'right';
+                                plane.clearedForILS = false; plane.ilsCaptured = false;
+                                plane.lastStatus = `RIGHT HDG ${String(degR % 360).padStart(3, '0')}`;
+                                this.log(`${id} turn right heading ${val}.`);
+                                this.pilotReadback(plane, `Right heading ${this.radioDigits(degR % 360, 3)}`);
+                            }
+                            break;
+                        case 'TL':
+                            let degL = parseInt(val, 10);
+                            if(isNaN(degL)) this.log(`Invalid heading '${val}'.`, 'error');
+                            else {
+                                plane.targetHeading = degL % 360;
+                                plane.turnDirection = 'left';
+                                plane.clearedForILS = false; plane.ilsCaptured = false;
+                                plane.lastStatus = `LEFT HDG ${String(degL % 360).padStart(3, '0')}`;
+                                this.log(`${id} turn left heading ${val}.`);
+                                this.pilotReadback(plane, `Left heading ${this.radioDigits(degL % 360, 3)}`);
+                            }
+                            break;
+                        case 'A': case 'ALT':
+                            let alt = parseInt(val, 10);
+                            if(isNaN(alt)) this.log(`Invalid altitude '${val}'.`, 'error');
+                            else {
+                                if(alt < 100) alt *= 1000;
+                                plane.targetAltitude = alt;
+                                this.log(`${id} climb/descend ${alt}ft.`);
+                                this.pilotAltitudeReadback(plane, alt);
+                            }
+                            break;
+                        case 'C':
+                            if (!isNaN(parseInt(val, 10))) {
+                                let alt = parseInt(val, 10);
+                                if(alt < 100) alt *= 1000;
+                                plane.targetAltitude = alt;
+                                this.log(`${id} climb/descend ${alt}ft.`);
+                                this.pilotAltitudeReadback(plane, alt);
+                            } else {
+                                const wp = CONFIG.waypoints.find(w => w.name === val.toUpperCase());
+                                if (wp) {
+                                    plane.targetHeading = Math.round(calculateBearing(plane.lat, plane.lon, wp.lat, wp.lon));
+                                    plane.turnDirection = 'shortest';
+                                    plane.lastStatus = `DCT ${wp.name}`;
+                                    this.log(`${id} proceeding direct ${wp.name}.`);
+                                    this.pilotReadback(plane, `Direct ${wp.name}`);
+                                } else { this.log(`Unknown Waypoint '${val}'.`, 'error'); }
+                            }
+                            break;
+                        case 'S': case 'SPD':
+                            let spd = parseInt(val, 10);
+                            if(isNaN(spd)) this.log(`Invalid speed '${val}'.`, 'error');
+                            else {
+                                plane.targetSpeed = spd;
+                                this.log(`${id} speed ${spd} knots.`);
+                                this.pilotReadback(plane, `Speed ${spd} knots`);
+                            }
+                            break;
+                        case 'L': case 'ILS':
+                            const rwyInfo = getRunwayDetails(val);
+                            if (!rwyInfo) {
+                                this.log(`Unknown Runway '${val}'.`, 'error');
+                                this.pilotReadback(plane, 'Unable, that runway is not available');
+                                break;
+                            }
+                            
+                            const dLat = (plane.lat - rwyInfo.lat) * 60; 
+                            const dLon = (plane.lon - rwyInfo.lon) * 60 * Math.cos(toRad(plane.lat));
+                            if (Math.sqrt(dLat*dLat + dLon*dLon) > 30) {
+                                this.log(`${id}: Threshold is >30 NM out (Max 30 NM).`, 'error');
+                                this.pilotReadback(plane, `Unable I L S runway ${this.radioRunway(val)}, still too far out`);
+                                break;
+                            }
+                            
+                            let diff = Math.abs(CONFIG.wind.dir - rwyInfo.heading);
+                            if (diff > 180) diff = 360 - diff;
+                            if (diff > 90) {
+                                this.log(`${id}: Unable ${val} (Tailwind).`, 'error');
+                                this.pilotReadback(plane, `Unable runway ${this.radioRunway(val)} due tailwind`);
+                            } else {
+                                plane.clearedForILS = true;
+                                plane.clearedRunway = val;
+                                plane.ilsCaptured = false;
+                                plane.lastStatus = `CLR ILS ${val}`;
+                                this.log(`${id} cleared ILS runway ${val}.`);
+                                this.pilotReadback(plane, `Cleared I L S runway ${this.radioRunway(val)}`);
+                            }
+                            break;
+                        case 'CTO': {
+                            if (plane.isArrival || !plane.onGround || plane.takeoffCleared) {
+                                this.log(`${id} is not waiting for departure.`, 'error');
+                                break;
+                            }
+                            const runway = plane.departureRunway;
+                            let tailwind = Math.abs(CONFIG.wind.dir - getRunwayDetails(runway).heading);
+                            if (tailwind > 180) tailwind = 360 - tailwind;
+                            if (tailwind > 90) {
+                                this.log(`${id}: Unable ${runway} (Tailwind).`, 'error');
+                                this.pilotReadback(plane, `Unable runway ${this.radioRunway(runway)} due tailwind`);
+                                break;
+                            }
+                            if (this.aircraft.some(other => other !== plane && runwayIsOccupiedBy(other, runway))) {
+                                this.log(`${id}: runway ${runway} is occupied.`, 'error');
+                                this.pilotReadback(plane, `Unable, runway ${this.radioRunway(runway)} is occupied`);
+                                break;
+                            }
+                            plane.holdingShort = false;
+                            plane.takeoffCleared = true;
+                            if (plane.targetAltitude <= CONFIG.airport.elevation) plane.targetAltitude = CONFIG.departureAltitude;
+                            plane.lastStatus = `TAKEOFF ${runway}`;
+                            this.log(`${id} cleared for takeoff runway ${runway}.`);
+                            this.pilotReadback(plane, `Cleared for takeoff runway ${this.radioRunway(runway)}, climbing to ${this.radioAltitude(plane.targetAltitude)}`);
+                            break;
+                        }
+                        case 'X':
+                            plane.clearedForILS = false; plane.ilsCaptured = false;
+                            plane.lastStatus = "HOLDING VECTORS";
+                            this.log(`${id} approach clearance cancelled.`);
+                            this.pilotReadback(plane, 'Approach clearance cancelled');
+                            break;
+                        default:
+                            this.log(`Unknown cmd: ${cmd}`, 'error');
+                    }
+                    i += consumed;
+                }
+                this.updateStrips();
+            }
+
+            setSimSpeed(speed) {
+                CONFIG.timeMultiplier = speed;
+                document.querySelectorAll('.sim-speed').forEach(btn => {
+                    const active = Number(btn.dataset.speed) === speed;
+                    btn.classList.toggle('bg-slate-600', active);
+                    btn.classList.toggle('text-white', active);
+                    btn.classList.toggle('text-slate-400', !active);
+                    btn.classList.toggle('hover:bg-slate-700', !active);
+                });
+            }
+
+            loadBest() {
+                try { this.best = Number(localStorage.getItem(`atcBest_${CONFIG.currentSectorId}`)) || 0; }
+                catch (_) { this.best = 0; }
+                this.bestAtShiftStart = this.best;
+                document.getElementById('best-display').textContent = this.best;
+            }
+
+            addScore(points, message, type = 'normal') {
+                this.score += points;
+                document.getElementById('score-display').textContent = this.score;
+                if (this.score > this.best) {
+                    this.best = this.score;
+                    document.getElementById('best-display').textContent = this.best;
+                    try { localStorage.setItem(`atcBest_${CONFIG.currentSectorId}`, String(this.best)); }
+                    catch (_) { /* The best score still shows for this session. */ }
+                }
+                this.log(`${message} (${points > 0 ? '+' : ''}${points} pts).`, type);
+            }
+
+            showDebrief() {
+                this.pausedForDebrief = !this.isPaused;
+                if (!this.isPaused) this.togglePause();
+                const stats = this.stats;
+                const times = stats.minutesInSector;
+                const rows = [
+                    ['Arrivals landed', stats.landed, false],
+                    ['Departures handed off', stats.handedOff, false],
+                    ['Late or off-gate handoffs', stats.badHandoffs, true],
+                    ['Go-arounds (runway occupied)', stats.goArounds, true],
+                    ['Separation losses', stats.losses, true],
+                    ['Midair collisions', stats.collisions, true],
+                    ['Arrivals lost from your airspace', stats.lost, true],
+                    ['Average time in your airspace', times.length ? `${(times.reduce((a, b) => a + b, 0) / times.length).toFixed(1)} min` : '—', false]
+                ];
+                const container = document.getElementById('debrief-stats');
+                container.replaceChildren(...rows.flatMap(([label, value, bad]) => {
+                    const name = document.createElement('div');
+                    name.textContent = label;
+                    const number = document.createElement('div');
+                    number.textContent = value;
+                    number.className = `text-right font-bold ${bad && value > 0 ? 'text-red-400' : 'text-white'}`;
+                    return [name, number];
+                }));
+                document.getElementById('debrief-subtitle').textContent =
+                    `${CONFIG.airport.name} · ${Math.floor(stats.simSeconds / 60)} min on position (sim time)`;
+                document.getElementById('debrief-score').textContent = this.score;
+                document.getElementById('debrief-best').textContent =
+                    this.score > this.bestAtShiftStart ? 'NEW BEST!' : `Best ${this.best}`;
+                document.getElementById('debrief').classList.remove('hidden');
+            }
+
+            hideDebrief() {
+                document.getElementById('debrief').classList.add('hidden');
+                if (this.pausedForDebrief && this.isPaused) this.togglePause();
+            }
+
+            // Departures hand off at the boundary; arrivals that leave it are lost.
+            handleSectorExit(ac) {
+                ac.removeMe = true;
+                this.stats.minutesInSector.push(ac.simAge / 60);
+                if (ac.isArrival) {
+                    this.stats.lost++;
+                    this.addScore(-75, `${ac.id} left your airspace without landing`, 'error');
+                    return;
+                }
+                const bearing = calculateBearing(CONFIG.airport.lat, CONFIG.airport.lon, ac.lat, ac.lon);
+                let offGate = Math.abs(bearing - ac.exitGate.angle);
+                if (offGate > 180) offGate = 360 - offGate;
+                const highEnough = ac.altitude >= CONFIG.handoffAltitude - 50;
+                if (offGate <= 30 && highEnough) {
+                    this.stats.handedOff++;
+                    this.addScore(20, `${ac.id} handed off to center via ${gateLabel(ac.exitGate)}`);
+                    this.pilotTransmission(ac, `Over to center, ${this.radioCallsign(ac)}. Good day.`);
+                } else {
+                    this.stats.badHandoffs++;
+                    const reason = !highEnough ? `below ${CONFIG.handoffAltitude.toLocaleString('en-US')} ft` :
+                        `${Math.round(offGate)}° away from the ${gateLabel(ac.exitGate)} gate`;
+                    this.addScore(-10, `${ac.id} left the sector ${reason}`, 'error');
+                }
+            }
+
+            createStrip(ac) {
+                const el = document.createElement('div');
+                el.className = `${ac.isArrival ? 'strip-arrival' : 'strip-departure'} text-white p-2 rounded shadow text-xs cursor-pointer hover:bg-slate-700 transition-colors`;
+                const airline = AIRLINES.find(item => item.id === ac.id.substring(0, 3));
+                const spokenCallsign = `${airline ? airline.name : ac.id.substring(0, 3)} ${ac.id.substring(3)}`;
+                const exit = ac.exitGate ? `<div class="text-[10px] text-sky-300">Exit ${gateLabel(ac.exitGate)} gate (${String(ac.exitGate.angle).padStart(3, '0')}°) at or above ${CONFIG.handoffAltitude.toLocaleString('en-US')} ft</div>` : '';
+                el.innerHTML = `
+                    <div class="flex items-start gap-3">
+                        <div class="shrink-0 bg-slate-800 rounded p-1 border border-slate-600 mt-1"><img src="${getAirlineLogo(ac.id.substring(0, 3))}" class="w-6 h-6 object-contain opacity-90"></div>
+                        <div class="flex-grow min-w-0">
+                            <div class="flex justify-between font-bold text-sm">
+                                <span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span>
+                                <span class="text-slate-400 text-[10px]">${ac.type}</span>
+                            </div>
+                            <div class="text-[10px] text-slate-400">Say “${spokenCallsign}”</div>
+                            <div class="text-[10px] text-slate-500 mb-0.5 flex justify-between">
+                                <span>${ac.origin} &rarr; ${ac.dest}</span>
+                                <span data-f="contact"></span>
+                            </div>
+                            ${exit}
+                            <div class="flex justify-between text-slate-300 mt-0.5 font-mono text-[11px]">
+                                <span title="Altitude / assigned (hundreds of feet)" data-f="alt"></span>
+                                <span title="Speed" data-f="spd"></span>
+                                <span title="Heading" data-f="hdg"></span>
+                            </div>
+                            <div class="mt-1 text-slate-400 italic text-[10px] text-right truncate tracking-tighter" data-f="status"></div>
+                        </div>
+                    </div>
+                `;
+                el.onclick = (e) => {
+                    e.preventDefault();
+                    this.selectAircraft(ac.id, true);
+                    setTimeout(() => {
+                        this.input.focus();
+                        const len = this.input.value.length;
+                        this.input.setSelectionRange(len, len);
+                    }, 10);
+                };
+                return el;
+            }
+
+            updateStrips() {
+                if (this.selectedAircraftId && !this.aircraft.some(ac => ac.id === this.selectedAircraftId)) {
+                    this.selectedAircraftId = null;
+                    this.input.placeholder = 'TYPE OR SPEAK: ACTIVE CALLSIGN, DESCEND AND MAINTAIN 3000 FEET';
+                    document.getElementById('selected-aircraft-label').textContent = '>';
+                }
+                const arrivals = this.aircraft.filter(ac => ac.isArrival);
+                const departures = this.aircraft.filter(ac => !ac.isArrival);
+                document.getElementById('arr-count').textContent = arrivals.length;
+                document.getElementById('dep-count').textContent = departures.length;
+
+                const live = new Set(this.aircraft.map(ac => ac.id));
+                this.stripEls.forEach((el, id) => {
+                    if (!live.has(id)) { el.remove(); this.stripEls.delete(id); }
+                });
+                // Reuse strip elements so a click is never lost to a rebuild.
+                [...arrivals, ...departures].forEach((ac, index) => {
+                    let el = this.stripEls.get(ac.id);
+                    if (!el) { el = this.createStrip(ac); this.stripEls.set(ac.id, el); }
+                    const selected = ac.id === this.selectedAircraftId;
+                    el.classList.toggle('ring-2', selected);
+                    el.classList.toggle('ring-cyan-400', selected);
+                    el.setAttribute('aria-selected', String(selected));
+                    if (this.stripContainer.children[index] !== el) this.stripContainer.insertBefore(el, this.stripContainer.children[index] || null);
+                });
+                this.refreshStripValues();
+            }
+
+            refreshStripValues() {
+                const level = feet => String(Math.round(feet / 100)).padStart(3, '0');
+                this.aircraft.forEach(ac => {
+                    const el = this.stripEls.get(ac.id);
+                    if (!el) return;
+                    const set = (field, text) => {
+                        const node = el.querySelector(`[data-f="${field}"]`);
+                        if (node.textContent !== text) node.textContent = text;
+                    };
+                    const assigned = level(ac.targetAltitude) !== level(ac.altitude) ? `→${level(ac.targetAltitude)}` : '';
+                    set('alt', `A:${level(ac.altitude)}${assigned}`);
+                    set('spd', `S:${Math.round(ac.speed)}kn`);
+                    set('hdg', `H:${String(Math.round(ac.heading) % 360).padStart(3, '0')}`);
+                    set('status', ac.lastStatus);
+                    set('contact', ac.contactEstablished ? 'CONTACT' : 'CHECKING IN');
+                    el.querySelector('[data-f="contact"]').className = ac.contactEstablished ? 'text-emerald-400' : 'text-amber-400 animate-pulse';
+                });
+            }
+
+            // Full data block: callsign, altitude with assigned altitude, speed and type.
+            drawDataBlock(ac, layer, alert) {
+                let el = this.labelEls.get(ac.id);
+                if (!el) {
+                    el = document.createElement('div');
+                    el.className = 'aircraft-label font-mono';
+                    layer.appendChild(el);
+                    this.labelEls.set(ac.id, el);
+                }
+                el.style.left = (ac.x + 12) + 'px';
+                el.style.top = (ac.y - 12) + 'px';
+                const level = feet => String(Math.round(feet / 100)).padStart(3, '0');
+                const nameColor = alert === 'loss' ? 'text-red-400' : alert === 'predicted' ? 'text-amber-300' :
+                    ac.id === this.selectedAircraftId ? 'text-cyan-300' : 'text-yellow-300';
+                const tag = alert ? ` <span class="${alert === 'loss' ? 'text-red-400' : 'text-amber-300'}">CA</span>` : '';
+                let html;
+                if (ac.onGround && !ac.isArrival && !ac.takeoffCleared) {
+                    html = `<span class="font-bold ${nameColor}">${ac.id}</span><br><span class="text-sky-300">RWY ${ac.departureRunway}</span> <span class="text-slate-300">${ac.type}</span>`;
+                } else {
+                    const arrow = Math.abs(ac.targetAltitude - ac.altitude) <= 50 ? '=' : (ac.targetAltitude > ac.altitude ? '↑' : '↓');
+                    const assigned = arrow === '=' ? '' : level(ac.targetAltitude);
+                    html = `<span class="font-bold ${nameColor}">${ac.id}</span>${tag}<br><span class="text-green-300">${level(ac.altitude)}${arrow}${assigned}</span><br><span class="text-slate-300">${Math.round(ac.speed)} ${ac.type}</span>`;
+                }
+                if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; }
+            }
+
+            processConflicts() {
+                const airborne = this.aircraft.filter(ac => !ac.onGround && !ac.removeMe);
+                this.conflicts = window.ATCTraffic.findConflicts(airborne,
+                    { lateralNM: CONFIG.separation.lateralNM, verticalFt: CONFIG.separation.verticalFt }, CONFIG.airport, 2);
+                const current = new Set();
+                this.conflicts.losses.forEach(({ a, b, lateralNM, verticalFt }) => {
+                    const key = [a.id, b.id].sort().join('|');
+                    current.add(key);
+                    if (lateralNM < 0.15 && verticalFt < 200) {
+                        if (a.removeMe || b.removeMe) return;
+                        a.removeMe = b.removeMe = true;
+                        this.stats.collisions++;
+                        this.addScore(-300, `MIDAIR COLLISION: ${a.id} and ${b.id}`, 'error');
+                        return;
+                    }
+                    if (this.activeLosses.has(key)) return;
+                    this.stats.losses++;
+                    this.addScore(-50, `SEPARATION LOST: ${a.id} / ${b.id} (${lateralNM.toFixed(1)} NM, ${Math.round(verticalFt)} ft)`, 'error');
+                });
+                this.activeLosses = current;
+            }
+
+            drawScope(centerPt) {
+                const ctx = this.ctx;
+                ctx.strokeStyle = 'rgba(100, 116, 139, 0.22)'; ctx.lineWidth = 1;
+                ctx.fillStyle = 'rgba(148, 163, 184, 0.55)'; ctx.font = '9px monospace';
+                for (let r = 10; r <= 30; r += 10) {
+                    ctx.beginPath(); ctx.arc(centerPt.x, centerPt.y, r * CONFIG.scale, 0, Math.PI * 2); ctx.stroke();
+                    ctx.fillText(`${r}`, centerPt.x, centerPt.y - r * CONFIG.scale - 3);
+                }
+
+                // Sector boundary with entry and exit gates.
+                const boundary = CONFIG.sectorRadiusNM * CONFIG.scale;
+                ctx.save();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.5)'; ctx.setLineDash([6, 6]);
+                ctx.beginPath(); ctx.arc(centerPt.x, centerPt.y, boundary, 0, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+                const selected = this.aircraft.find(ac => ac.id === this.selectedAircraftId);
+                ctx.font = 'bold 10px monospace';
+                CONFIG.entryGates.forEach(gate => {
+                    const inner = movePoint(centerPt.x, centerPt.y, gate.angle, boundary - 6);
+                    const outer = movePoint(centerPt.x, centerPt.y, gate.angle, boundary + 6);
+                    const label = movePoint(centerPt.x, centerPt.y, gate.angle, boundary + 16);
+                    const isExit = selected && selected.exitGate === gate;
+                    ctx.strokeStyle = ctx.fillStyle = isExit ? '#38bdf8' : 'rgba(203, 213, 225, 0.7)';
+                    ctx.lineWidth = isExit ? 3 : 2;
+                    ctx.beginPath(); ctx.moveTo(inner.x, inner.y); ctx.lineTo(outer.x, outer.y); ctx.stroke();
+                    ctx.fillText(gateLabel(gate), label.x, label.y + 3);
+                });
+            }
+
+            loop(timestamp) {
+                if (this.isPaused) {
+                    this.lastTime = timestamp;
+                    requestAnimationFrame((t) => this.loop(t));
+                    return;
+                }
+
+                const dt = Math.min((timestamp - this.lastTime) / 1000, 0.2);
+                this.lastTime = timestamp;
+                const simDt = dt * CONFIG.timeMultiplier;
+                this.stats.simSeconds += simDt;
+
+                this.spawnClock += simDt;
+                if (this.spawnClock >= this.spawnIntervalSec) {
+                    // If nothing could enter safely, try again in a few seconds.
+                    this.spawnClock = this.spawnTraffic() ? 0 : this.spawnIntervalSec - 3;
+                }
+
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+
+                this.recycleStorms();
+                this.storms.forEach(storm => {
+                    storm.update(dt);
+                    const pt = this.map.latLngToContainerPoint([storm.lat, storm.lon]);
+                    storm.draw(this.ctx, pt, CONFIG.scale);
+                });
+
+                this.ctx.textAlign = 'center';
+                CONFIG.waypoints.forEach(wp => {
+                    const pt = this.map.latLngToContainerPoint([wp.lat, wp.lon]);
+                    this.ctx.fillStyle = '#22d3ee'; this.ctx.strokeStyle = '#22d3ee'; this.ctx.lineWidth = 2;
+                    this.ctx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = toRad(i * 60);
+                        const x = pt.x + 10 * Math.cos(angle);
+                        const y = pt.y + 10 * Math.sin(angle);
+                        if (i === 0) this.ctx.moveTo(x, y); else this.ctx.lineTo(x, y);
+                    }
+                    this.ctx.closePath(); this.ctx.stroke();
+                    this.ctx.beginPath(); this.ctx.arc(pt.x, pt.y, 2.5, 0, Math.PI*2); this.ctx.fill();
+                    this.ctx.font = 'bold 11px monospace'; this.ctx.strokeStyle = 'black'; this.ctx.lineWidth = 3;
+                    this.ctx.strokeText(wp.name, pt.x, pt.y + 22); this.ctx.fillText(wp.name, pt.x, pt.y + 22);
+                });
+
+                CONFIG.secondaryAirports.forEach(ap => {
+                    const pt = this.map.latLngToContainerPoint([ap.lat, ap.lon]);
+                    if (pt.x < -50 || pt.x > this.canvas.width + 50 || pt.y < -50 || pt.y > this.canvas.height + 50) return;
+                    this.ctx.strokeStyle = '#94a3b8'; this.ctx.lineWidth = 3;
+                    const angle = toRad(ap.rwyHeading - 90);
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(pt.x - Math.cos(angle)*14, pt.y - Math.sin(angle)*14);
+                    this.ctx.lineTo(pt.x + Math.cos(angle)*14, pt.y + Math.sin(angle)*14);
+                    this.ctx.stroke();
+                    this.ctx.fillStyle = '#cbd5e1'; this.ctx.font = 'bold 10px monospace';
+                    this.ctx.fillText(ap.name, pt.x, pt.y - 12);
+                });
+
+                const centerPt = this.map.latLngToContainerPoint([CONFIG.airport.lat, CONFIG.airport.lon]);
+                this.drawScope(centerPt);
+
+                this.ctx.strokeStyle = '#fff'; this.ctx.lineWidth = 2.5;
+                CONFIG.airport.runways.forEach(r => {
+                    const x1 = centerPt.x + (r.x1 * CONFIG.scale), y1 = centerPt.y + (r.y1 * CONFIG.scale);
+                    const x2 = centerPt.x + (r.x2 * CONFIG.scale), y2 = centerPt.y + (r.y2 * CONFIG.scale);
+                    this.ctx.beginPath(); this.ctx.moveTo(x1, y1); this.ctx.lineTo(x2, y2); this.ctx.stroke();
+                    this.ctx.fillStyle = '#f8fafc'; this.ctx.font = '10px monospace';
+                    this.ctx.fillText(r.name, x1, y1 - 5); this.ctx.fillText(r.recip, x2, y2 + 11);
+                });
+
+                let stripsNeedRefresh = false;
+
+                this.aircraft.forEach(ac => {
+                    const result = ac.update(dt, this.map, this.aircraft, this.storms);
+
+                    if (!ac.contactEstablished && !ac.hasCheckedIn && timestamp > ac.nextAnnounceTime) {
+                        ac.hasCheckedIn = true;
+                        const checkin = ac.isArrival ?
+                            `${CONFIG.airport.name}, ${this.radioCallsign(ac)} with you at ${this.radioAltitude(Math.round(ac.altitude / 100) * 100)}.` :
+                            `${this.radioCallsign(ac)}, holding short runway ${this.radioRunway(ac.departureRunway)}, ready for departure.`;
+                        this.log(`${ac.id}: "${checkin}"`, 'system');
+                        this.pilotRadio.say(checkin, ac.id);
+                    }
+
+                    if (result === "WEATHER_ALERT") {
+                        const request = ac.weatherDeviationDirection ?
+                            `Approach, ${this.radioCallsign(ac)} requesting a ${ac.weatherDeviationDirection} deviation around weather.` :
+                            `Approach, ${this.radioCallsign(ac)} requesting vectors around weather. Both sides look blocked.`;
+                        this.pilotTransmission(ac, request, true);
+                    }
+                    if (result === "GO_AROUND") {
+                        this.stats.goArounds++;
+                        this.addScore(-15, `${ac.id} going around — runway occupied!`, 'error');
+                        this.pilotTransmission(ac, `Going around, ${this.radioCallsign(ac)}. Runway occupied.`, true);
+                    }
+                    if (!ac.isArrival && !ac.onGround && !ac.airborneReported) {
+                        ac.airborneReported = true;
+                        this.log(`${ac.id} airborne off runway ${ac.departureRunway}.`);
+                    }
+
+                    if (ac.rollout && ac.speed <= 12 && !ac.removeMe) {
+                        this.stats.landed++;
+                        this.stats.minutesInSector.push(ac.simAge / 60);
+                        this.addScore(25, `${ac.id} landed safely`);
+                        ac.removeMe = true;
+                    }
+                    if (!ac.onGround && !ac.removeMe && window.ATCTraffic.distanceNM(ac, CONFIG.airport) > CONFIG.sectorRadiusNM) {
+                        this.handleSectorExit(ac);
+                    }
+
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.45)';
+                    ac.trail.forEach(pt => {
+                        const tPt = this.map.latLngToContainerPoint([pt.lat, pt.lon]);
+                        this.ctx.fillRect(tPt.x, tPt.y, 2, 2);
+                    });
+
+                    const img = this.images[ac.iconType];
+                    this.ctx.save();
+                    this.ctx.translate(ac.x, ac.y);
+                    this.ctx.rotate(toRad(ac.heading));
+                    let size = (ac.iconType === "JUMBO" ? 34 : (ac.iconType === "WIDE" ? 30 : (ac.iconType === "REGIONAL" ? 20 : 24)));
+                    if (img && img.complete) this.ctx.drawImage(img, -size/2, -size/2, size, size);
+                    else { this.ctx.fillStyle = '#fff'; this.ctx.beginPath(); this.ctx.arc(0, 0, 4, 0, Math.PI*2); this.ctx.fill(); }
+                    this.ctx.restore();
+
+                    // Leader line shows where the aircraft will be in one minute.
+                    if (!ac.onGround) {
+                        this.ctx.strokeStyle = 'rgba(255,255,255,0.5)'; this.ctx.lineWidth = 1;
+                        const vecEnd = movePoint(ac.x, ac.y, ac.heading, ac.speed / 60 * CONFIG.scale);
+                        this.ctx.beginPath(); this.ctx.moveTo(ac.x, ac.y); this.ctx.lineTo(vecEnd.x, vecEnd.y); this.ctx.stroke();
+                    }
+                });
+
+                this.conflictClock -= dt;
+                if (this.conflictClock <= 0) {
+                    this.conflictClock = 0.25;
+                    this.processConflicts();
+                }
+                const alerts = new Map();
+                const drawPair = ({ a, b }, color, dashed) => {
+                    this.ctx.save();
+                    this.ctx.strokeStyle = color; this.ctx.lineWidth = 2;
+                    if (dashed) this.ctx.setLineDash([5, 4]);
+                    this.ctx.beginPath(); this.ctx.moveTo(a.x, a.y); this.ctx.lineTo(b.x, b.y); this.ctx.stroke();
+                    this.ctx.restore();
+                };
+                this.conflicts.predicted.forEach(pair => {
+                    drawPair(pair, '#fbbf24', true);
+                    alerts.set(pair.a.id, 'predicted'); alerts.set(pair.b.id, 'predicted');
+                });
+                this.conflicts.losses.forEach(pair => {
+                    drawPair(pair, '#ef4444', false);
+                    alerts.set(pair.a.id, 'loss'); alerts.set(pair.b.id, 'loss');
+                });
+
+                const labelsLayer = document.getElementById('labels-layer');
+                this.aircraft.forEach(ac => { if (!ac.removeMe) this.drawDataBlock(ac, labelsLayer, alerts.get(ac.id)); });
+
+                const sepDisp = document.getElementById('sep-display');
+                if (this.conflicts.losses.length) { sepDisp.textContent = "CONFLICT"; sepDisp.className = "text-red-500 animate-pulse font-bold"; }
+                else if (this.conflicts.predicted.length) { sepDisp.textContent = "ALERT"; sepDisp.className = "text-amber-400 font-bold"; }
+                else { sepDisp.textContent = "OK"; sepDisp.className = "text-green-400 font-bold"; }
+
+                if (this.aircraft.some(ac => ac.removeMe)) {
+                    this.aircraft = this.aircraft.filter(ac => !ac.removeMe);
+                    stripsNeedRefresh = true;
+                }
+                const live = new Set(this.aircraft.map(ac => ac.id));
+                this.labelEls.forEach((el, id) => {
+                    if (!live.has(id)) { el.remove(); this.labelEls.delete(id); }
+                });
+
+                this.stripClock -= dt;
+                if (stripsNeedRefresh) this.updateStrips();
+                else if (this.stripClock <= 0) {
+                    this.stripClock = 0.5;
+                    this.refreshStripValues();
+                }
+
+                requestAnimationFrame((t) => this.loop(t));
+            }
+        }
+
+        // Exposed for debugging from the browser console.
+        window.onload = () => { window.atcGame = new Game(); };
+    </script>
+</body>
+</html>
