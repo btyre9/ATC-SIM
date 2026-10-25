@@ -682,6 +682,21 @@
                 aircraft: '#facc15', aircraftEdge: 'rgba(15, 23, 42, 0.9)', overflight: 'rgba(71, 85, 105, 0.6)' }
         };
 
+        // Trail colors by altitude, FlightRadar24 style: white on the ground, then turquoise to blue to purple.
+        const TRAIL_RAMP = [
+            [0, [94, 234, 212]], [5000, [34, 211, 238]], [10000, [59, 130, 246]],
+            [20000, [29, 78, 216]], [30000, [124, 58, 237]], [40000, [168, 85, 247]]
+        ];
+        function trailColor(point) {
+            if (point.onGround) return [248, 250, 252];
+            const feet = Math.max(0, point.altitude);
+            const upper = TRAIL_RAMP.findIndex(([level]) => level >= feet);
+            if (upper <= 0) return upper === 0 ? TRAIL_RAMP[0][1] : TRAIL_RAMP.at(-1)[1];
+            const [lowFeet, low] = TRAIL_RAMP[upper - 1], [highFeet, high] = TRAIL_RAMP[upper];
+            const t = (feet - lowFeet) / (highFeet - lowFeet);
+            return low.map((value, i) => Math.round(value + (high[i] - value) * t));
+        }
+
         const WEATHER_DESCRIPTIONS = {
             LIVE: "Real wind and NEXRAD radar for this airport right now.",
             CLEAR: "No precipitation and light winds.",
@@ -968,7 +983,7 @@
                 this.trailClock += dt * CONFIG.timeMultiplier;
                 if (this.trailClock >= 4.8) {
                     this.trailClock = 0;
-                    this.trail.push({ lat: this.lat, lon: this.lon });
+                    this.trail.push({ lat: this.lat, lon: this.lon, altitude: this.altitude, onGround: this.onGround });
                     if (this.trail.length > 10) this.trail.shift();
                 }
                 if (this.pendingActions.length && this.pendingActions[0].at <= this.simAge) {
@@ -2693,16 +2708,19 @@
                 button.classList.toggle('line-through', !on);
             }
 
-            // History dots fade from newest to oldest, with a backing so they show on any map.
-            drawTrail(plane, colors) {
+            // History dots colored by altitude, fading with age. Dark dots get a light rim and light
+            // dots a dark rim, so each one stands out on any map.
+            drawTrail(plane) {
                 const count = plane.trail.length;
                 plane.trail.forEach((pt, index) => {
                     const p = this.map.latLngToContainerPoint([pt.lat, pt.lon]);
-                    this.ctx.globalAlpha = 0.35 + 0.65 * (index + 1) / count;
-                    this.ctx.fillStyle = colors.backing;
-                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.fillStyle = colors.aircraft;
-                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2); this.ctx.fill();
+                    const [r, g, b] = trailColor(pt);
+                    const light = 0.299 * r + 0.587 * g + 0.114 * b > 150;
+                    this.ctx.globalAlpha = 0.45 + 0.55 * (index + 1) / count;
+                    this.ctx.fillStyle = light ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)';
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 3.8, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2); this.ctx.fill();
                 });
                 this.ctx.globalAlpha = 1;
             }
@@ -3115,7 +3133,7 @@
                         this.handleSectorExit(ac);
                     }
 
-                    if (this.trailsOn && ac.id === this.selectedAircraftId) this.drawTrail(ac, colors);
+                    if (this.trailsOn && ac.id === this.selectedAircraftId) this.drawTrail(ac);
 
                     // The dark outline keeps the yellow readable on light and dark maps.
                     const sprite = this.aircraftSprite(ac.type, colors.aircraft, colors.aircraftEdge);

@@ -49,7 +49,7 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
 - **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, workload (training, standard, busy), departure mode (tower or manual), and overflights on or off.
-- **TRAILS** shows the history dots (one per radar sweep, the last ten) behind the aircraft you select. **1× / 2× / 4×** set sim speed.
+- **TRAILS** shows the history dots (one per radar sweep, the last ten) behind the aircraft you select, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
 
 ## Files
 
