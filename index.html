@@ -2596,10 +2596,24 @@
                 plane.contactEstablished = true;
                 // Pilots read back at once but take a few seconds to set the autopilot before the aircraft responds.
                 const reactionSec = 3 + Math.random() * 3;
+                // Instructions are carried out in the order given: a quick correction never lands before
+                // the instruction it corrects, whatever the random reaction time.
+                const queuedUntil = plane.pendingActions.reduce((latest, action) => Math.max(latest, action.at), -Infinity);
                 const act = (change, delaySec = reactionSec) => {
-                    const at = plane.simAge + delaySec;
+                    const at = Math.max(plane.simAge + delaySec, queuedUntil);
                     plane.pendingActions.push({ at, apply: change });
                     plane.pendingActions.sort((a, b) => a.at - b.at);
+                };
+                // An altitude assigned to an aircraft already cleared for the approach cancels that clearance,
+                // unless this same transmission clears it again ("descend and maintain 3000, cleared ILS").
+                const reclearsApproach = tokens.includes('L') || tokens.includes('ILS');
+                const assignAltitude = alt => {
+                    const cancelsApproach = plane.clearedForILS && !reclearsApproach;
+                    act(() => {
+                        plane.targetAltitude = alt;
+                        if (cancelsApproach) { plane.clearedForILS = false; plane.ilsCaptured = false; }
+                    });
+                    if (cancelsApproach) this.log(`${id}: the altitude assignment cancels its approach clearance. Clear it for the ILS again when ready.`, 'system');
                 };
                 let assignedAltitude = null;
                 // A transmission gets one readback covering all of its instructions, as pilots do.
@@ -2624,6 +2638,17 @@
 
                     switch(cmd) {
                         case 'MPH':
+                            act(() => {
+                                plane.directTo = null;
+                                plane.alignHeading = null;
+                                plane.onVectors = true;
+                                plane.clearedForILS = false;
+                                plane.ilsCaptured = false;
+                                plane.targetHeading = Math.round(plane.heading) % 360;
+                                plane.turnDirection = 'shortest';
+                                plane.targetAltitude = Math.round(plane.altitude / 100) * 100;
+                                plane.targetSpeed = Math.round(plane.speed);
+                            });
                             plane.lastStatus = "MAINT PRESENT HDG";
                             this.log(`${id} maintaining present heading, altitude, and speed.`, 'system');
                             readback('Maintaining present heading, altitude, and speed');
@@ -2633,7 +2658,9 @@
                         {
                             const missed = plane.missedApproach();
                             plane.lastStatus = "GO AROUND";
-                            act(() => plane.goAround(), 2);
+                            // A go-around is urgent and supersedes anything still queued.
+                            plane.pendingActions = [];
+                            plane.pendingActions.push({ at: plane.simAge + 2, apply: () => plane.goAround() });
                             this.log(`${id} going around: runway heading ${String(missed.heading).padStart(3, '0')}, climbing to ${missed.altitude.toLocaleString('en-US')} ft, 210 kt until your next instruction.`, 'error');
                             readback(`Going around, runway heading, ${this.altitudeReadback(plane, missed.altitude)}`);
                             break;
@@ -2701,7 +2728,7 @@
                             else {
                                 if(alt < 100) alt *= 1000;
                                 assignedAltitude = alt;
-                                act(() => { plane.targetAltitude = alt; });
+                                assignAltitude(alt);
                                 this.log(`${id} climb/descend ${alt}ft.`);
                                 readback(this.altitudeReadback(plane, alt));
                             }
@@ -2711,7 +2738,7 @@
                                 let alt = parseInt(val, 10);
                                 if(alt < 100) alt *= 1000;
                                 assignedAltitude = alt;
-                                act(() => { plane.targetAltitude = alt; });
+                                assignAltitude(alt);
                                 this.log(`${id} climb/descend ${alt}ft.`);
                                 readback(this.altitudeReadback(plane, alt));
                             } else {
