@@ -1183,6 +1183,7 @@
                 this.labelEls = new Map();
                 this.stripEls = new Map();
                 this.lastTakeoff = {};
+                this.spotterPhotos = new Map();
                 this.overflights = [];
                 this.overflightClock = 40;
                 
@@ -1943,6 +1944,7 @@
                         const type = chosen.types[Math.floor(Math.random() * chosen.types.length)];
                         const plane = new Aircraft(id, type, start.lat, start.lon, heading, altitude, 250, true, chosen.origin, CONFIG.airport.id);
                         plane.arrivalFix = fix ? fix.name : null;
+                        plane.registration = this.pickRegistration(id, type);
                         plane.lastStatus = fix ? `ARR VIA ${fix.name}` : 'INBOUND';
                         plane.nextAnnounceTime = performance.now() + 2000;
                         this.aircraft.push(plane);
@@ -1956,6 +1958,14 @@
             gateFix(gate, role) {
                 const name = window.ATC_FIXES?.[CONFIG.airport.id]?.gates[gate.name]?.[role];
                 return name ? CONFIG.waypoints.find(w => w.name === name) || null : null;
+            }
+
+            // A real tail number from the airline's fleet of this type that is not already flying in the sim.
+            pickRegistration(id, type) {
+                const fleet = window.ATC_PHOTOS?.fleets?.[`${id.slice(0, 3)}|${type}`] || [];
+                const flying = new Set(this.aircraft.map(ac => ac.registration));
+                const free = fleet.filter(registration => !flying.has(registration));
+                return free.length ? free[Math.floor(Math.random() * free.length)] : null;
             }
 
             pickDepartureRunway() {
@@ -1984,6 +1994,7 @@
                 const type = chosen.types[Math.floor(Math.random() * chosen.types.length)];
                 const plane = new Aircraft(id, type, CONFIG.airport.lat, CONFIG.airport.lon, 0, CONFIG.airport.elevation, 0, false, CONFIG.airport.id, chosen.origin);
                 plane.exitGate = CONFIG.entryGates.find(g => g.name === chosen.gateName) || CONFIG.entryGates[0];
+                plane.registration = this.pickRegistration(id, type);
                 // The SID ends at a real departure fix toward the destination; the gate point stands in over open water.
                 const gatePoint = moveLatLng(CONFIG.airport.lat, CONFIG.airport.lon, plane.exitGate.angle, plane.exitGate.dist);
                 plane.exitFix = this.gateFix(plane.exitGate, 'departure') ||
@@ -2834,7 +2845,7 @@
                         <div class="flex-grow min-w-0">
                             <div class="flex justify-between font-bold text-sm">
                                 <span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span>
-                                <span class="text-slate-400 text-[10px]">${ac.type}</span>
+                                <span class="text-slate-400 text-[10px]">${ac.type}${ac.registration ? ` · ${ac.registration}` : ''}</span>
                             </div>
                             <div class="text-[10px] text-slate-400">Say “${spokenCallsign}”</div>
                             <div class="text-[10px] text-slate-500 mb-0.5 flex justify-between">
@@ -2851,7 +2862,7 @@
                         </div>
                     </div>
                     <figure data-f="photo" class="hidden mt-2">
-                        <img alt="" class="w-full h-32 object-cover rounded border border-slate-600 bg-slate-800">
+                        <a data-f="photo-link" target="_blank" rel="noopener"><img alt="" class="w-full h-32 object-cover rounded border border-slate-600 bg-slate-800"></a>
                         <figcaption class="mt-0.5 text-[9px] text-slate-500 truncate"></figcaption>
                     </figure>
                 `;
@@ -2897,29 +2908,55 @@
                 this.refreshStripValues();
             }
 
-            // The selected aircraft's strip shows a freely licensed photo, in its airline's livery when
-            // Commons has one and otherwise a typical photo of the type, with credit.
+            // Photo of this exact aircraft from Planespotters.net, looked up by registration once per session.
+            planespottersPhoto(registration) {
+                if (!registration) return Promise.resolve(null);
+                if (!this.spotterPhotos.has(registration)) {
+                    this.spotterPhotos.set(registration,
+                        fetch(`https://api.planespotters.net/pub/photos/reg/${encodeURIComponent(registration)}`)
+                            .then(response => response.ok ? response.json() : null)
+                            .then(data => data?.photos?.[0] || null)
+                            .catch(() => null));
+                }
+                return this.spotterPhotos.get(registration);
+            }
+
+            // The selected aircraft's strip shows its own Planespotters photo when it has a registration,
+            // otherwise a Commons photo in its airline's livery or of its type. Every photo is credited and linked.
             showStripPhoto(el, ac, show) {
                 const figure = el.querySelector('[data-f="photo"]');
-                const airline = AIRLINES.find(item => item.id === ac.id.slice(0, 3));
-                const livery = window.ATC_PHOTOS?.liveries?.[`${ac.id.slice(0, 3)}|${ac.type}`];
-                const photo = livery || window.ATC_PHOTOS?.types?.[ac.type];
-                const label = livery ? `${airline ? airline.name : ac.id.slice(0, 3)} ${ac.type}` : `Typical ${ac.type}`;
-                figure.classList.toggle('hidden', !show || !photo);
-                if (!show || !photo || figure.dataset.loaded) return;
-                figure.dataset.loaded = 'true';
-                const img = figure.querySelector('img');
-                img.src = photo.url;
-                img.alt = label;
-                const caption = figure.querySelector('figcaption');
-                const link = document.createElement('a');
-                link.href = photo.source;
-                link.target = '_blank';
-                link.rel = 'noopener';
-                link.className = 'hover:text-slate-300 underline';
-                link.textContent = `${photo.artist}, ${photo.license}`;
-                caption.title = `${label}. Photo: ${photo.artist}, ${photo.license}, via Wikimedia Commons.`;
-                caption.replaceChildren(`${label} · Photo: `, link);
+                if (!show) { figure.classList.add('hidden'); return; }
+                if (figure.dataset.loaded) { figure.classList.toggle('hidden', figure.dataset.loaded === 'none'); return; }
+                figure.dataset.loaded = 'pending';
+                this.planespottersPhoto(ac.registration).then(spotted => {
+                    const airline = AIRLINES.find(item => item.id === ac.id.slice(0, 3));
+                    const livery = window.ATC_PHOTOS?.liveries?.[`${ac.id.slice(0, 3)}|${ac.type}`];
+                    const commons = livery || window.ATC_PHOTOS?.types?.[ac.type];
+                    const photo = spotted ? {
+                        url: spotted.thumbnail_large?.src || spotted.thumbnail?.src, source: spotted.link,
+                        label: `${ac.registration}`, credit: `${spotted.photographer} / Planespotters.net`
+                    } : commons && {
+                        url: commons.url, source: commons.source,
+                        label: livery ? `${airline ? airline.name : ac.id.slice(0, 3)} ${ac.type}` : `Typical ${ac.type}`,
+                        credit: `${commons.artist}, ${commons.license}`
+                    };
+                    figure.dataset.loaded = photo ? 'done' : 'none';
+                    if (!photo) { figure.classList.add('hidden'); return; }
+                    const img = figure.querySelector('img');
+                    img.src = photo.url;
+                    img.alt = `${photo.label}, photo by ${photo.credit}`;
+                    figure.querySelector('[data-f="photo-link"]').href = photo.source;
+                    const link = document.createElement('a');
+                    link.href = photo.source;
+                    link.target = '_blank';
+                    link.rel = 'noopener';
+                    link.className = 'hover:text-slate-300 underline';
+                    link.textContent = photo.credit;
+                    const caption = figure.querySelector('figcaption');
+                    caption.title = `${photo.label}. Photo: ${photo.credit}`;
+                    caption.replaceChildren(`${photo.label} · Photo: `, link);
+                    figure.classList.toggle('hidden', el.getAttribute('aria-selected') !== 'true');
+                });
             }
 
             refreshStripValues() {

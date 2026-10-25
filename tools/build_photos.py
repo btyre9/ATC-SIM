@@ -1,13 +1,17 @@
-"""Builds photos-data.js: freely licensed aircraft photos with photographer credit.
+"""Builds photos-data.js: freely licensed aircraft photos with photographer credit, and real tail numbers.
 
 - liveries: for each airline and type in the schedules, a photo from the Wikimedia Commons fleet
   category "<Type> of <Airline>" (or its per-aircraft subcategories), so it shows that airline's livery.
 - types: the lead image of each type's Wikipedia article, used when no livery photo is found.
+- fleets: real registrations for each airline and type, taken from the Commons per-aircraft categories
+  and kept only when Planespotters.net has a photo of that aircraft in that airline and type. The sim
+  fetches the Planespotters photo live when the aircraft is selected.
 
 Run from the project folder:  python3 tools/build_photos.py
 """
 import html
 import json
+import random
 import re
 import time
 import urllib.parse
@@ -69,6 +73,22 @@ EXCLUDE_FILES = {
     'File:FEMA - 15566 - Photograph by George Armstrong taken on 09-04-2005 in Georgia.jpg',
 }
 API = 'https://commons.wikimedia.org/w/api.php'
+PLANESPOTTERS = 'https://api.planespotters.net/pub/photos/reg/'
+# Per-aircraft Commons categories are named like "N8538V (aircraft)" or "N1776R (Boeing 737-8 MAX)".
+REGISTRATION_CATEGORY = re.compile(r'^Category:(N\d{1,5}[A-Z]{0,2}) \(')
+# Planespotters photo pages are named like "n915us-american-airlines-airbus-a321-231".
+AIRLINE_SLUGS = {'DAL': 'delta', 'SWA': 'southwest', 'AAL': 'american', 'UAL': 'united',
+                 'ASA': 'alaska', 'FDX': 'fedex', 'UPS': 'ups'}
+TYPE_SLUGS = {
+    'B737': r'737-7\w\w', 'B738': r'737-8\w\w', 'B739': r'737-9\w\w', 'B38M': r'737-8-max|737-max-8',
+    'B717': r'717', 'B752': r'757-2', 'B763': r'767-3', 'B764': r'767-4', 'B772': r'777-2',
+    'B77L': r'777-f|777f|777-2\w\wlr', 'B77W': r'777-3', 'B789': r'787-9',
+    'A319': r'a319', 'A320': r'a320', 'A321': r'a321', 'A333': r'a330-3', 'A359': r'a350-9', 'A343': r'a340-3',
+    'E190': r'erj-190|e190|embraer-190', 'CRJ7': r'crj-?7|cl-600-2c10', 'CRJ9': r'crj-?9|cl-600-2d24',
+    'MD11': r'md-11', 'B748': r'747-8', 'A388': r'a380',
+}
+FLEET_SIZE = 6        # Registrations kept per airline and type.
+FLEET_CHECKS = 14     # Planespotters lookups tried per airline and type.
 HEADERS = {'User-Agent': 'OpenATC-simulator/1.0 (https://github.com/btyre9/ATC-SIM)'}
 
 
@@ -190,6 +210,46 @@ def livery_photo(airline, icao):
     return None
 
 
+def fleet_candidates(airline, icao):
+    """Registrations from the per-aircraft subcategories of an airline's fleet categories."""
+    found = []
+    for airline_name in AIRLINES[airline]:
+        for type_name in COMMONS_TYPES.get(icao, []):
+            for prefix in ('', 'Current '):
+                data = commons(action='query', list='categorymembers', cmtype='subcat', cmlimit=200,
+                               cmtitle=f'Category:{prefix}{type_name} of {airline_name}')
+                for member in data.get('query', {}).get('categorymembers', []):
+                    match = REGISTRATION_CATEGORY.match(member['title'])
+                    if match and match.group(1) not in found:
+                        found.append(match.group(1))
+    return found
+
+
+def planespotters_matches(registration, airline, icao):
+    """True when Planespotters has a photo of this registration in this airline and type."""
+    time.sleep(0.6)
+    try:
+        photos = get_json(PLANESPOTTERS + registration).get('photos') or []
+    except Exception:
+        return False
+    if not photos:
+        return False
+    slug = photos[0]['link'].split('?')[0].rsplit('/', 1)[-1]
+    return AIRLINE_SLUGS.get(airline, '~') in slug and re.search(TYPE_SLUGS.get(icao, '~'), slug) is not None
+
+
+def fleet_registrations(airline, icao):
+    candidates = fleet_candidates(airline, icao)
+    random.Random(f'{airline}{icao}').shuffle(candidates)
+    fleet = []
+    for registration in candidates[:FLEET_CHECKS]:
+        if planespotters_matches(registration, airline, icao):
+            fleet.append(registration)
+            if len(fleet) >= FLEET_SIZE:
+                break
+    return sorted(fleet)
+
+
 def scheduled_combinations():
     """Airline and type pairs that fly in the simulator's schedules."""
     source = open('index.html').read()
@@ -210,18 +270,22 @@ def main():
             cache[article] = type_photo(article)
         if cache[article]:
             types[icao] = cache[article]
-    liveries = {}
+    liveries, fleets = {}, {}
     for airline, icao in scheduled_combinations():
         if airline not in AIRLINES:
             continue
         photo = livery_photo(airline, icao)
         if photo:
             liveries[f'{airline}|{icao}'] = photo
-        print(f'{airline} {icao}:', f"{photo['category']} ({photo['license']})" if photo else 'type photo fallback')
+        fleet = fleet_registrations(airline, icao)
+        if fleet:
+            fleets[f'{airline}|{icao}'] = fleet
+        print(f'{airline} {icao}:', f"{photo['category']} ({photo['license']})" if photo else 'type photo fallback',
+              f'| {len(fleet)} registrations {fleet}')
     with open('photos-data.js', 'w') as out:
-        out.write('/* Generated by tools/build_photos.py from Wikimedia Commons. Do not edit by hand. */\n')
-        out.write(f'window.ATC_PHOTOS = {json.dumps({"liveries": liveries, "types": types}, indent=1)};\n')
-    print(f'{len(liveries)} livery photos, {len(types)} type photos')
+        out.write('/* Generated by tools/build_photos.py from Wikimedia Commons and Planespotters.net checks. Do not edit by hand. */\n')
+        out.write(f'window.ATC_PHOTOS = {json.dumps({"liveries": liveries, "types": types, "fleets": fleets}, indent=1)};\n')
+    print(f'{len(liveries)} livery photos, {len(types)} type photos, {sum(map(len, fleets.values()))} registrations')
 
 
 if __name__ == '__main__':
