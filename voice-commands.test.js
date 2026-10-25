@@ -206,3 +206,12 @@ test('spoken fix names match identifiers, sound-alikes and navaid place names', 
     const twins = [at('BOYKN', 33.7, -84.2), at('BAKAN', 35.0, -81.0)];
     assert.equal(matchFix('boykin', twins, { lat: 34.9, lon: -81.1 }).name, 'BAKAN');
 });
+
+test('expect runway phrases give the runway to plan for', () => {
+    assert.equal(hear('Delta 228 expect runway two six right').command, 'DAL228 EXP 26R');
+    assert.equal(hear('Delta 228 expect the ILS runway two seven left approach').command, 'DAL228 EXP 27L');
+    assert.equal(hear('Delta 228 expect ILS runway 28').command, 'DAL228 EXP 28');
+    assert.equal(hear('Delta 228 expect runway one niner right descend and maintain four thousand').command, 'DAL228 EXP 19R A 4000');
+    assert.equal(hear('Delta 228 cleared ILS runway zero one center').command, 'DAL228 L 01C');
+    assert.equal(hear('Delta 228 expect runway bananas').ok, false);
+});

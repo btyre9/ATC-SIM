@@ -332,6 +332,7 @@
                 <div>Go around</div><div id="help-say-ga"></div><code id="help-type-ga" class="text-green-300"></code>
                 <div>Takeoff</div><div id="help-say-cto"></div><code id="help-type-cto" class="text-green-300"></code>
                 <div>Handoff</div><div id="help-say-ho"></div><code id="help-type-ho" class="text-green-300"></code>
+                <div>Expect runway</div><div id="help-say-exp"></div><code id="help-type-exp" class="text-green-300"></code>
             </div>
             <h3 class="mt-4 mb-1 font-bold text-cyan-300">Procedures</h3>
             <ul class="list-disc pl-5 space-y-1 text-slate-300">
@@ -342,6 +343,7 @@
                 <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta and Charlotte, 3,000 at San Diego), 210 kt. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
+                <li><b>Expect runway</b> tells an arrival which runway to plan for. On its own navigation it flies to that runway's final (a real approach fix 8 to 16 NM out, or a point 12 NM out) and turns onto the runway course; on vectors it keeps your heading. It still needs an approach clearance.</li>
                 <li><b>Direct</b> works with any fix on the scope; triangles are real FAA arrival and departure fixes.</li>
             </ul>
             <p class="mt-3 text-amber-300">In this simulator, “flight level three thousand” means 3,000 feet and “flight level twelve thousand” means 12,000 feet. “Flight level three zero zero” still means 30,000 feet. Say heading digits separately: “two seven zero” for 270°. ILS clearance requires an aircraft within 30 nautical miles of the runway.</p>
@@ -944,6 +946,9 @@
                 this.exitFix = null;
                 this.arrivalFix = null;
                 this.handedOff = null;
+                this.expectedRunway = null;
+                this.onVectors = false;      // True once the controller assigns a heading.
+                this.alignHeading = null;    // Runway course to turn onto at the final fix.
 
                 const airlineCode = id.substring(0, 3);
                 const flightNum = id.substring(3);
@@ -967,6 +972,8 @@
             goAround() {
                 const missed = this.missedApproach();
                 this.directTo = null;
+                this.alignHeading = null;
+                this.onVectors = true;
                 this.clearedForILS = false;
                 this.ilsCaptured = false;
                 this.targetHeading = missed.heading;
@@ -999,7 +1006,15 @@
 
                 // Direct-to keeps tracking the fix until the aircraft passes over it.
                 if (this.directTo && canTurn && !this.clearedForILS) {
-                    if (window.ATCTraffic.distanceNM(this, this.directTo) < 1.5) this.directTo = null;
+                    if (window.ATCTraffic.distanceNM(this, this.directTo) < 1.5) {
+                        // Expecting a runway: at the final fix, turn onto the runway course and line up.
+                        if (this.alignHeading !== null) {
+                            this.targetHeading = this.alignHeading;
+                            this.alignHeading = null;
+                            this.lastStatus = `ON FINAL COURSE ${this.expectedRunway}`;
+                        }
+                        this.directTo = null;
+                    }
                     else {
                         this.targetHeading = Math.round(calculateBearing(this.lat, this.lon, this.directTo.lat, this.directTo.lon)) % 360;
                         this.turnDirection = 'shortest';
@@ -2016,6 +2031,25 @@
                 return true;
             }
 
+            // Where an aircraft expecting a runway joins its final: a real approach fix on the extended
+            // centerline 8 to 16 NM out when there is one, otherwise a point 12 NM out.
+            finalFixFor(runwayName) {
+                const runway = getRunwayDetails(runwayName);
+                const outbound = (runway.heading + 180) % 360;
+                let best = null;
+                for (const wp of CONFIG.waypoints) {
+                    if (wp.navaid) continue;
+                    const distance = window.ATCTraffic.distanceNM(runway, wp);
+                    const offset = toRad(calculateBearing(runway.lat, runway.lon, wp.lat, wp.lon) - outbound);
+                    const along = distance * Math.cos(offset), across = Math.abs(distance * Math.sin(offset));
+                    if (along < 8 || along > 16 || across > 0.6) continue;
+                    if (!best || Math.abs(along - 12) < best.score) best = { wp, score: Math.abs(along - 12) };
+                }
+                if (best) return best.wp;
+                const point = moveLatLng(runway.lat, runway.lon, outbound, 12);
+                return { name: `${runwayName} FINAL`, lat: point.lat, lon: point.lon, type: 'FINAL' };
+            }
+
             radioFrequency(freq) {
                 return String(freq).split('').map(c => c === '.' ? 'point' : this.radioDigits(c)).join(' ');
             }
@@ -2264,7 +2298,8 @@
                     ils: [`Cleared ILS runway ${this.radioRunway(runway)}`, `${id} L ${runway}`],
                     ga: ['Go around', `${id} GA`],
                     cto: ['Cleared for takeoff (manual departures only)', `${id} CTO`],
-                    ho: ['Contact tower / Contact center', `${id} HO`]
+                    ho: ['Contact tower / Contact center', `${id} HO`],
+                    exp: [`Expect runway ${this.radioRunway(runway)}`, `${id} EXP ${runway}`]
                 };
                 Object.entries(examples).forEach(([action, [said, typed]]) => {
                     document.getElementById(`help-say-${action}`).textContent = said;
@@ -2503,7 +2538,7 @@
                     return;
                 }
 
-                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO', 'HO'];
+                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO', 'HO', 'EXP'];
                 if (shortCommands.includes(id) && this.aircraft.some(plane => plane.id === this.selectedAircraftId)) {
                     raw = `${this.selectedAircraftId} ${raw}`;
                     tokens = raw.split(/\s+/);
@@ -2559,7 +2594,7 @@
                     let val = null;
                     let consumed = 1;
 
-                    const needsArg = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS'].includes(cmd);
+                    const needsArg = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'EXP'].includes(cmd);
                     if (needsArg) {
                         if (i + 1 >= tokens.length) { this.log(`Missing value for command ${cmd}`, 'error'); break; }
                         val = tokens[i+1];
@@ -2587,8 +2622,11 @@
                             if(isNaN(deg)) this.log(`Invalid heading '${val}'.`, 'error');
                             else {
                                 assignedHeading = deg % 360;
+                                plane.onVectors = true; // Known now, so an "expect runway" right after keeps the vector.
                                 act(() => {
                                     plane.directTo = null;
+                                    plane.onVectors = true;
+                                    plane.alignHeading = null;
                                     plane.targetHeading = deg % 360;
                                     plane.turnDirection = 'shortest';
                                     plane.clearedForILS = false; plane.ilsCaptured = false;
@@ -2603,8 +2641,11 @@
                             if(isNaN(degR)) this.log(`Invalid heading '${val}'.`, 'error');
                             else {
                                 assignedHeading = degR % 360;
+                                plane.onVectors = true; // Known now, so an "expect runway" right after keeps the vector.
                                 act(() => {
                                     plane.directTo = null;
+                                    plane.onVectors = true;
+                                    plane.alignHeading = null;
                                     plane.targetHeading = degR % 360;
                                     plane.turnDirection = 'right';
                                     plane.clearedForILS = false; plane.ilsCaptured = false;
@@ -2619,8 +2660,11 @@
                             if(isNaN(degL)) this.log(`Invalid heading '${val}'.`, 'error');
                             else {
                                 assignedHeading = degL % 360;
+                                plane.onVectors = true; // Known now, so an "expect runway" right after keeps the vector.
                                 act(() => {
                                     plane.directTo = null;
+                                    plane.onVectors = true;
+                                    plane.alignHeading = null;
                                     plane.targetHeading = degL % 360;
                                     plane.turnDirection = 'left';
                                     plane.clearedForILS = false; plane.ilsCaptured = false;
@@ -2652,7 +2696,7 @@
                             } else {
                                 const wp = window.ATCVoice.matchFix(val, CONFIG.waypoints, plane);
                                 if (wp) {
-                                    act(() => { plane.directTo = wp; });
+                                    act(() => { plane.directTo = wp; plane.onVectors = false; plane.alignHeading = null; });
                                     plane.lastStatus = `DCT ${wp.name}`;
                                     this.log(`${id} proceeding direct ${wp.name}.`);
                                     readback(`Direct ${wp.navaid && wp.title ? wp.title : wp.name}`); // Pilots say a navaid by name: "direct Rome".
@@ -2746,6 +2790,35 @@
                             const climbTo = plane.targetAltitude > CONFIG.airport.elevation ? plane.targetAltitude : CONFIG.departureAltitude;
                             readback(`Cleared for takeoff runway ${this.radioRunway(runway)}` +
                                 (altitudeInTransmission ? '' : `, climbing to ${this.radioAltitude(climbTo)}`));
+                            break;
+                        }
+                        case 'EXP': {
+                            const runway = getRunwayDetails(val);
+                            if (!runway) { this.log(`Unknown Runway '${val}'.`, 'error'); break; }
+                            let tailwind = Math.abs(CONFIG.wind.dir - runway.heading);
+                            if (tailwind > 180) tailwind = 360 - tailwind;
+                            if (tailwind > 90) {
+                                const flow = CONFIG.airport.flows[this.activeFlowIndex];
+                                this.log(`${id}: runway ${runway.name} has a tailwind. Arrivals are landing ${flow.arrRwys.join(', ')}.`, 'error');
+                                break;
+                            }
+                            plane.expectedRunway = runway.name;
+                            // On its own navigation the aircraft flies its runway transition to the final and
+                            // lines up; on vectors it keeps the assigned heading and just plans for the runway.
+                            if (plane.isArrival && !plane.onVectors && !plane.clearedForILS) {
+                                const fix = this.finalFixFor(runway.name);
+                                act(() => {
+                                    plane.directTo = fix;
+                                    plane.alignHeading = Math.round(runway.heading) % 360;
+                                    plane.turnDirection = 'shortest';
+                                });
+                                plane.lastStatus = `EXP ${runway.name} VIA ${fix.name}`;
+                                this.log(`${id} expecting runway ${runway.name}, joining the final at ${fix.name}.`);
+                            } else {
+                                plane.lastStatus = `EXP ${runway.name}`;
+                                this.log(`${id} expecting runway ${runway.name}.`);
+                            }
+                            readback(`Expect runway ${this.radioRunway(runway.name)}`);
                             break;
                         }
                         case 'HO': {
@@ -3226,11 +3299,12 @@
                 ring(CONFIG.sectorRadiusNM * CONFIG.scale, colors.boundary, 1.5, [6, 6]);
                 // Ring the selected aircraft's arrival or departure fix.
                 const selected = this.aircraft.find(ac => ac.id === this.selectedAircraftId);
-                const routeFix = selected && (selected.exitFix || CONFIG.waypoints.find(w => w.name === selected.arrivalFix));
+                const routeFix = selected && (selected.directTo || selected.exitFix || CONFIG.waypoints.find(w => w.name === selected.arrivalFix));
                 if (routeFix) {
                     const pt = this.map.latLngToContainerPoint([routeFix.lat, routeFix.lon]);
-                    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2;
+                    ctx.strokeStyle = ctx.fillStyle = '#38bdf8'; ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.arc(pt.x, pt.y, 13, 0, Math.PI * 2); ctx.stroke();
+                    if (routeFix.type === 'FINAL') { ctx.font = 'bold 10px monospace'; ctx.fillText(routeFix.name, pt.x, pt.y + 26); }
                 }
             }
 

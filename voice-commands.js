@@ -16,7 +16,7 @@
     const COMMAND_START = new Set([
         'DESCEND', 'CLIMB', 'MAINTAIN', 'TURN', 'FLY', 'HEADING',
         'REDUCE', 'INCREASE', 'SPEED', 'PROCEED', 'DIRECT',
-        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR'
+        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR', 'EXPECT'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
     const NATO = {
@@ -157,6 +157,20 @@
         return { value: number };
     }
 
+    /* "two six right", "26R", "one eight", "zero one center" -> "26R", "18", "01C". */
+    function runwayFromWords(text) {
+        const words = text.split(' ');
+        const sides = { LEFT: 'L', RIGHT: 'R', CENTER: 'C', CENTRE: 'C' };
+        let side = '';
+        if (sides[words.at(-1)]) side = sides[words.pop()];
+        if (words.length === 1 && /^\d{1,2}[LRC]$/.test(words[0])) {
+            side = words[0].at(-1);
+            words[0] = words[0].slice(0, -1);
+        }
+        const runway = numberFromWords(words);
+        return runway === null || runway < 1 || runway > 36 ? null : `${String(runway).padStart(2, '0')}${side}`;
+    }
+
     function parseInstruction(phrase, elevation, plane) {
         let match = phrase.match(/^(DESCEND|CLIMB)(?: TO)?(?: AND)?(?: MAINTAIN)?(?: AT)? (.+)$/);
         const direction = match ? match[1] : null;
@@ -219,16 +233,15 @@
 
         match = phrase.match(/^CLEARED (?:FOR (?:THE )?)?ILS(?: APPROACH)? RUNWAY (.+)$/);
         if (match) {
-            const words = match[1].split(' ');
-            let side = '';
-            if (words.at(-1) === 'LEFT' || words.at(-1) === 'RIGHT') side = words.pop()[0];
-            if (/^\d{1,2}[LR]$/.test(words[0]) && words.length === 1) {
-                side = words[0].at(-1);
-                words[0] = words[0].slice(0, -1);
-            }
-            const runway = numberFromWords(words);
-            if (runway === null || runway < 1 || runway > 36) return { error: 'I could not understand the runway.' };
-            return { command: `L ${String(runway).padStart(2, '0')}${side}` };
+            const runway = runwayFromWords(match[1]);
+            return runway ? { command: `L ${runway}` } : { error: 'I could not understand the runway.' };
+        }
+
+        // "Expect runway two six right", "expect the ILS runway 26R approach": the runway to plan for.
+        match = phrase.match(/^EXPECT (?:THE )?(?:(?:ILS|VISUAL|RNAV)(?: APPROACH)? )?(?:(?:TO )?RUNWAY )?(.+?)(?: APPROACH)?$/);
+        if (match) {
+            const runway = runwayFromWords(match[1]);
+            return runway ? { command: `EXP ${runway}` } : { error: 'I could not understand the runway to expect.' };
         }
 
         if (phrase === 'GO AROUND' || phrase === 'ABORT') return { command: 'GA' };
