@@ -676,11 +676,11 @@
             dark: { runway: '#ffffff', runwayText: '#f8fafc', rings: 'rgba(226, 232, 240, 0.4)', ringText: 'rgba(241, 245, 249, 0.85)',
                 boundary: 'rgba(241, 245, 249, 0.85)', backing: 'rgba(15, 23, 42, 0.55)', gate: 'rgba(203, 213, 225, 0.7)', airport: '#94a3b8', airportText: '#cbd5e1',
                 waypoint: '#22d3ee', halo: 'black', leader: 'rgba(255, 255, 255, 0.5)',
-                aircraft: '#facc15', aircraftEdge: 'rgba(0, 0, 0, 0.85)', overflight: 'rgba(203, 213, 225, 0.55)' },
+                aircraft: '#facc15', handedOff: '#d1d5db', aircraftEdge: 'rgba(0, 0, 0, 0.85)', overflight: 'rgba(203, 213, 225, 0.55)' },
             light: { runway: '#1e293b', runwayText: '#0f172a', rings: 'rgba(30, 41, 59, 0.3)', ringText: 'rgba(30, 41, 59, 0.75)',
                 boundary: 'rgba(30, 41, 59, 0.7)', backing: 'rgba(255, 255, 255, 0.5)', gate: 'rgba(30, 41, 59, 0.8)', airport: '#475569', airportText: '#1e293b',
                 waypoint: '#0e7490', halo: 'white', leader: 'rgba(15, 23, 42, 0.6)',
-                aircraft: '#facc15', aircraftEdge: 'rgba(15, 23, 42, 0.9)', overflight: 'rgba(71, 85, 105, 0.6)' }
+                aircraft: '#facc15', handedOff: '#d1d5db', aircraftEdge: 'rgba(15, 23, 42, 0.9)', overflight: 'rgba(71, 85, 105, 0.6)' }
         };
 
         // Trail colors by altitude, FlightRadar24 style: white on the ground, then turquoise to blue to purple.
@@ -3167,7 +3167,7 @@
                     return;
                 }
                 const nameColor = alert === 'loss' ? 'db-loss' : alert === 'predicted' ? 'db-predicted' :
-                    ac.id === this.selectedAircraftId ? 'db-selected' : 'db-callsign';
+                    ac.id === this.selectedAircraftId ? 'db-selected' : ac.handedOff ? 'db-dim' : 'db-callsign';
                 const tag = alert ? ` <span class="${alert === 'loss' ? 'db-loss' : 'db-predicted'}">CA</span>` : '';
                 let html;
                 if (ac.onGround && !ac.isArrival && !ac.takeoffCleared) {
@@ -3175,7 +3175,8 @@
                 } else {
                     const arrow = Math.abs(ac.targetAltitude - ac.altitude) <= 50 ? '=' : (ac.targetAltitude > ac.altitude ? '↑' : '↓');
                     const assigned = arrow === '=' ? '' : level(ac.targetAltitude);
-                    html = `<span class="font-bold ${nameColor}">${ac.id}</span>${tag}<br><span class="db-alt">${level(ac.altitude)}${arrow}${assigned}</span><br><span class="db-info">${Math.round(ac.speed)} ${ac.type}</span>`;
+                    const detail = ac.handedOff ? 'db-dim' : 'db-alt';
+                    html = `<span class="font-bold ${nameColor}">${ac.id}</span>${tag}<br><span class="${detail}">${level(ac.altitude)}${arrow}${assigned}</span><br><span class="${ac.handedOff ? 'db-dim' : 'db-info'}">${Math.round(ac.speed)} ${ac.type}</span>`;
                 }
                 if (el.dataset.html !== html) { el.innerHTML = html; el.dataset.html = html; }
             }
@@ -3465,7 +3466,8 @@
                     if (this.trailsOn && ac.id === this.selectedAircraftId) this.drawTrail(ac);
 
                     // The dark outline keeps the yellow readable on light and dark maps.
-                    const sprite = this.aircraftSprite(ac.type, colors.aircraft, colors.aircraftEdge);
+                    // Handed off to center or tower: drawn gray, no longer your traffic.
+                    const sprite = this.aircraftSprite(ac.type, ac.handedOff ? colors.handedOff : colors.aircraft, colors.aircraftEdge);
                     const size = window.ATCAircraftIcons.screenSize(ac.type);
                     this.ctx.save();
                     this.ctx.translate(ac.x, ac.y);
