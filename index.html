@@ -310,7 +310,7 @@
                 <h2 class="font-bold text-cyan-300 text-sm">How to control an aircraft</h2>
                 <button id="close-command-help" type="button" class="text-slate-300 hover:text-white font-bold" aria-label="Close command help">CLOSE</button>
             </div>
-            <p class="text-slate-300 mb-3">First click an aircraft strip on the right. Then click MIC and say just one short instruction. You do not need to say the callsign again. If Chrome hears a word incorrectly, edit the text in the command bar and press SEND. You can still say a callsign and instruction together if you prefer.</p>
+            <p class="text-slate-300 mb-3">First click an aircraft strip on the right. Then click MIC and speak; normal pauses are fine. The mic closes about 2½ seconds after you stop talking, or click MIC again to finish right away. You do not need to say the callsign again. If Chrome hears a word incorrectly, edit the text in the command bar and press SEND. You can still say a callsign and instruction together if you prefer.</p>
             <p id="help-aircraft" class="text-amber-300 font-bold mb-3">Waiting for an aircraft...</p>
             <div class="grid grid-cols-[80px_1fr_125px] gap-2 text-slate-300">
                 <div class="font-bold text-slate-400">Action</div><div class="font-bold text-slate-400">Say after clicking MIC</div><div class="font-bold text-slate-400">Or type and SEND</div>
@@ -381,7 +381,7 @@
             <button id="command-help-btn" type="button" class="bg-cyan-900 hover:bg-cyan-800 text-cyan-100 px-3 py-2 rounded font-bold text-xs border border-cyan-700">COMMANDS</button>
             <button id="pilot-audio-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" aria-label="Toggle pilot audio" aria-pressed="false" title="Turn on spoken pilot check-ins and readbacks">PILOTS: OFF</button>
             <button id="pilot-voice-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" title="Choose and test a pilot voice">VOICE</button>
-            <button id="voice-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" aria-label="Speak ATC command" aria-pressed="false" title="Select an aircraft strip, then say one short instruction">MIC</button>
+            <button id="voice-btn" type="button" class="bg-slate-700 hover:bg-slate-600 text-white px-3 py-2 rounded font-bold text-xs border border-slate-500" aria-label="Speak ATC command" aria-pressed="false" title="Click to talk; the mic closes after 2½ seconds of silence, or click again to finish">MIC</button>
             <button id="send-btn" class="bg-green-700 hover:bg-green-600 text-white px-4 py-2 rounded font-bold text-xs">SEND</button>
         </div>
         <div id="msg-area" class="absolute bottom-16 left-4 text-yellow-400 text-sm font-bold pointer-events-none drop-shadow-md z-40"></div>
@@ -407,7 +407,7 @@
             <h3 class="text-slate-400 font-bold uppercase mb-2 border-b border-slate-600 pb-1">Radio Log</h3>
             <div id="radio-log" class="space-y-1 font-mono text-slate-300">
                 <div class="text-green-500">SYSTEM: Simulator Ready (Weather Enabled).</div>
-                <div class="text-slate-500">Select an aircraft strip, then click MIC and say a short instruction.</div>
+                <div class="text-slate-500">Select an aircraft strip, then click MIC and speak. Pauses are fine; the mic closes when you stop talking.</div>
             </div>
         </div>
     </div>
@@ -2305,6 +2305,33 @@
                 return `${verb} ${this.radioAltitude(altitude)}`;
             }
 
+            // Interprets one finished transmission: a clearance, or a callsign alone to select an aircraft.
+            handleVoiceTranscripts(transcripts) {
+                const transcript = transcripts[0];
+                const inputId = this.voiceOriginalInput.trim().split(/\s+/)[0]?.toUpperCase();
+                const selectedId = this.aircraft.some(plane => plane.id === inputId) ? inputId : this.selectedAircraftId;
+                const parsed = window.ATCVoice.choose(transcripts, this.aircraft, AIRLINES, CONFIG.airport.elevation, selectedId);
+                if (!parsed.ok) {
+                    let error = parsed.error;
+                    if (parsed.error === 'No instruction was recognized.') {
+                        const callsign = window.ATCVoice.chooseCallsign(transcripts, this.aircraft, AIRLINES);
+                        if (callsign.ok) {
+                            this.selectAircraft(callsign.id, true);
+                            this.log(`VOICE: "${transcript}" → ${callsign.id} selected. Now say a clearance.`, 'system');
+                            const plane = this.aircraft.find(item => item.id === callsign.id);
+                            this.pilotTransmission(plane, `${this.radioCallsign(plane)}, go ahead.`, true);
+                            return;
+                        }
+                        error = callsign.error;
+                    }
+                    this.log(`VOICE: "${transcript}" — ${error} Edit the text in the command bar and press SEND.`, 'error');
+                    return;
+                }
+                const correction = parsed.transcript === transcript ? '' : ` (matched "${parsed.transcript}")`;
+                this.log(`VOICE: "${transcript}"${correction} → ${parsed.command}`, 'system');
+                this.processCommand(parsed.command);
+            }
+
             initVoiceInput() {
                 const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
                 if (!Recognition) {
@@ -2316,7 +2343,9 @@
 
                 this.recognition = new Recognition();
                 this.recognition.lang = 'en-US';
-                this.recognition.continuous = false;
+                // Continuous mode keeps listening through the short pauses in a clearance; the mic closes
+                // after a few seconds of silence, at a time limit, or when MIC is clicked again.
+                this.recognition.continuous = true;
                 this.recognition.interimResults = true;
                 this.recognition.maxAlternatives = 5;
                 this.recognitionHintsActive = false;
@@ -2336,6 +2365,13 @@
                 this.voiceStartRequested = false;
                 this.voiceOriginalInput = '';
                 this.voiceHandled = false;
+                this.voiceTranscripts = [];
+                const SILENCE_MS = 2500, MAX_LISTEN_MS = 20000;
+                const stopListening = () => { if (this.voiceListening) this.recognition.stop(); };
+                const clearVoiceTimers = () => {
+                    clearTimeout(this.voiceSilenceTimer);
+                    clearTimeout(this.voiceMaxTimer);
+                };
 
                 if (window.location.protocol === 'file:') {
                     this.log('VOICE SETUP: Open start-atc.command to use a stable localhost address, then choose “Allow while visiting” in Chrome.', 'system');
@@ -2358,6 +2394,9 @@
                 this.recognition.onstart = () => {
                     this.voiceListening = true;
                     this.voiceHandled = false;
+                    this.voiceTranscripts = [];
+                    clearVoiceTimers();
+                    this.voiceMaxTimer = setTimeout(stopListening, MAX_LISTEN_MS);
                     this.voiceButton.textContent = 'LISTENING';
                     this.voiceButton.classList.remove('bg-slate-700');
                     this.voiceButton.classList.add('bg-red-700', 'animate-pulse');
@@ -2372,32 +2411,11 @@
                     }
                     const transcript = transcripts[0] || '';
                     if (!transcript) return;
+                    this.voiceTranscripts = transcripts;
                     this.input.value = transcript.toUpperCase();
-                    if (this.voiceHandled || !results.every(result => result.isFinal)) return;
-                    this.voiceHandled = true;
-
-                    const inputId = this.voiceOriginalInput.trim().split(/\s+/)[0]?.toUpperCase();
-                    const selectedId = this.aircraft.some(plane => plane.id === inputId) ? inputId : this.selectedAircraftId;
-                    const parsed = window.ATCVoice.choose(transcripts, this.aircraft, AIRLINES, CONFIG.airport.elevation, selectedId);
-                    if (!parsed.ok) {
-                        let error = parsed.error;
-                        if (parsed.error === 'No instruction was recognized.') {
-                            const callsign = window.ATCVoice.chooseCallsign(transcripts, this.aircraft, AIRLINES);
-                            if (callsign.ok) {
-                                this.selectAircraft(callsign.id, true);
-                                this.log(`VOICE: "${transcript}" → ${callsign.id} selected. Now say a clearance.`, 'system');
-                                const plane = this.aircraft.find(item => item.id === callsign.id);
-                                this.pilotTransmission(plane, `${this.radioCallsign(plane)}, go ahead.`, true);
-                                return;
-                            }
-                            error = callsign.error;
-                        }
-                        this.log(`VOICE: "${transcript}" — ${error} Edit the text in the command bar and press SEND.`, 'error');
-                        return;
-                    }
-                    const correction = parsed.transcript === transcript ? '' : ` (matched "${parsed.transcript}")`;
-                    this.log(`VOICE: "${transcript}"${correction} → ${parsed.command}`, 'system');
-                    this.processCommand(parsed.command);
+                    // Each new word restarts the silence countdown.
+                    clearTimeout(this.voiceSilenceTimer);
+                    this.voiceSilenceTimer = setTimeout(stopListening, SILENCE_MS);
                 };
                 this.recognition.onerror = (event) => {
                     if (event.error === 'phrases-not-supported') {
@@ -2419,6 +2437,11 @@
                     this.log(messages[event.error] || `Speech recognition error: ${event.error}`, 'error');
                 };
                 this.recognition.onend = () => {
+                    clearVoiceTimers();
+                    if (!this.voiceHandled && this.voiceTranscripts[0]) {
+                        this.voiceHandled = true;
+                        this.handleVoiceTranscripts(this.voiceTranscripts);
+                    }
                     if (!this.voiceHandled) this.input.value = this.voiceOriginalInput;
                     this.voiceListening = false;
                     this.voiceStartRequested = false;

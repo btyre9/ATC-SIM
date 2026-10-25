@@ -10,7 +10,7 @@ Double-click `start-atc.command` (macOS). It starts `serve.py` at `http://127.0.
 
 ## Playing
 
-Click an aircraft strip, then type or say one instruction. Press **COMMANDS** in the sim for the full list and the procedures.
+Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the mic closes about 2½ seconds after you stop talking (20 seconds at most), or click MIC again to finish right away. Press **COMMANDS** in the sim for the full list and the procedures.
 
 | Typed | Spoken example | Meaning |
 |---|---|---|
