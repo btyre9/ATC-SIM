@@ -137,3 +137,9 @@ test('takeoff clearances work with the runway before, after, or omitted', () => 
     assert.equal(hear('Delta 228 cleared for takeoff runway two six left').command, 'DAL228 CTO');
     assert.equal(choose(['cleared for takeoff'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 CTO');
 });
+
+test('handoff phrases map to the handoff command', () => {
+    assert.equal(hear('Delta 228 contact tower').command, 'DAL228 HO');
+    assert.equal(hear('Delta 228 contact Atlanta Center one three two point four seven').command, 'DAL228 HO');
+    assert.equal(choose(['monitor tower one one niner point one'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 HO');
+});

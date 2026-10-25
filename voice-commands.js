@@ -16,7 +16,7 @@
     const COMMAND_START = new Set([
         'DESCEND', 'CLIMB', 'MAINTAIN', 'TURN', 'FLY', 'HEADING',
         'REDUCE', 'INCREASE', 'SPEED', 'PROCEED', 'DIRECT',
-        'CLEARED', 'GO', 'ABORT', 'RUNWAY'
+        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
 
@@ -177,6 +177,8 @@
         if (match) return { command: `C ${match[1]}` };
 
         if (/^(?:RUNWAY .+ )?CLEARED (?:FOR )?TAKEOFF(?: RUNWAY .+)?$/.test(phrase)) return { command: 'CTO' };
+        // "Contact tower", "contact Atlanta Center one three two point four seven", "monitor tower".
+        if (/^(?:CONTACT|MONITOR)\b/.test(phrase)) return { command: 'HO' };
 
         match = phrase.match(/^CLEARED (?:FOR (?:THE )?)?ILS(?: APPROACH)? RUNWAY (.+)$/);
         if (match) {

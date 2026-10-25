@@ -4,17 +4,39 @@
 
     const VOICES = ['af_heart', 'af_bella', 'am_michael', 'am_fenrir', 'bf_emma', 'bm_george'];
 
+    // Runs the model in kokoro-worker.js; generating one sentence takes seconds and would block the page.
+    function loadWorkerModel() {
+        const worker = new root.Worker(new URL('kokoro-worker.js', root.document.baseURI), { type: 'module' });
+        const pending = new Map();
+        let nextId = 0;
+        const request = message => new Promise((resolve, reject) => {
+            const id = ++nextId;
+            pending.set(id, { resolve, reject });
+            worker.postMessage({ ...message, id });
+        });
+        worker.onmessage = ({ data }) => {
+            const job = pending.get(data.id);
+            if (!job) return;
+            pending.delete(data.id);
+            if (data.ok) job.resolve(data);
+            else job.reject(new Error(data.error));
+        };
+        worker.onerror = event => {
+            const error = new Error(event.message || 'The Kokoro worker stopped.');
+            pending.forEach(job => job.reject(error));
+            pending.clear();
+        };
+        return request({ type: 'load' }).then(() => ({
+            generate: (text, { voice }) => request({ type: 'generate', text, voice })
+                .then(data => ({ audio: data.audio, sampling_rate: data.samplingRate }))
+        }));
+    }
+
     class KokoroRadio {
         constructor(onStatus = () => {}, onError = () => {}, options = {}) {
             this.onStatus = onStatus;
             this.onError = onError;
-            this.loadModel = options.loadModel || (async () => {
-                const { KokoroTTS, env } = await import('./vendor/kokoro.web.js');
-                if (root.caches) env.useBrowserCache = true;
-                return KokoroTTS.from_pretrained('onnx-community/Kokoro-82M-v1.0-ONNX', {
-                    dtype: 'q8', device: 'wasm'
-                });
-            });
+            this.loadModel = options.loadModel || loadWorkerModel;
             this.AudioContext = options.AudioContext || root.AudioContext || root.webkitAudioContext;
             this.random = options.random || Math.random;
             this.enabled = false;
