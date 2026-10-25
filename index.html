@@ -181,7 +181,7 @@
                     <button id="zoom-wide" class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-700 text-white rounded hover:bg-slate-600 transition-colors border border-slate-500">WIDE</button>
                     <button id="zoom-app" class="px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors">APP</button>
                     <button id="zoom-twr" class="px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors">TWR</button>
-                    <button id="trails-btn" type="button" aria-pressed="true" class="px-2.5 py-0.5 text-[10px] font-bold rounded transition-colors" title="Show or hide the history trail behind each aircraft">TRAILS</button>
+                    <button id="trails-btn" type="button" aria-pressed="true" class="px-2.5 py-0.5 text-[10px] font-bold rounded transition-colors" title="Show the history trail behind the aircraft you select">TRAILS</button>
                     <div class="w-px h-4 bg-slate-700 mx-1"></div>
                     <button id="speed-1" data-speed="1" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Real time">1×</button>
                     <button id="speed-2" data-speed="2" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Double speed">2×</button>
@@ -674,11 +674,11 @@
         const SCOPE_COLORS = {
             dark: { runway: '#ffffff', runwayText: '#f8fafc', rings: 'rgba(226, 232, 240, 0.4)', ringText: 'rgba(241, 245, 249, 0.85)',
                 boundary: 'rgba(241, 245, 249, 0.85)', backing: 'rgba(15, 23, 42, 0.55)', gate: 'rgba(203, 213, 225, 0.7)', airport: '#94a3b8', airportText: '#cbd5e1',
-                waypoint: '#22d3ee', halo: 'black', trail: 'rgba(255, 255, 255, 0.45)', leader: 'rgba(255, 255, 255, 0.5)',
+                waypoint: '#22d3ee', halo: 'black', leader: 'rgba(255, 255, 255, 0.5)',
                 aircraft: '#facc15', aircraftEdge: 'rgba(0, 0, 0, 0.85)', overflight: 'rgba(203, 213, 225, 0.55)' },
             light: { runway: '#1e293b', runwayText: '#0f172a', rings: 'rgba(30, 41, 59, 0.3)', ringText: 'rgba(30, 41, 59, 0.75)',
                 boundary: 'rgba(30, 41, 59, 0.7)', backing: 'rgba(255, 255, 255, 0.5)', gate: 'rgba(30, 41, 59, 0.8)', airport: '#475569', airportText: '#1e293b',
-                waypoint: '#0e7490', halo: 'white', trail: 'rgba(15, 23, 42, 0.5)', leader: 'rgba(15, 23, 42, 0.6)',
+                waypoint: '#0e7490', halo: 'white', leader: 'rgba(15, 23, 42, 0.6)',
                 aircraft: '#facc15', aircraftEdge: 'rgba(15, 23, 42, 0.9)', overflight: 'rgba(71, 85, 105, 0.6)' }
         };
 
@@ -910,7 +910,7 @@
                 this.rollout = false;
                 this.removeMe = false;
                 this.trail = []; 
-                this.historyCounter = 0;
+                this.trailClock = 0;
                 this.lastStatus = "INBOUND";
                 this.contactEstablished = false;
                 this.nextAnnounceTime = 0;
@@ -964,6 +964,13 @@
 
             update(dt, map, allAircraft, storms) {
                 this.simAge += dt * CONFIG.timeMultiplier;
+                // One history dot per terminal radar sweep (about 4.8 s), keeping the last ten.
+                this.trailClock += dt * CONFIG.timeMultiplier;
+                if (this.trailClock >= 4.8) {
+                    this.trailClock = 0;
+                    this.trail.push({ lat: this.lat, lon: this.lon });
+                    if (this.trail.length > 10) this.trail.shift();
+                }
                 if (this.pendingActions.length && this.pendingActions[0].at <= this.simAge) {
                     const due = this.pendingActions.filter(action => action.at <= this.simAge);
                     this.pendingActions = this.pendingActions.filter(action => action.at > this.simAge);
@@ -1113,13 +1120,6 @@
                             }
                         }
                     }
-                }
-
-                this.historyCounter++;
-                if (this.historyCounter > 20) { 
-                    this.trail.push({lat: this.lat, lon: this.lon});
-                    if (this.trail.length > 8) this.trail.shift();
-                    this.historyCounter = 0;
                 }
 
                 return "FLYING";
@@ -1446,11 +1446,6 @@
                 this.overflights.forEach(plane => {
                     plane.update(dt, this.map, [], []);
                     if (window.ATCTraffic.distanceNM(plane, CONFIG.airport) > CONFIG.sectorRadiusNM + 14) plane.removeMe = true;
-                    this.ctx.fillStyle = colors.overflight;
-                    if (this.trailsOn) plane.trail.forEach(pt => {
-                        const tPt = this.map.latLngToContainerPoint([pt.lat, pt.lon]);
-                        this.ctx.fillRect(tPt.x, tPt.y, 2, 2);
-                    });
                     const icon = this.aircraftSprite(plane.type, colors.overflight, colors.backing);
                     const size = Math.round(window.ATCAircraftIcons.screenSize(plane.type) * 0.85);
                     this.ctx.save();
@@ -2698,6 +2693,20 @@
                 button.classList.toggle('line-through', !on);
             }
 
+            // History dots fade from newest to oldest, with a backing so they show on any map.
+            drawTrail(plane, colors) {
+                const count = plane.trail.length;
+                plane.trail.forEach((pt, index) => {
+                    const p = this.map.latLngToContainerPoint([pt.lat, pt.lon]);
+                    this.ctx.globalAlpha = 0.35 + 0.65 * (index + 1) / count;
+                    this.ctx.fillStyle = colors.backing;
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2); this.ctx.fill();
+                    this.ctx.fillStyle = colors.aircraft;
+                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 2.2, 0, Math.PI * 2); this.ctx.fill();
+                });
+                this.ctx.globalAlpha = 1;
+            }
+
             setSimSpeed(speed) {
                 CONFIG.timeMultiplier = speed;
                 document.querySelectorAll('.sim-speed').forEach(btn => {
@@ -3106,11 +3115,7 @@
                         this.handleSectorExit(ac);
                     }
 
-                    this.ctx.fillStyle = colors.trail;
-                    if (this.trailsOn) ac.trail.forEach(pt => {
-                        const tPt = this.map.latLngToContainerPoint([pt.lat, pt.lon]);
-                        this.ctx.fillRect(tPt.x, tPt.y, 2, 2);
-                    });
+                    if (this.trailsOn && ac.id === this.selectedAircraftId) this.drawTrail(ac, colors);
 
                     // The dark outline keeps the yellow readable on light and dark maps.
                     const sprite = this.aircraftSprite(ac.type, colors.aircraft, colors.aircraftEdge);
