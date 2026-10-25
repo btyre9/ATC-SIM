@@ -70,3 +70,16 @@ test('new arrivals need 8 NM of space and no short-term conflict', () => {
     // ...but the same entry 1000 ft higher is accepted.
     assert.equal(entryIsClear(at(0, -10, { heading: 0, altitude: 11000, targetAltitude: 11000 }), traffic), true);
 });
+
+test('localizer offset measures distance out on final and off the centerline', () => {
+    const { localizerOffset } = require('./traffic-logic');
+    // Runway 27 (landing west): the final is east of the threshold; north is to the pilot's right.
+    const threshold = { lat: 33, lon: -84, heading: 270 };
+    const onFinal = localizerOffset(at(10, 0), threshold);
+    assert.ok(Math.abs(onFinal.along - 10) < 0.05 && Math.abs(onFinal.cross) < 0.05);
+    const rightOfCourse = localizerOffset(at(10, 1), threshold);
+    assert.ok(Math.abs(rightOfCourse.cross - 1) < 0.05);
+    assert.ok(localizerOffset(at(-1, 0), threshold).along < 0, 'past the threshold');
+    // Runway 18 (landing south): the final is north of the threshold.
+    assert.ok(Math.abs(localizerOffset(at(0, 8), { ...threshold, heading: 180 }).along - 8) < 0.05);
+});

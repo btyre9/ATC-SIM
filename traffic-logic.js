@@ -23,6 +23,17 @@
         return Math.hypot(offset.east, offset.north);
     }
 
+    /* Position against a runway threshold and its landing course (threshold.heading): along is NM out on
+       the final (negative once past the threshold); cross is NM right of the centerline, looking down the runway. */
+    function localizerOffset(position, threshold) {
+        const { east, north } = offsetNM(threshold, position);
+        const course = radians(threshold.heading);
+        return {
+            along: -(east * Math.sin(course) + north * Math.cos(course)),
+            cross: east * Math.cos(course) - north * Math.sin(course)
+        };
+    }
+
     function altitudeAfter(plane, minutes, climbFpm = CLIMB_FPM) {
         const target = plane.targetAltitude ?? plane.altitude;
         const change = Math.min(Math.abs(target - plane.altitude), climbFpm * minutes);
@@ -94,6 +105,6 @@
         });
     }
 
-    root.ATCTraffic = { offsetNM, distanceNM, altitudeAfter, separationFor, predictLoss, findConflicts, entryIsClear };
+    root.ATCTraffic = { offsetNM, distanceNM, localizerOffset, altitudeAfter, separationFor, predictLoss, findConflicts, entryIsClear };
     if (typeof module !== 'undefined') module.exports = root.ATCTraffic;
 })(typeof window !== 'undefined' ? window : globalThis);

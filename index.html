@@ -340,6 +340,7 @@
                 <li>Once an arrival is established on the localizer, say <b>"contact tower"</b>. Landing without a handoff costs points.</li>
                 <li><b>Departures</b> (blue) are cleared for takeoff by tower. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
                 <li>Once a departure is through 7,000 ft, climbing to at least 10,000, and on course to its fix, say <b>"contact center"</b>. Leaving the dashed 40 NM boundary without a handoff costs points.</li>
+                <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around.</li>
                 <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta and Charlotte, 3,000 at San Diego), 210 kt. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
@@ -1092,64 +1093,84 @@
                     }
                 }
 
-                // --- ILS & LANDING LOGIC ---
+                // --- ILS approach and landing ---
                 if (this.clearedForILS && this.clearedRunway && !this.onGround) {
                     const rwyInfo = getRunwayDetails(this.clearedRunway);
-                    if(rwyInfo) {
-                        const dLat = (this.lat - rwyInfo.lat) * 60;
-                        const dLon = (this.lon - rwyInfo.lon) * 60 * Math.cos(toRad(this.lat));
-                        const distToThresh = Math.sqrt(dLat*dLat + dLon*dLon);
+                    if (rwyInfo) {
+                        const course = rwyInfo.heading;
+                        const elevation = CONFIG.airport.elevation;
+                        // along: NM out on the final; cross: NM right of the centerline, looking down the runway.
+                        const { along, cross } = window.ATCTraffic.localizerOffset(this, rwyInfo);
+                        const relative = ((this.heading - course) % 360 + 540) % 360 - 180;
+                        const crossRate = this.speed / 3600 * Math.sin(toRad(relative)); // NM per second, rightward
+                        const glideslope = elevation + Math.max(0, along) * 318;         // 3 degrees
 
-                        if (distToThresh < 0.5) {
-                            const runwayOccupied = allAircraft.some(other => other !== this && runwayIsOccupiedBy(other, this.clearedRunway));
-
-                            if (runwayOccupied) {
-                                this.goAround();
-                                this.lastStatus = "GO AROUND (RWY OCCUPIED)";
-                                return "GO_AROUND";
-                            }
+                        if (along < 0.5 && along > -1 && allAircraft.some(other => other !== this && runwayIsOccupiedBy(other, this.clearedRunway))) {
+                            this.goAround();
+                            this.lastStatus = "GO AROUND (RWY OCCUPIED)";
+                            return "GO_AROUND";
                         }
 
                         if (!this.ilsCaptured) {
-                            const bearing = calculateBearing(this.lat, this.lon, rwyInfo.lat, rwyInfo.lon);
-                            let angleDiff = bearing - rwyInfo.heading;
-                            if(angleDiff > 180) angleDiff -= 360;
-                            if(angleDiff < -180) angleDiff += 360;
-                            
-                            const interceptAngle = Math.max(-30, Math.min(30, angleDiff));
-                            this.targetHeading = (rwyInfo.heading + interceptAngle + 360) % 360;
-                            this.turnDirection = 'shortest';
-                            
                             if (this.targetSpeed > 180) this.targetSpeed = 180;
-
-                            const headingDiff = Math.abs(this.heading - rwyInfo.heading);
-                            if (distToThresh < 18 && (headingDiff < 10 || headingDiff > 350)) {
+                            // Hold the assigned heading until the localizer. A heading that would never reach it
+                            // (parallel, too shallow, or turning away) becomes a 20 degree intercept.
+                            const closing = cross * crossRate < 0 && Math.abs(relative) >= 10 && Math.abs(relative) <= 90;
+                            if (!closing && Math.abs(cross) > 0.1) {
+                                this.targetHeading = (course - Math.sign(cross) * 20 + 360) % 360;
+                                this.turnDirection = 'shortest';
+                            }
+                            // Lead the turn so the aircraft rolls out on the centerline.
+                            const turnRadius = (this.speed / 3600) / toRad(1.5); // NM, at the 1.5 deg/s turn rate
+                            const lead = Math.max(0.15, turnRadius * (1 - Math.cos(toRad(Math.abs(relative)))));
+                            if (Math.abs(cross) <= lead && along > 0.5 && along < 30) {
                                 this.ilsCaptured = true;
-                                this.lastStatus = `ILS ${rwyInfo.name} LOC CAPTURED`;
-                                this.targetHeading = rwyInfo.heading;
-                            }
-                        } 
-                        
-                        if (this.ilsCaptured) {
-                            const gsAltitude = CONFIG.airport.elevation + (distToThresh * 318);
-                            if (distToThresh < 6) this.targetSpeed = 150; 
-                            if (distToThresh < 2) this.targetSpeed = 135; 
-
-                            if (this.altitude > gsAltitude - 200) {
-                                this.targetAltitude = gsAltitude;
-                                this.lastStatus = `ILS ${rwyInfo.name} GS ACTIVE`;
                             } else {
-                                this.lastStatus = `ILS ${rwyInfo.name} LOC CAPTURED`;
+                                this.lastStatus = `ILS ${rwyInfo.name} INTERCEPTING`;
                             }
-                            
-                            if(this.targetAltitude < CONFIG.airport.elevation) this.targetAltitude = CONFIG.airport.elevation;
-                            
-                            if (distToThresh < 0.25 && this.altitude <= CONFIG.airport.elevation + 100) {
+                            if (!this.ilsCaptured && along < 1) {
+                                this.goAround();
+                                this.lastStatus = "MISSED APCH (NOT ESTABLISHED)";
+                                return "MISSED_APPROACH";
+                            }
+                        }
+
+                        if (this.ilsCaptured) {
+                            // Track the localizer, steering toward where the centerline will be in 20 seconds.
+                            const predicted = cross + crossRate * 20;
+                            const correction = Math.max(-30, Math.min(30, -predicted * 60));
+                            this.targetHeading = (course + correction + 360) % 360;
+                            this.turnDirection = 'shortest';
+                            if (along < 6) this.targetSpeed = Math.min(this.targetSpeed, 150);
+                            if (along < 2) this.targetSpeed = Math.min(this.targetSpeed, 135);
+
+                            // Glideslope: from below, hold altitude until it comes down to meet the aircraft;
+                            // from above (or once on it), follow it down.
+                            if (this.altitude > glideslope - 150) {
+                                this.targetAltitude = Math.max(elevation, glideslope);
+                                this.lastStatus = `ILS ${rwyInfo.name} ON GLIDESLOPE`;
+                            } else {
+                                this.lastStatus = `ILS ${rwyInfo.name} LOCALIZER`;
+                            }
+
+                            // Stabilized by 1.5 NM out, or go around: on the centerline and near the glideslope.
+                            if (along < 1.5 && along > 0 && (Math.abs(cross) > 0.4 || this.altitude - glideslope > 700)) {
+                                this.goAround();
+                                this.lastStatus = "MISSED APCH (UNSTABLE)";
+                                return "MISSED_APPROACH";
+                            }
+
+                            if (along <= 0.2 && along > -0.8 && Math.abs(cross) < 0.15 && this.altitude <= elevation + 150) {
                                 this.onGround = true;
-                                this.altitude = CONFIG.airport.elevation;
+                                this.altitude = elevation;
+                                this.heading = this.targetHeading = Math.round(course) % 360;
                                 this.rollout = true;
                                 this.targetSpeed = 10;
                                 this.lastStatus = "ROLLOUT";
+                            } else if (along < -0.8) {
+                                this.goAround();
+                                this.lastStatus = "MISSED APCH";
+                                return "MISSED_APPROACH";
                             }
                         }
                     }
@@ -3411,6 +3432,15 @@
                         this.stats.goArounds++;
                         this.addScore(-15, `${ac.id} going around — runway occupied!`, 'error');
                         this.pilotTransmission(ac, `Going around, runway occupied, runway heading, climbing to ${this.radioAltitude(ac.targetAltitude)}, ${this.radioCallsign(ac)}.`, true);
+                    }
+                    if (result === "MISSED_APPROACH") {
+                        // Not established, unstable, or past the runway without landing: fly the missed approach.
+                        ac.handedOff = null;
+                        this.stats.goArounds++;
+                        const reason = ac.lastStatus.includes('NOT ESTABLISHED') ? 'never established on the localizer' :
+                            ac.lastStatus.includes('UNSTABLE') ? 'unstable approach' : 'not in a position to land';
+                        this.addScore(-15, `${ac.id} missed approach: ${reason}`, 'error');
+                        this.pilotTransmission(ac, `Going around, ${reason}, runway heading, climbing to ${this.radioAltitude(ac.targetAltitude)}, ${this.radioCallsign(ac)}.`, true);
                     }
                     if (!ac.isArrival && !ac.onGround && !ac.airborneReported) {
                         ac.airborneReported = true;
