@@ -43,6 +43,8 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 | Arrival lost from airspace | −75 |
 | Midair collision | −300 |
 
+Selecting an aircraft expands its strip with a photo of its type, credited to the photographer.
+
 **END SHIFT** shows a debrief. Best scores are saved per airport in the browser.
 
 ### Settings
@@ -62,11 +64,13 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 | `aircraft-icons.js` | Type-specific silhouettes from real dimensions and engine layouts |
 | `fixes-data.js` | Real FAA arrival, departure and procedure fixes (generated) |
 | `runways-data.js` | Surveyed runway ends, headings and widths from FAA data (generated) |
+| `photos-data.js` | One freely licensed photo per aircraft type, with credit (generated) |
 | `voice-commands.js` | Speech transcript to command parser |
 | `pilot-radio.js`, `kokoro-radio.js`, `kokoro-worker.js` | Spoken pilot transmissions; Kokoro runs in a background worker |
 | `serve.py`, `start-atc.command` | Local server and launcher |
 | `tools/build_fixes.py` | Regenerates `fixes-data.js` from the FAA Designated Points dataset |
 | `tools/build_runways.py` | Regenerates `runways-data.js` from the FAA Runways dataset |
+| `tools/build_photos.py` | Regenerates `photos-data.js` from Wikipedia lead images on Wikimedia Commons |
 | `vendor/` | Kokoro JS browser bundle (Apache 2.0) |
 
 FAA fixes change on the 56-day chart cycle, and runways are occasionally renumbered as magnetic north drifts (Charlotte's are now 01L/19R, 01R/19L and 18/36). Refresh both with:
@@ -78,6 +82,10 @@ python3 tools/build_fixes.py
 ```bash
 python3 tools/build_runways.py
 ```
+
+## Photo credits
+
+Aircraft photos are the lead images of each type's Wikipedia article, hosted on Wikimedia Commons under Creative Commons licences (CC BY or CC BY-SA). Each strip names the photographer and licence and links to the original. The images are shown at their original addresses and are not stored in this repository.
 
 ## Tests
 

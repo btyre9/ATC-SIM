@@ -416,6 +416,7 @@
     <script src="weather-control.js"></script>
     <script src="fixes-data.js"></script>
     <script src="runways-data.js"></script>
+    <script src="photos-data.js"></script>
     <script src="aircraft-icons.js"></script>
     <script>
         /**
@@ -2836,8 +2837,13 @@
                             <div class="mt-1 text-slate-400 italic text-[10px] text-right truncate tracking-tighter" data-f="status"></div>
                         </div>
                     </div>
+                    <figure data-f="photo" class="hidden mt-2">
+                        <img alt="" class="w-full h-32 object-cover rounded border border-slate-600 bg-slate-800">
+                        <figcaption class="mt-0.5 text-[9px] text-slate-500 truncate"></figcaption>
+                    </figure>
                 `;
                 el.onclick = (e) => {
+                    if (e.target.closest('a')) return; // Let the photo credit link open.
                     e.preventDefault();
                     this.selectAircraft(ac.id, true);
                     setTimeout(() => {
@@ -2872,9 +2878,31 @@
                     el.classList.toggle('ring-2', selected);
                     el.classList.toggle('ring-cyan-400', selected);
                     el.setAttribute('aria-selected', String(selected));
+                    this.showStripPhoto(el, ac, selected);
                     if (this.stripContainer.children[index] !== el) this.stripContainer.insertBefore(el, this.stripContainer.children[index] || null);
                 });
                 this.refreshStripValues();
+            }
+
+            // The selected aircraft's strip shows a freely licensed photo of its type, with credit.
+            showStripPhoto(el, ac, show) {
+                const figure = el.querySelector('[data-f="photo"]');
+                const photo = window.ATC_PHOTOS?.[ac.type];
+                figure.classList.toggle('hidden', !show || !photo);
+                if (!show || !photo || figure.dataset.loaded) return;
+                figure.dataset.loaded = 'true';
+                const img = figure.querySelector('img');
+                img.src = photo.url;
+                img.alt = `Typical ${ac.type} (${photo.article})`;
+                const caption = figure.querySelector('figcaption');
+                const link = document.createElement('a');
+                link.href = photo.source;
+                link.target = '_blank';
+                link.rel = 'noopener';
+                link.className = 'hover:text-slate-300 underline';
+                link.textContent = `${photo.artist}, ${photo.license}`;
+                caption.title = `Typical ${ac.type} (${photo.article}). Photo: ${photo.artist}, ${photo.license}, via Wikimedia Commons.`;
+                caption.replaceChildren(`Typical ${ac.type} · Photo: `, link);
             }
 
             refreshStripValues() {
