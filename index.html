@@ -330,6 +330,7 @@
                 <div>Direct</div><div id="help-say-direct"></div><code id="help-type-direct" class="text-green-300"></code>
                 <div>Approach</div><div id="help-say-ils"></div><code id="help-type-ils" class="text-green-300"></code>
                 <div>Go around</div><div id="help-say-ga"></div><code id="help-type-ga" class="text-green-300"></code>
+                <div>Line up</div><div id="help-say-luaw"></div><code id="help-type-luaw" class="text-green-300"></code>
                 <div>Takeoff</div><div id="help-say-cto"></div><code id="help-type-cto" class="text-green-300"></code>
                 <div>Handoff</div><div id="help-say-ho"></div><code id="help-type-ho" class="text-green-300"></code>
                 <div>Expect runway</div><div id="help-say-exp"></div><code id="help-type-exp" class="text-green-300"></code>
@@ -339,10 +340,12 @@
             <ul class="list-disc pl-5 space-y-1 text-slate-300">
                 <li><b>Arrivals</b> (amber) enter over the arrival fix on their strip at 10,000 to 14,000 ft and 250 kt. Descend them, vector them to join the localizer at 30° or less, from at or below the glideslope, then clear them for the ILS.</li>
                 <li>Once an arrival is established on the localizer, say <b>"contact tower"</b>. Landing without a handoff costs points.</li>
-                <li><b>Departures</b> (blue) are cleared for takeoff by tower. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
+                <li><b>Departures</b> (blue) wait at the hold-short line beside the runway. Tower (or you, in manual departure mode) lines them up and waits, then clears them for takeoff. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
                 <li>Once a departure is through 7,000 ft, climbing to at least 10,000, and on course to its fix, say <b>"contact center"</b>. Leaving the dashed 40 NM boundary without a handoff costs points.</li>
                 <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around.</li>
                 <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta and Charlotte, 3,000 at San Diego), 210 kt. They hold that until you give new instructions, and come back to your frequency.</li>
+                <li><b>Runways:</b> one aircraft on a runway at a time, counting both ends (09 and 27 are one runway). Don't line up or clear a departure with an aircraft on the runway or an arrival inside about 2 minutes; tower waits for that. Entering a runway with an aircraft on it or an arrival inside 1 NM is a runway incursion (−200). An arrival finding the runway occupied goes around.</li>
+                <li><b>Runway changes:</b> when the wind swings, departures taxi to the new runway and approach clearances to the old one are cancelled (except arrivals established inside 5 NM). Re-clear those arrivals.</li>
                 <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
                 <li><b>Expect runway</b> tells an arrival which runway to plan for. On its own navigation it flies to that runway's final (a real approach fix 8 to 16 NM out, or a point 12 NM out) and turns onto the runway course; on vectors it keeps your heading. It still needs an approach clearance.</li>
@@ -769,6 +772,55 @@
                 { lat: rwyObj.lat2, lon: rwyObj.lon2, heading: (rwyObj.heading + 180) % 360, name: rwyName };
         }
 
+        const RUNWAY_RULES = {
+            holdShortNM: 0.1,        // Hold-short line beside the threshold, clear of the runway.
+            lineUpSec: 15,           // Taxi from the hold-short line onto the centerline.
+            shortFinalNM: 1,         // Entering the runway with an arrival this close is a runway incursion.
+            finalWatchNM: 10,        // Arrivals tower watches when deciding whether a departure can go.
+            towerLineUpEtaSec: 120,  // Tower lines up a departure only when the next arrival is at least this far out,
+            towerTakeoffEtaSec: 60,  // and clears it for takeoff only with at least this long to spare.
+            towerLineUpSpacingSec: 45,
+            towerTakeoffSpacingSec: 60
+        };
+
+        // The strip of pavement a runway end belongs to: 09 and 27 are one runway.
+        function physicalRunway(rwyName) {
+            return CONFIG.airport.runways.find(r => r.name === rwyName || r.recip === rwyName) || null;
+        }
+
+        function sameRunway(a, b) {
+            const runway = a && physicalRunway(a);
+            return !!runway && runway === physicalRunway(b);
+        }
+
+        // More than 90 degrees between the wind and the runway course.
+        function runwayHasTailwind(rwyName) {
+            let angle = Math.abs(CONFIG.wind.dir - getRunwayDetails(rwyName).heading);
+            if (angle > 180) angle = 360 - angle;
+            return angle > 90;
+        }
+
+        function distanceToRunwayNM(point, runway) {
+            const end = window.ATCTraffic.offsetNM({ lat: runway.lat1, lon: runway.lon1 }, { lat: runway.lat2, lon: runway.lon2 });
+            const p = window.ATCTraffic.offsetNM({ lat: runway.lat1, lon: runway.lon1 }, point);
+            const t = Math.max(0, Math.min(1, (p.east * end.east + p.north * end.north) / (end.east ** 2 + end.north ** 2)));
+            return Math.hypot(p.east - t * end.east, p.north - t * end.north);
+        }
+
+        // Departures wait on a taxiway beside the threshold, facing the runway, on the side away from any parallel runway.
+        function holdShortPoint(rwyName) {
+            const threshold = getRunwayDetails(rwyName);
+            const own = physicalRunway(rwyName);
+            const others = CONFIG.airport.runways.filter(r => r !== own);
+            const clearance = point => Math.min(Infinity, ...others.map(r => distanceToRunwayNM(point, r)));
+            const [left, right] = [-90, 90].map(turn => {
+                const side = (threshold.heading + turn + 360) % 360;
+                const point = moveLatLng(threshold.lat, threshold.lon, side, RUNWAY_RULES.holdShortNM);
+                return { lat: point.lat, lon: point.lon, heading: (side + 180) % 360 };
+            });
+            return clearance(left) >= clearance(right) ? left : right;
+        }
+
         function createRadarEcho(seed, severity) {
             const size = 144;
             const canvas = document.createElement('canvas');
@@ -939,6 +991,9 @@
                 this.weatherDeviationDirection = null;
                 this.weatherDeviationHeading = null;
                 this.holdingShort = false;
+                this.lineUp = null;             // { from, progress } while taxiing onto the runway.
+                this.linedUp = false;           // On the centerline at the threshold, waiting.
+                this.departureClearance = null; // 'LUAW' or 'CTO' once given.
                 this.departureRunway = null;
                 this.exitGate = null;
                 this.simAge = 0;
@@ -1004,6 +1059,22 @@
                     const due = this.pendingActions.filter(action => action.at <= this.simAge);
                     this.pendingActions = this.pendingActions.filter(action => action.at > this.simAge);
                     due.forEach(action => action.apply());
+                }
+                // Lining up: taxi from the hold-short line to the threshold, turning onto the runway heading.
+                if (this.lineUp) {
+                    const threshold = getRunwayDetails(this.departureRunway);
+                    const from = this.lineUp.from;
+                    const t = this.lineUp.progress = Math.min(1, this.lineUp.progress + dt * CONFIG.timeMultiplier / RUNWAY_RULES.lineUpSec);
+                    const turn = ((threshold.heading - from.heading) % 360 + 540) % 360 - 180;
+                    this.lat = from.lat + (threshold.lat - from.lat) * t;
+                    this.lon = from.lon + (threshold.lon - from.lon) * t;
+                    this.heading = this.targetHeading = (from.heading + turn * t + 360) % 360;
+                    if (t >= 1) {
+                        this.lineUp = null;
+                        this.linedUp = true;
+                        this.heading = this.targetHeading = threshold.heading;
+                        this.lastStatus = `LUAW ${this.departureRunway}`;
+                    }
                 }
                 const agl = this.altitude - CONFIG.airport.elevation;
                 const canTurn = !this.onGround && (agl >= 1000 || this.lastStatus.includes("ILS"));
@@ -1187,11 +1258,16 @@
             }
         }
 
-        // Rolling out after landing, or rolling for takeoff, on that runway.
+        // The runway end an aircraft is on: rolling out after landing, lining up, lined up, or rolling for takeoff.
+        function runwayUsedBy(plane) {
+            if (!plane.onGround) return null;
+            if (plane.rollout) return plane.clearedRunway;
+            return plane.lineUp || plane.linedUp || plane.takeoffCleared ? plane.departureRunway : null;
+        }
+
+        // Whether the aircraft is on this strip of pavement, from either end.
         function runwayIsOccupiedBy(plane, runway) {
-            if (!plane.onGround || plane.holdingShort) return false;
-            return plane.rollout ? plane.clearedRunway === runway :
-                plane.takeoffCleared && plane.departureRunway === runway;
+            return sameRunway(runwayUsedBy(plane), runway);
         }
 
         /**
@@ -1224,6 +1300,7 @@
                 this.labelEls = new Map();
                 this.stripEls = new Map();
                 this.lastTakeoff = {};
+                this.incursionPairs = new Set();
                 this.spotterPhotos = new Map();
                 this.overflights = [];
                 this.overflightClock = 40;
@@ -1320,7 +1397,7 @@
 
             newStats() {
                 return { landed: 0, handedOff: 0, badHandoffs: 0, goArounds: 0, losses: 0,
-                    collisions: 0, lost: 0, minutesInSector: [], simSeconds: 0 };
+                    collisions: 0, incursions: 0, lost: 0, minutesInSector: [], simSeconds: 0 };
             }
 
             loadSetting(key, fallback, allowed) {
@@ -1646,6 +1723,7 @@
                 this.score = 0;
                 this.stats = this.newStats();
                 this.activeLosses.clear();
+                this.incursionPairs.clear();
                 this.conflicts = { losses: [], predicted: [] };
                 this.spawnClock = 0;
                 document.getElementById('score-display').textContent = '0';
@@ -1708,13 +1786,33 @@
                 document.getElementById('active-dep-list').textContent = flow.depRwys.join(', ');
                 this.updateWeatherDisplay();
 
-                // Departures still waiting move to a runway in the new flow.
-                this.aircraft.filter(ac => ac.holdingShort).forEach(ac => {
+                // Departures not yet rolling, lined up or not, taxi to a hold-short line in the new flow.
+                this.aircraft.filter(ac => !ac.isArrival && ac.onGround && !ac.takeoffCleared).forEach(ac => {
                     ac.departureRunway = null;
                     const runway = this.pickDepartureRunway();
                     if (runway) this.positionDeparture(ac, runway);
                     else ac.removeMe = true;
                 });
+
+                // Approach and expect-runway clearances to a runway that now has a tailwind are cancelled.
+                // Arrivals already established inside 5 NM land as cleared.
+                const cancelled = [];
+                this.aircraft.forEach(ac => {
+                    if (!ac.isArrival || ac.onGround) return;
+                    const runway = ac.pendingIls || (ac.clearedForILS && ac.clearedRunway) || ac.expectedRunway;
+                    if (!runway || flow.arrRwys.includes(runway) || !runwayHasTailwind(runway)) return;
+                    if (ac.ilsCaptured && window.ATCTraffic.localizerOffset(ac, getRunwayDetails(runway)).along < 5) return;
+                    ac.clearedForILS = false;
+                    ac.ilsCaptured = false;
+                    ac.pendingIls = null;
+                    ac.expectedRunway = null;
+                    if (ac.alignHeading !== null) { ac.alignHeading = null; ac.directTo = null; }
+                    ac.lastStatus = 'RWY CHANGE';
+                    cancelled.push(ac.id);
+                });
+                if (cancelled.length) {
+                    this.log(`Runway change to ${flow.arrRwys.join(', ')}: approach clearances cancelled for ${cancelled.join(', ')}. Re-clear them.`, 'error');
+                }
             }
 
             resetSpawnTimer() {
@@ -2020,18 +2118,21 @@
 
             pickDepartureRunway() {
                 const flow = CONFIG.airport.flows[this.activeFlowIndex] || CONFIG.airport.flows[0];
-                const busy = new Set(this.aircraft.filter(ac => !ac.isArrival && ac.onGround).map(ac => ac.departureRunway));
-                const free = flow.depRwys.filter(runway => !busy.has(runway));
+                const busy = this.aircraft.filter(ac => !ac.isArrival && ac.onGround).map(ac => ac.departureRunway);
+                const free = flow.depRwys.filter(runway => !busy.some(other => sameRunway(other, runway)));
                 return free.length ? free[Math.floor(Math.random() * free.length)] : null;
             }
 
             positionDeparture(plane, runway) {
-                const rwy = getRunwayDetails(runway);
-                plane.lat = rwy.lat;
-                plane.lon = rwy.lon;
-                plane.heading = plane.targetHeading = rwy.heading;
+                const hold = holdShortPoint(runway);
+                plane.lat = hold.lat;
+                plane.lon = hold.lon;
+                plane.heading = plane.targetHeading = hold.heading;
                 plane.departureRunway = runway;
                 plane.holdingShort = true;
+                plane.lineUp = null;
+                plane.linedUp = false;
+                plane.departureClearance = null;
                 plane.lastStatus = `HOLD SHORT ${runway}`;
             }
 
@@ -2111,22 +2212,86 @@
                 return readback;
             }
 
-            startTakeoff(plane) {
+            // Line up and wait: cross the hold-short line and taxi onto the runway.
+            beginLineUp(plane) {
+                if (!plane.holdingShort) return;
+                this.checkRunwayEntry(plane);
                 plane.holdingShort = false;
+                plane.lineUp = { from: { lat: plane.lat, lon: plane.lon, heading: plane.heading }, progress: 0 };
+                plane.lastStatus = `LINING UP ${plane.departureRunway}`;
+            }
+
+            // Only from the centerline: a departure cleared from the hold-short line lines up first.
+            startTakeoff(plane) {
+                plane.linedUp = false;
                 plane.takeoffCleared = true;
                 if (plane.targetAltitude <= CONFIG.airport.elevation) plane.targetAltitude = CONFIG.departureAltitude;
                 plane.lastStatus = `TAKEOFF ${plane.departureRunway}`;
-                this.lastTakeoff[plane.departureRunway] = this.stats.simSeconds;
+                this.lastTakeoff[physicalRunway(plane.departureRunway).name] = this.stats.simSeconds;
             }
 
-            // Tower releases a departure when its runway is free, nobody is on short final, and the last one has had a minute.
-            towerCanRelease(plane) {
+            secondsSinceTakeoff(runway) {
+                return this.stats.simSeconds - (this.lastTakeoff[physicalRunway(runway).name] ?? -Infinity);
+            }
+
+            // The next arrival for this strip of runway, landing either way, with its distance and seconds to the threshold.
+            nextArrival(runway) {
+                let next = null;
+                this.aircraft.forEach(ac => {
+                    const landing = ac.isArrival && !ac.onGround && (ac.pendingIls || (ac.clearedForILS && ac.clearedRunway) || ac.expectedRunway);
+                    if (!landing || !sameRunway(landing, runway)) return;
+                    const threshold = getRunwayDetails(landing);
+                    const { along, cross } = window.ATCTraffic.localizerOffset(ac, threshold);
+                    const offCourse = Math.abs(((ac.heading - threshold.heading) % 360 + 540) % 360 - 180);
+                    if (along < -0.5 || along > RUNWAY_RULES.finalWatchNM || Math.abs(cross) > 1.5 || offCourse > 90) return;
+                    const eta = Math.max(0, along) / Math.max(ac.speed, 100) * 3600;
+                    if (!next || eta < next.eta) next = { plane: ac, along, eta };
+                });
+                return next;
+            }
+
+            // FAA: nobody enters a runway another aircraft is using, or one an arrival is about to land on.
+            checkRunwayEntry(plane) {
                 const runway = plane.departureRunway;
-                if (this.stats.simSeconds - (this.lastTakeoff[runway] ?? -Infinity) < 60) return false;
-                if (this.aircraft.some(other => other !== plane && runwayIsOccupiedBy(other, runway))) return false;
-                const threshold = getRunwayDetails(runway);
-                return !this.aircraft.some(other => other.ilsCaptured && other.clearedRunway === runway &&
-                    window.ATCTraffic.distanceNM(other, threshold) < 4);
+                const occupant = this.aircraft.find(other => other !== plane && runwayIsOccupiedBy(other, runway));
+                const arrival = this.nextArrival(runway);
+                const other = occupant || (arrival && arrival.along < RUNWAY_RULES.shortFinalNM ? arrival.plane : null);
+                if (other) this.recordIncursion(plane, other, `entered runway ${runway} with ${other.id} ${occupant ? 'on the runway' : 'on short final'}`);
+            }
+
+            recordIncursion(a, b, what) {
+                const key = [a.id, b.id].sort().join('|');
+                if (this.incursionPairs.has(key)) return;
+                this.incursionPairs.add(key);
+                this.stats.incursions++;
+                this.addScore(-200, `RUNWAY INCURSION: ${a.id} ${what}`, 'error');
+            }
+
+            // Backstop: two aircraft on the same runway at once, however it happened.
+            checkRunwayIncursions() {
+                const onRunways = this.aircraft.filter(ac => runwayUsedBy(ac) && !ac.removeMe);
+                onRunways.forEach((a, i) => onRunways.slice(i + 1).forEach(b => {
+                    if (sameRunway(runwayUsedBy(a), runwayUsedBy(b))) this.recordIncursion(a, b, `and ${b.id} on runway ${physicalRunway(runwayUsedBy(a)).name}/${physicalRunway(runwayUsedBy(a)).recip} together`);
+                }));
+            }
+
+            // Tower lines a departure up when the runway is free, the last departure has had time to get going,
+            // and the next arrival is at least two minutes out; once lined up, it clears it for takeoff.
+            towerHandleDeparture(plane) {
+                const runway = plane.departureRunway;
+                if (this.aircraft.some(other => other !== plane && runwayIsOccupiedBy(other, runway))) return;
+                const arrival = this.nextArrival(runway);
+                const eta = arrival ? arrival.eta : Infinity;
+                const sinceTakeoff = this.secondsSinceTakeoff(runway);
+                if (plane.holdingShort && plane.simAge >= plane.towerReleaseAt &&
+                    sinceTakeoff >= RUNWAY_RULES.towerLineUpSpacingSec && eta >= RUNWAY_RULES.towerLineUpEtaSec) {
+                    plane.departureClearance = 'LUAW';
+                    this.beginLineUp(plane);
+                    this.log(`Tower: ${plane.id} line up and wait runway ${runway}.`, 'system');
+                } else if (plane.linedUp && sinceTakeoff >= RUNWAY_RULES.towerTakeoffSpacingSec && eta >= RUNWAY_RULES.towerTakeoffEtaSec) {
+                    this.startTakeoff(plane);
+                    this.log(`Tower: ${plane.id} cleared for takeoff runway ${runway}.`, 'system');
+                }
             }
 
             // Spoken facility name without the sector note, e.g. "SoCal Approach" or "Atlanta Departure".
@@ -2313,6 +2478,7 @@
                 const spoken = `${airline?.name || 'Delta'} ${id.slice(3)}`;
                 const waypoint = CONFIG.waypoints[0]?.name || 'RMG';
                 const runway = CONFIG.airport.flows[this.activeFlowIndex]?.arrRwys[0] || CONFIG.airport.runways[0].name;
+                const depRunway = CONFIG.airport.flows[this.activeFlowIndex]?.depRwys[0] || runway;
                 document.getElementById('help-aircraft').textContent = plane ?
                     `Current example: ${spoken} (${id})` : 'Example below: wait for an aircraft to appear before sending a clearance.';
                 const examples = {
@@ -2325,7 +2491,8 @@
                     direct: [`Proceed direct ${waypoint}`, `${id} C ${waypoint}`],
                     ils: [`Cleared ILS runway ${this.radioRunway(runway)}`, `${id} L ${runway}`],
                     ga: ['Go around', `${id} GA`],
-                    cto: ['Cleared for takeoff (manual departures only)', `${id} CTO`],
+                    luaw: [`Runway ${this.radioRunway(depRunway)}, line up and wait`, `${id} LUAW`],
+                    cto: [`Runway ${this.radioRunway(depRunway)}, cleared for takeoff`, `${id} CTO`],
                     ho: ['Contact tower / Contact center', `${id} HO`],
                     exp: [`Expect runway ${this.radioRunway(runway)}`, `${id} EXP ${runway}`],
                     xp: ['Expedite descend and maintain four thousand (or "expedite your descent")', `${id} XP A 4000`]
@@ -2567,7 +2734,7 @@
                     return;
                 }
 
-                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO', 'HO', 'EXP', 'XP'];
+                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO', 'LUAW', 'HO', 'EXP', 'XP'];
                 if (shortCommands.includes(id) && this.aircraft.some(plane => plane.id === this.selectedAircraftId)) {
                     raw = `${this.selectedAircraftId} ${raw}`;
                     tokens = raw.split(/\s+/);
@@ -2819,6 +2986,7 @@
                                 // Shown as cleared from the moment it is said, before the pilot acts on it.
                                 plane.pendingIls = val;
                                 act(() => {
+                                    if (plane.pendingIls !== val) return;
                                     plane.directTo = null;
                                     plane.clearedForILS = true;
                                     plane.clearedRunway = val;
@@ -2830,30 +2998,41 @@
                                 readback(`Cleared I L S runway ${this.radioRunway(val)}`);
                             }
                             break;
-                        case 'CTO': {
+                        case 'CTO':
+                        case 'LUAW': {
                             if (plane.isArrival || !plane.onGround || plane.takeoffCleared) {
                                 this.log(`${id} is not waiting for departure.`, 'error');
                                 break;
                             }
                             const runway = plane.departureRunway;
-                            let tailwind = Math.abs(CONFIG.wind.dir - getRunwayDetails(runway).heading);
-                            if (tailwind > 180) tailwind = 360 - tailwind;
-                            if (tailwind > 90) {
+                            if (runwayHasTailwind(runway)) {
                                 this.log(`${id}: Unable ${runway} (Tailwind).`, 'error');
                                 readback(`Unable runway ${this.radioRunway(runway)} due tailwind`);
                                 break;
                             }
-                            if (this.aircraft.some(other => other !== plane && runwayIsOccupiedBy(other, runway))) {
-                                this.log(`${id}: runway ${runway} is occupied.`, 'error');
-                                readback(`Unable, runway ${this.radioRunway(runway)} is occupied`);
+                            // Pilots can see an aircraft on the runway ahead, but not an arrival behind them on final.
+                            const occupant = this.aircraft.find(other => other !== plane && runwayIsOccupiedBy(other, runway));
+                            if (occupant) {
+                                this.log(`${id}: runway ${runway} is occupied by ${occupant.id}.`, 'error');
+                                readback(`Unable, traffic on runway ${this.radioRunway(runway)}`);
                                 break;
                             }
-                            plane.holdingShort = false;
-                            act(() => this.startTakeoff(plane));
+                            // Lines up from the hold-short line; cleared for takeoff, it rolls once on the centerline.
+                            act(() => {
+                                if (plane.departureRunway !== runway || plane.takeoffCleared) return;
+                                if (cmd === 'CTO' || !plane.departureClearance) plane.departureClearance = cmd;
+                                this.beginLineUp(plane);
+                            });
+                            if (cmd === 'LUAW') {
+                                plane.lastStatus = `LUAW ${runway}`;
+                                this.log(`${id} line up and wait runway ${runway}.`);
+                                readback(`Runway ${this.radioRunway(runway)}, line up and wait`);
+                                break;
+                            }
                             plane.lastStatus = `TAKEOFF ${runway}`;
                             this.log(`${id} cleared for takeoff runway ${runway}.`);
                             const climbTo = plane.targetAltitude > CONFIG.airport.elevation ? plane.targetAltitude : CONFIG.departureAltitude;
-                            readback(`Cleared for takeoff runway ${this.radioRunway(runway)}` +
+                            readback(`Runway ${this.radioRunway(runway)}, cleared for takeoff` +
                                 (altitudeInTransmission ? '' : `, climbing to ${this.radioAltitude(climbTo)}`));
                             break;
                         }
@@ -2871,9 +3050,7 @@
                         case 'EXP': {
                             const runway = getRunwayDetails(val);
                             if (!runway) { this.log(`Unknown Runway '${val}'.`, 'error'); break; }
-                            let tailwind = Math.abs(CONFIG.wind.dir - runway.heading);
-                            if (tailwind > 180) tailwind = 360 - tailwind;
-                            if (tailwind > 90) {
+                            if (runwayHasTailwind(runway.name)) {
                                 const flow = CONFIG.airport.flows[this.activeFlowIndex];
                                 this.log(`${id}: runway ${runway.name} has a tailwind. Arrivals are landing ${flow.arrRwys.join(', ')}.`, 'error');
                                 break;
@@ -2884,6 +3061,7 @@
                             if (plane.isArrival && !plane.onVectors && !plane.clearedForILS) {
                                 const fix = this.finalFixFor(runway.name);
                                 act(() => {
+                                    if (plane.expectedRunway !== runway.name) return;
                                     plane.directTo = fix;
                                     plane.alignHeading = Math.round(runway.heading) % 360;
                                     plane.turnDirection = 'shortest';
@@ -3002,6 +3180,7 @@
                     ['Missed handoffs', stats.badHandoffs, true],
                     ['Go-arounds (runway occupied)', stats.goArounds, true],
                     ['Separation losses', stats.losses, true],
+                    ['Runway incursions', stats.incursions, true],
                     ['Midair collisions', stats.collisions, true],
                     ['Arrivals lost from your airspace', stats.lost, true],
                     ['Average time in your airspace', times.length ? `${(times.reduce((a, b) => a + b, 0) / times.length).toFixed(1)} min` : '—', false]
@@ -3236,7 +3415,7 @@
                 const tag = alert ? ` <span class="${alert === 'loss' ? 'db-loss' : 'db-predicted'}">CA</span>` : '';
                 let html;
                 if (ac.onGround && !ac.isArrival && !ac.takeoffCleared) {
-                    html = `<span class="font-bold ${nameColor}">${ac.id}</span><br><span class="db-runway">RWY ${ac.departureRunway}</span> <span class="db-info">${ac.type}</span>`;
+                    html = `<span class="font-bold ${nameColor}">${ac.id}</span><br><span class="db-runway">${ac.lineUp || ac.linedUp ? 'LUAW' : 'RWY'} ${ac.departureRunway}</span> <span class="db-info">${ac.type}</span>`;
                 } else {
                     const arrow = Math.abs(ac.targetAltitude - ac.altitude) <= 50 ? '=' : (ac.targetAltitude > ac.altitude ? '↑' : '↓');
                     const assigned = arrow === '=' ? '' : level(ac.targetAltitude);
@@ -3468,10 +3647,9 @@
                     const result = ac.update(dt, this.map, this.aircraft, this.storms);
 
                     const towerDeparture = !ac.isArrival && this.departureMode === 'TOWER';
-                    if (towerDeparture && ac.holdingShort && ac.simAge >= ac.towerReleaseAt && this.towerCanRelease(ac)) {
-                        this.startTakeoff(ac);
-                        this.log(`Tower: ${ac.id} cleared for takeoff runway ${ac.departureRunway}.`, 'system');
-                    }
+                    if (towerDeparture && ac.onGround && !ac.takeoffCleared) this.towerHandleDeparture(ac);
+                    // Cleared for takeoff from the hold-short line: rolls as soon as it is lined up.
+                    if (ac.linedUp && ac.departureClearance === 'CTO') this.startTakeoff(ac);
                     // Arrivals call on handoff; departures call tower while holding short, or call you once airborne.
                     const readyToCall = !towerDeparture || (!ac.onGround && ac.altitude - CONFIG.airport.elevation >= 1200);
                     if (!ac.contactEstablished && !ac.hasCheckedIn && readyToCall && timestamp > ac.nextAnnounceTime) {
@@ -3561,6 +3739,7 @@
                 if (this.conflictClock <= 0) {
                     this.conflictClock = 0.25;
                     this.processConflicts();
+                    this.checkRunwayIncursions();
                 }
                 const alerts = new Map();
                 const drawPair = ({ a, b }, color, dashed) => {

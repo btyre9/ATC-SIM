@@ -23,7 +23,8 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 | `XP A 4000` | "Expedite descend and maintain four thousand", "turn left immediately heading two four zero", "expedite your descent" | Carry it out at once: 1 s reaction, about 1.7x climb or descent rate, standard-rate turn |
 | `EXP 26R` | "Expect runway two six right" | Runway to plan for; arrivals on their own navigation fly to its final and line up |
 | `GA` | "Go around" | Go around |
-| `CTO` | "Cleared for takeoff" | Takeoff (manual departure mode) |
+| `LUAW` | "Runway two seven, line up and wait" (or "position and hold") | Taxi onto the runway and wait (manual departure mode) |
+| `CTO` | "Runway two seven, cleared for takeoff" | Takeoff; from the hold-short line it lines up first, then rolls (manual departure mode) |
 
 Pilots read back right away and act 3–6 seconds later, like setting the autopilot.
 
@@ -31,8 +32,10 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 
 - **Arrivals** (amber strips) enter over a real STAR fix at 10,000–14,000 ft and 250 kt. Descend them, vector them to intercept the localizer at 30° or less from at or below the glideslope, clear them for the ILS, then hand them to tower.
 - **On the ILS**, an arrival holds your intercept heading until it reaches the localizer, tracks the centerline, follows the 3° glideslope and lands. If it isn't established by 1 NM out, or is still off the centerline or high at 1.5 NM, it goes around (stabilized-approach rule).
-- **Departures** (blue strips) are launched by tower and fly their SID: runway heading to 1,000 ft, then direct to a real departure fix toward their destination, climbing to 5,000. Climb them to 10,000 ft or higher, then hand them to center once through 7,000 and on course.
+- **Departures** (blue strips) wait at the hold-short line beside the runway. Tower lines them up and clears them for takeoff (or you do, in manual departure mode). They fly their SID: runway heading to 1,000 ft, then direct to a real departure fix toward their destination, climbing to 5,000. Climb them to 10,000 ft or higher, then hand them to center once through 7,000 and on course.
 - **Rules:** 250 kt maximum below 10,000 ft (14 CFR 91.117) and 160 kt minimum until established. Separation is 3 NM or 1,000 ft, or 2.5 NM on the same final; parallel ILS approaches are exempt. Pilots refuse clearances that break these rules and say why.
+- **Runways:** one aircraft on a runway at a time, and both ends count (San Diego's 09 and 27 are one runway). Tower lines a departure up only when the runway is clear and the next arrival is at least 2 minutes out, and clears it for takeoff with at least a minute to spare. Pilots refuse to enter a runway they can see is occupied, but they can't see an arrival behind them: lining up or clearing a departure with an arrival inside 1 NM is a runway incursion. An arrival that finds the runway occupied goes around.
+- **Runway changes:** when the wind swings to the other flow, waiting departures taxi to the new runway (lined-up ones back to a hold-short line), and approach and expect-runway clearances to the old runway are cancelled, except for arrivals established inside 5 NM. The log lists who to re-clear.
 - **Overflights** cross at FL300–FL400 on hemispheric-rule levels. They are on another frequency, but climbing your traffic into them still counts as a conflict.
 
 | Event | Points |
@@ -43,6 +46,7 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 | Missed handoff | −10 |
 | Go-around, runway occupied | −15 |
 | Separation loss | −50 |
+| Runway incursion | −200 |
 | Arrival lost from airspace | −75 |
 | Midair collision | −300 |
 

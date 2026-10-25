@@ -16,7 +16,7 @@
     const COMMAND_START = new Set([
         'DESCEND', 'CLIMB', 'MAINTAIN', 'TURN', 'FLY', 'HEADING',
         'REDUCE', 'INCREASE', 'SPEED', 'PROCEED', 'DIRECT',
-        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR', 'EXPECT'
+        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR', 'EXPECT', 'LINE', 'POSITION'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
     // "Expedite" or "immediately" anywhere in a transmission asks for it to be carried out at once.
@@ -34,6 +34,8 @@
     // Words that can follow RUNWAY in a takeoff clearance, so the clearance does not swallow the next instruction.
     const RUNWAY_WORD = '(?:\\d{1,2}[LCR]?|ZERO|OH|ONE|TWO|TO|TOO|THREE|FOUR|FOR|FIVE|SIX|SEVEN|EIGHT|NINE|NINER|LEFT|RIGHT|CENTER)';
     const TAKEOFF = new RegExp(`^(?:RUNWAY(?: ${RUNWAY_WORD})+ )?CLEARED (?:FOR )?TAKEOFF(?: RUNWAY(?: ${RUNWAY_WORD})+)?$`);
+    // "Runway two seven, line up and wait" (formerly "position and hold").
+    const LINE_UP = new RegExp(`^(?:RUNWAY(?: ${RUNWAY_WORD})+ )?(?:LINE UP AND WAIT|POSITION AND HOLD)(?: RUNWAY(?: ${RUNWAY_WORD})+)?$`);
 
     function numberFromWords(words) {
         if (!words.length) return null;
@@ -85,6 +87,7 @@
             .replace(/\bHEAD IN\b|\bHONEY\b|\bHITTING\b|\bHEATING\b|\bHEDDING\b|\bHEADED\b|\bHEADIN\b/g, 'HEADING')
             .replace(/\bFT\b/g, 'FEET')
             .replace(/\bTAKE OFF\b/g, 'TAKEOFF')
+            .replace(/\bLINEUP\b|\bLINED UP\b/g, 'LINE UP')
             .replace(/\bI L S\b/g, 'ILS');
     }
 
@@ -223,6 +226,7 @@
         }
 
         if (TAKEOFF.test(phrase)) return { command: 'CTO' };
+        if (LINE_UP.test(phrase)) return { command: 'LUAW' };
         // A bare altitude such as "flight level one zero thousand" assigns it, like "maintain".
         if (phrase.startsWith('FLIGHT LEVEL ')) {
             const altitude = parseAltitude(phrase, elevation);

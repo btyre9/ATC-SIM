@@ -232,3 +232,10 @@ test('expedite or immediately marks a transmission to be carried out at once', (
     assert.equal(choose(['expedite climb and maintain one one thousand'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 XP A 11000');
     assert.equal(hear('Delta 228 descend and maintain four thousand').command, 'DAL228 A 4000');
 });
+
+test('line up and wait phrases', () => {
+    assert.equal(hear('Delta 228 runway two seven line up and wait').command, 'DAL228 LUAW');
+    assert.equal(hear('Delta 228 line up and wait runway two seven').command, 'DAL228 LUAW');
+    assert.equal(hear('Delta 228 position and hold').command, 'DAL228 LUAW');
+    assert.equal(choose(['lineup and wait'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 LUAW');
+});
