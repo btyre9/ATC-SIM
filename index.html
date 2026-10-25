@@ -2816,11 +2816,14 @@
                                 this.log(`${id}: too high for the glideslope here (about ${(Math.round(glideslope / 100) * 100).toLocaleString('en-US')} ft). Descend first.`, 'error');
                                 readback("Unable, we're too high for the approach, request lower");
                             } else {
+                                // Shown as cleared from the moment it is said, before the pilot acts on it.
+                                plane.pendingIls = val;
                                 act(() => {
                                     plane.directTo = null;
                                     plane.clearedForILS = true;
                                     plane.clearedRunway = val;
                                     plane.ilsCaptured = false;
+                                    plane.pendingIls = null;
                                 });
                                 plane.lastStatus = `CLR ILS ${val}`;
                                 this.log(`${id} cleared ILS runway ${val}.`);
@@ -3052,7 +3055,7 @@
                         <div class="shrink-0 bg-slate-800 rounded p-1 border border-slate-600 mt-1"><img src="${getAirlineLogo(ac.id.substring(0, 3))}" class="w-6 h-6 object-contain opacity-90"></div>
                         <div class="flex-grow min-w-0">
                             <div class="flex justify-between font-bold text-sm">
-                                <span><span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span><span data-f="talking" class="hidden ml-1.5 text-[9px] text-emerald-300 animate-pulse">● TRANSMITTING</span></span>
+                                <span><span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span><span data-f="ils" class="hidden ml-1.5 text-emerald-300 font-bold"></span><span data-f="talking" class="hidden ml-1.5 text-[9px] text-emerald-300 animate-pulse">● TRANSMITTING</span></span>
                                 <span class="text-slate-400 text-[10px]">${ac.type}${ac.registration ? ` · ${ac.registration}` : ''}</span>
                             </div>
                             <div class="text-[10px] text-slate-400">Say “${spokenCallsign}”</div>
@@ -3171,6 +3174,12 @@
                 });
             }
 
+            // Runway an aircraft is cleared for the ILS to (including a clearance the pilot is about to act on).
+            ilsRunwayFor(plane) {
+                if (plane.onGround) return null;
+                return plane.pendingIls || (plane.clearedForILS ? plane.clearedRunway : null);
+            }
+
             refreshStripValues() {
                 const level = feet => String(Math.round(feet / 100)).padStart(3, '0');
                 this.aircraft.forEach(ac => {
@@ -3186,6 +3195,9 @@
                     set('hdg', `H:${String(Math.round(ac.heading) % 360).padStart(3, '0')}`);
                     set('status', ac.lastStatus);
                     set('airtime', this.airTimeText(ac));
+                    const ilsRunway = this.ilsRunwayFor(ac);
+                    set('ils', ilsRunway ? `▼ ILS ${ilsRunway}` : '');
+                    el.querySelector('[data-f="ils"]').classList.toggle('hidden', !ilsRunway);
                     const talking = this.isTalking(ac);
                     el.querySelector('[data-f="talking"]').classList.toggle('hidden', !talking);
                     el.classList.toggle('ring-1', talking && ac.id !== this.selectedAircraftId);
@@ -3527,6 +3539,15 @@
                     this.ctx.rotate(toRad(ac.heading));
                     this.ctx.drawImage(sprite, -size / 2, -size / 2, size, size);
                     this.ctx.restore();
+
+                    // Cleared for the ILS: a green down arrow beside the aircraft.
+                    if (this.ilsRunwayFor(ac)) {
+                        const ax = ac.x - size / 2 - 9, ay = ac.y;
+                        this.ctx.beginPath();
+                        this.ctx.moveTo(ax - 6, ay - 5); this.ctx.lineTo(ax + 6, ay - 5); this.ctx.lineTo(ax, ay + 6); this.ctx.closePath();
+                        this.ctx.lineWidth = 2.5; this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.9)'; this.ctx.stroke();
+                        this.ctx.fillStyle = '#34d399'; this.ctx.fill();
+                    }
 
                     // Leader line shows where the aircraft will be in one minute.
                     if (!ac.onGround) {

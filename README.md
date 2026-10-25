@@ -48,6 +48,8 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 
 Each aircraft carries a real registration from its airline's fleet, shown on its strip with its route and time in the air (estimated from the origin for arrivals). When a pilot transmits, their strip opens for a few seconds. Selecting it shows a Planespotters.net photo of that exact aircraft, or a photo in the airline's livery or of the type when none is available, always credited to the photographer.
 
+Aircraft cleared for the ILS show a green ▼ beside their icon and an "▼ ILS 27" badge on their strip until the clearance ends.
+
 Once a departure has been handed to center and read back the frequency, it is drawn in gray with a dimmed data block: no longer your traffic. Arrivals handed to tower stay yellow.
 
 **END SHIFT** shows a debrief. Best scores are saved per airport in the browser.
