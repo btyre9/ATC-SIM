@@ -181,7 +181,7 @@
                     <button id="zoom-wide" class="px-2.5 py-0.5 text-[10px] font-bold bg-slate-700 text-white rounded hover:bg-slate-600 transition-colors border border-slate-500">WIDE</button>
                     <button id="zoom-app" class="px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors">APP</button>
                     <button id="zoom-twr" class="px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors">TWR</button>
-                    <button id="trails-btn" type="button" aria-pressed="true" class="px-2.5 py-0.5 text-[10px] font-bold rounded transition-colors" title="Show the history trail behind the aircraft you select">TRAILS</button>
+                    <button id="trails-btn" type="button" aria-pressed="true" class="px-2.5 py-0.5 text-[10px] font-bold rounded transition-colors" title="Show the selected aircraft's whole track, colored by altitude">TRAILS</button>
                     <div class="w-px h-4 bg-slate-700 mx-1"></div>
                     <button id="speed-1" data-speed="1" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Real time">1×</button>
                     <button id="speed-2" data-speed="2" class="sim-speed px-2 py-0.5 text-[10px] font-bold rounded transition-colors" title="Double speed">2×</button>
@@ -612,6 +612,14 @@
             { id: "KAL", name: "Korean Air",  color: "#0065a1", text: "#ffffff" }
         ];
 
+        // Origin airports in the schedules (OurAirports, public domain), for estimating time in the air.
+        const ORIGIN_AIRPORTS = { EGLL: [51.471, -0.460], KATL: [33.637, -84.428], KBOS: [42.362, -71.008], KBWI: [39.175, -76.668],
+            KCLT: [35.214, -80.943], KDAL: [32.845, -96.848], KDCA: [38.852, -77.038], KDEN: [39.860, -104.674], KDFW: [32.897, -97.038],
+            KJFK: [40.639, -73.779], KLAS: [36.083, -115.152], KLAX: [33.943, -118.408], KLGA: [40.777, -73.873], KMCO: [28.429, -81.309],
+            KMDW: [41.786, -87.752], KMEM: [35.044, -89.976], KMIA: [25.796, -80.290], KOAK: [37.720, -122.221], KORD: [41.979, -87.905],
+            KPDX: [45.589, -122.598], KPHL: [39.872, -75.241], KPHX: [33.435, -112.006], KSAN: [32.734, -117.190], KSDF: [38.171, -85.735],
+            KSEA: [47.448, -122.310], KSFO: [37.620, -122.375], KSJC: [37.362, -121.929], KSLC: [40.789, -111.980], LFPG: [49.009, 2.554] };
+
         const DAY_MODIFIERS = {
             0: { name: "SUN", rateMultiplier: 1.0,  bizBoost: 0.7 },
             1: { name: "MON", rateMultiplier: 1.25, bizBoost: 1.4 },
@@ -970,12 +978,16 @@
 
             update(dt, map, allAircraft, storms) {
                 this.simAge += dt * CONFIG.timeMultiplier;
-                // One history dot per terminal radar sweep (about 4.8 s), keeping the last ten.
+                // Track history for the whole flight: a point every 2.4 s once the aircraft has moved,
+                // capped at about two hours.
                 this.trailClock += dt * CONFIG.timeMultiplier;
-                if (this.trailClock >= 4.8) {
+                if (this.trailClock >= 2.4) {
                     this.trailClock = 0;
-                    this.trail.push({ lat: this.lat, lon: this.lon, altitude: this.altitude, onGround: this.onGround });
-                    if (this.trail.length > 10) this.trail.shift();
+                    const last = this.trail.at(-1);
+                    if (!last || Math.abs(last.lat - this.lat) + Math.abs(last.lon - this.lon) > 0.0008) {
+                        this.trail.push({ lat: this.lat, lon: this.lon, altitude: this.altitude, onGround: this.onGround });
+                        if (this.trail.length > 3000) this.trail.shift();
+                    }
                 }
                 if (this.pendingActions.length && this.pendingActions[0].at <= this.simAge) {
                     const due = this.pendingActions.filter(action => action.at <= this.simAge);
@@ -1938,6 +1950,8 @@
                         const plane = new Aircraft(id, type, start.lat, start.lon, heading, altitude, 250, true, chosen.origin, CONFIG.airport.id);
                         plane.arrivalFix = fix ? fix.name : null;
                         plane.registration = this.pickRegistration(id, type);
+                        const flown = this.estimateFlightSeconds(chosen.origin, start);
+                        if (flown !== null) plane.airborneSince = -flown;
                         plane.lastStatus = fix ? `ARR VIA ${fix.name}` : 'INBOUND';
                         plane.nextAnnounceTime = performance.now() + 2000;
                         this.aircraft.push(plane);
@@ -2284,8 +2298,37 @@
             }
 
             pilotTransmission(plane, message, priority = false) {
+                this.markTalking(plane);
                 this.log(`${plane.id}: "${message}"`, 'system');
                 this.pilotRadio.say(message, plane.id, priority);
+            }
+
+            // While a pilot transmits, their strip opens with photo and details for a few seconds.
+            markTalking(plane) {
+                plane.talkingUntil = performance.now() + 7000;
+                this.stripClock = 0;
+            }
+
+            isTalking(plane) {
+                return performance.now() < (plane.talkingUntil || 0);
+            }
+
+            // Arrivals: estimated from the great-circle distance flown from their origin at a typical
+            // 450 kt cruise, plus about 15 minutes for taxi, climb and descent. Departures: since liftoff.
+            estimateFlightSeconds(origin, position) {
+                const from = ORIGIN_AIRPORTS[origin];
+                if (!from) return null;
+                const [lat1, lon1, lat2, lon2] = [from[0], from[1], position.lat, position.lon].map(toRad);
+                const a = Math.sin((lat2 - lat1) / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin((lon2 - lon1) / 2) ** 2;
+                const flownNM = 2 * 3440.065 * Math.asin(Math.sqrt(a));
+                return flownNM / 450 * 3600 + 15 * 60;
+            }
+
+            airTimeText(plane) {
+                if (plane.airborneSince === undefined) return plane.onGround ? 'On ground' : '';
+                const minutes = Math.max(0, Math.round((plane.simAge - plane.airborneSince) / 60));
+                const hours = Math.floor(minutes / 60);
+                return `In air ${hours ? `${hours}h ${String(minutes % 60).padStart(2, '0')}m` : `${minutes}m`}`;
             }
 
             pilotReadback(plane, message) {
@@ -2748,21 +2791,24 @@
                 button.classList.toggle('line-through', !on);
             }
 
-            // History dots colored by altitude, fading with age. Dark dots get a light rim and light
-            // dots a dark rim, so each one stands out on any map.
+            // The selected aircraft's whole track as one line, colored by altitude along its length
+            // (white on the ground, turquoise to blue to purple as it climbs), over a contrasting backing.
             drawTrail(plane) {
-                const count = plane.trail.length;
-                plane.trail.forEach((pt, index) => {
-                    const p = this.map.latLngToContainerPoint([pt.lat, pt.lon]);
-                    const [r, g, b] = trailColor(pt);
-                    const light = 0.299 * r + 0.587 * g + 0.114 * b > 150;
-                    this.ctx.globalAlpha = 0.45 + 0.55 * (index + 1) / count;
-                    this.ctx.fillStyle = light ? 'rgba(15, 23, 42, 0.75)' : 'rgba(255, 255, 255, 0.85)';
-                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 3.8, 0, Math.PI * 2); this.ctx.fill();
-                    this.ctx.fillStyle = `rgb(${r}, ${g}, ${b})`;
-                    this.ctx.beginPath(); this.ctx.arc(p.x, p.y, 2.6, 0, Math.PI * 2); this.ctx.fill();
-                });
-                this.ctx.globalAlpha = 1;
+                const points = [...plane.trail, { lat: plane.lat, lon: plane.lon, altitude: plane.altitude, onGround: plane.onGround }]
+                    .map(pt => ({ ...pt, p: this.map.latLngToContainerPoint([pt.lat, pt.lon]) }));
+                if (points.length < 2) return;
+                const ctx = this.ctx;
+                ctx.save();
+                ctx.lineCap = ctx.lineJoin = 'round';
+                ctx.strokeStyle = this.scopeColors.backing; ctx.lineWidth = 5.5;
+                ctx.beginPath(); points.forEach(({ p }, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y)); ctx.stroke();
+                ctx.lineWidth = 3;
+                for (let i = 1; i < points.length; i++) {
+                    const [r, g, b] = trailColor(points[i]);
+                    ctx.strokeStyle = `rgb(${r}, ${g}, ${b})`;
+                    ctx.beginPath(); ctx.moveTo(points[i - 1].p.x, points[i - 1].p.y); ctx.lineTo(points[i].p.x, points[i].p.y); ctx.stroke();
+                }
+                ctx.restore();
             }
 
             setSimSpeed(speed) {
@@ -2859,13 +2905,17 @@
                         <div class="shrink-0 bg-slate-800 rounded p-1 border border-slate-600 mt-1"><img src="${getAirlineLogo(ac.id.substring(0, 3))}" class="w-6 h-6 object-contain opacity-90"></div>
                         <div class="flex-grow min-w-0">
                             <div class="flex justify-between font-bold text-sm">
-                                <span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span>
+                                <span><span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span><span data-f="talking" class="hidden ml-1.5 text-[9px] text-emerald-300 animate-pulse">● TRANSMITTING</span></span>
                                 <span class="text-slate-400 text-[10px]">${ac.type}${ac.registration ? ` · ${ac.registration}` : ''}</span>
                             </div>
                             <div class="text-[10px] text-slate-400">Say “${spokenCallsign}”</div>
+                            <div class="flex items-baseline justify-between mt-0.5">
+                                <span class="text-[13px] font-bold text-slate-100 tracking-wide">${ac.origin} <span class="text-slate-500 font-normal">&rarr;</span> ${ac.dest}</span>
+                                <span data-f="contact" class="text-[10px]"></span>
+                            </div>
                             <div class="text-[10px] text-slate-500 mb-0.5 flex justify-between">
-                                <span>${ac.origin} &rarr; ${ac.dest}${via}</span>
-                                <span data-f="contact"></span>
+                                <span>${via.trim()}</span>
+                                <span data-f="airtime" class="text-slate-400"></span>
                             </div>
                             ${exit}
                             <div class="flex justify-between text-slate-300 mt-0.5 font-mono text-[11px]">
@@ -2917,7 +2967,7 @@
                     el.classList.toggle('ring-2', selected);
                     el.classList.toggle('ring-cyan-400', selected);
                     el.setAttribute('aria-selected', String(selected));
-                    this.showStripPhoto(el, ac, selected);
+                    this.showStripPhoto(el, ac, selected || this.isTalking(ac));
                     if (this.stripContainer.children[index] !== el) this.stripContainer.insertBefore(el, this.stripContainer.children[index] || null);
                 });
                 this.refreshStripValues();
@@ -2970,7 +3020,7 @@
                     const caption = figure.querySelector('figcaption');
                     caption.title = `${photo.label}. Photo: ${photo.credit}`;
                     caption.replaceChildren(`${photo.label} · Photo: `, link);
-                    figure.classList.toggle('hidden', el.getAttribute('aria-selected') !== 'true');
+                    figure.classList.toggle('hidden', !(el.getAttribute('aria-selected') === 'true' || this.isTalking(ac)));
                 });
             }
 
@@ -2988,6 +3038,14 @@
                     set('spd', `S:${Math.round(ac.speed)}kn`);
                     set('hdg', `H:${String(Math.round(ac.heading) % 360).padStart(3, '0')}`);
                     set('status', ac.lastStatus);
+                    set('airtime', this.airTimeText(ac));
+                    const talking = this.isTalking(ac);
+                    el.querySelector('[data-f="talking"]').classList.toggle('hidden', !talking);
+                    el.classList.toggle('ring-1', talking && ac.id !== this.selectedAircraftId);
+                    el.classList.toggle('ring-emerald-400', talking && ac.id !== this.selectedAircraftId);
+                    this.showStripPhoto(el, ac, ac.id === this.selectedAircraftId || talking);
+                    if (talking && !el.dataset.talkingShown) el.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    el.dataset.talkingShown = talking ? 'true' : '';
                     const withTower = !ac.isArrival && this.departureMode === 'TOWER' && !ac.hasCheckedIn && !ac.contactEstablished;
                     set('contact', ac.handedOff ? ac.handedOff : ac.contactEstablished ? 'CONTACT' : withTower ? 'WITH TOWER' : 'CHECKING IN');
                     el.querySelector('[data-f="contact"]').className = ac.handedOff || withTower ? 'text-slate-400' :
@@ -3264,6 +3322,7 @@
                             towerDeparture ? `${this.radioFacility('Departure')}, ${this.radioCallsign(ac)}, ${passing} climbing ${this.radioAltitude(ac.targetAltitude)}.` :
                             `${this.radioCallsign(ac)}, holding short runway ${this.radioRunway(ac.departureRunway)}, ready for departure.`;
                         this.log(`${ac.id}: "${checkin}"`, 'system');
+                        this.markTalking(ac);
                         this.pilotRadio.say(checkin, ac.id);
                     }
 
@@ -3281,6 +3340,7 @@
                     }
                     if (!ac.isArrival && !ac.onGround && !ac.airborneReported) {
                         ac.airborneReported = true;
+                        ac.airborneSince = ac.simAge;
                         this.log(`${ac.id} airborne off runway ${ac.departureRunway}.`);
                     }
 

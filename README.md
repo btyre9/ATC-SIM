@@ -43,7 +43,7 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 | Arrival lost from airspace | −75 |
 | Midair collision | −300 |
 
-Each aircraft carries a real registration from its airline's fleet, shown on its strip. Selecting it shows a Planespotters.net photo of that exact aircraft, or a photo in the airline's livery or of the type when none is available, always credited to the photographer.
+Each aircraft carries a real registration from its airline's fleet, shown on its strip with its route and time in the air (estimated from the origin for arrivals). When a pilot transmits, their strip opens for a few seconds. Selecting it shows a Planespotters.net photo of that exact aircraft, or a photo in the airline's livery or of the type when none is available, always credited to the photographer.
 
 **END SHIFT** shows a debrief. Best scores are saved per airport in the browser.
 
@@ -51,7 +51,7 @@ Each aircraft carries a real registration from its airline's fleet, shown on its
 
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
 - **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
-- **TRAILS** shows the history dots (one per radar sweep, the last ten) behind the aircraft you select, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
+- **TRAILS** shows the whole track of the aircraft you select as one line, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
 
 ## Files
 
