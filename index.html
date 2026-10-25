@@ -328,6 +328,7 @@
                 <li>Once an arrival is established on the localizer, say <b>"contact tower"</b>. Landing without a handoff costs points.</li>
                 <li><b>Departures</b> (blue) are cleared for takeoff by tower. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
                 <li>Once a departure is through 7,000 ft, climbing to at least 10,000, and on course to its fix, say <b>"contact center"</b>. Leaving the dashed 40 NM boundary without a handoff costs points.</li>
+                <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta and Charlotte, 3,000 at San Diego), 210 kt. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
                 <li><b>Direct</b> works with any fix on the scope; triangles are real FAA arrival and departure fixes.</li>
@@ -937,15 +938,28 @@
                 this.spokenCallsign = airlineName + " " + flightNum + (HEAVY_TYPES.includes(type) ? " Heavy" : "");
             }
 
+            // Published-style missed approach: runway heading, climb to about 3,000 ft above the field
+            // (nearest thousand), 210 kt, held until the controller says otherwise.
+            missedApproach() {
+                const runway = this.clearedRunway && getRunwayDetails(this.clearedRunway);
+                const missedAltitude = Math.round((CONFIG.airport.elevation + 3000) / 1000) * 1000;
+                return {
+                    heading: Math.round(runway ? runway.heading : this.heading) % 360,
+                    altitude: Math.max(missedAltitude, Math.round(this.altitude / 100) * 100),
+                    runway: runway ? runway.name : null
+                };
+            }
+
             goAround() {
+                const missed = this.missedApproach();
                 this.directTo = null;
-                this.targetAltitude = CONFIG.airport.elevation + 4000;
-                this.targetSpeed = 240;
-                this.targetHeading = (this.heading + 20) % 360;
                 this.clearedForILS = false;
                 this.ilsCaptured = false;
-                this.lastStatus = "GO AROUND";
-                this.turnDirection = 'right';
+                this.targetHeading = missed.heading;
+                this.turnDirection = 'shortest';
+                this.targetAltitude = missed.altitude;
+                this.targetSpeed = 210;
+                this.lastStatus = missed.runway ? `MISSED APCH ${missed.runway}` : 'GO AROUND';
             }
 
             update(dt, map, allAircraft, storms) {
@@ -2466,11 +2480,14 @@
                             break;
                         case 'ABORT':
                         case 'GA':
+                        {
+                            const missed = plane.missedApproach();
                             plane.lastStatus = "GO AROUND";
                             act(() => plane.goAround(), 2);
-                            this.log(`${id} GOING AROUND (4000ft AGL, 240kts, right turn).`, 'error');
-                            readback('Going around');
+                            this.log(`${id} going around: runway heading ${String(missed.heading).padStart(3, '0')}, climbing to ${missed.altitude.toLocaleString('en-US')} ft, 210 kt until your next instruction.`, 'error');
+                            readback(`Going around, runway heading, ${this.altitudeReadback(plane, missed.altitude)}`);
                             break;
+                        }
                         case 'H': case 'HDG':
                             let deg = parseInt(val, 10);
                             if(isNaN(deg)) this.log(`Invalid heading '${val}'.`, 'error');
@@ -3068,7 +3085,7 @@
                         ac.handedOff = null; // Tower sends a missed approach back to approach control.
                         this.stats.goArounds++;
                         this.addScore(-15, `${ac.id} going around — runway occupied!`, 'error');
-                        this.pilotTransmission(ac, `Going around, ${this.radioCallsign(ac)}. Runway occupied.`, true);
+                        this.pilotTransmission(ac, `Going around, runway occupied, runway heading, climbing to ${this.radioAltitude(ac.targetAltitude)}, ${this.radioCallsign(ac)}.`, true);
                     }
                     if (!ac.isArrival && !ac.onGround && !ac.airborneReported) {
                         ac.airborneReported = true;
