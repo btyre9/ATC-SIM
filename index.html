@@ -462,28 +462,77 @@
                     { name: "KMGE", lat: 33.915, lon: -84.516, rwyHeading: 286 }
                 ],
                 schedule: [
-                    { airline: "DAL", weight: 58, routes: [
-                        { origin: "KJFK", gate: "NE_GATE", types: ["B752", "A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KLGA", gate: "NE_GATE", types: ["A320", "B738", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
-                        { origin: "KBOS", gate: "NE_GATE", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KDCA", gate: "NE_GATE", types: ["B717", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
-                        { origin: "KMCO", gate: "SE_GATE", types: ["B752", "A321", "B763"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KMIA", gate: "SE_GATE", types: ["B739", "A321", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KDFW", gate: "W_GATE",  types: ["A320", "B739", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KORD", gate: "NW_GATE", types: ["B717", "B738", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
-                        { origin: "KLAX", gate: "W_GATE",  types: ["A359", "B763", "B752", "A321"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
-                        { origin: "KSFO", gate: "W_GATE",  types: ["B752", "A321", "B763"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
-                        { origin: "EGLL", gate: "NE_GATE", types: ["A333", "A359", "B764"], banks: ["AFTERNOON"] },
-                        { origin: "LFPG", gate: "NE_GATE", types: ["A333", "A359"], banks: ["AFTERNOON"] }
+                    { airline: "DAL", weight: 66, routes: [
+                        { origin: "KJFK", types: ["B752", "A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KLGA", types: ["A320", "B738", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KBOS", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDCA", types: ["B717", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KEWR", types: ["A320", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KPHL", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KBWI", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KRDU", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPIT", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCMH", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDTW", types: ["A320", "B739", "A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KMSP", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KORD", types: ["B717", "B738", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KIND", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSTL", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMCI", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCVG", types: ["B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KBNA", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMEM", types: ["B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMSY", types: ["B739", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KIAH", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KAUS", types: ["A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSAT", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDFW", types: ["A320", "B739", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDEN", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPHX", types: ["A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KLAS", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KSLC", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KSEA", types: ["B752", "A321", "B763"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KPDX", types: ["B752", "A321"], banks: ["MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KLAX", types: ["A359", "B763", "B752", "A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KSFO", types: ["B752", "A321", "B763"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KSAN", types: ["B752", "A321"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "KMCO", types: ["B752", "A321", "B763"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KTPA", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KFLL", types: ["A321", "B739", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMIA", types: ["B739", "A321", "B752"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KRSW", types: ["A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KJAX", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSAV", types: ["B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCHS", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGLL", types: ["A333", "A359", "B764"], banks: ["AFTERNOON"] },
+                        { origin: "LFPG", types: ["A333", "A359"], banks: ["AFTERNOON"] },
+                        { origin: "EHAM", types: ["A333", "B764"], banks: ["AFTERNOON"] }
                     ]},
-                    { airline: "SWA", weight: 14, routes: [
-                        { origin: "KBWI", gate: "NE_GATE", types: ["B738", "B38M", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KMDW", gate: "NW_GATE", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KDAL", gate: "W_GATE",  types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    { airline: "SWA", weight: 12, routes: [
+                        { origin: "KBWI", types: ["B738", "B38M", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMDW", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDAL", types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KHOU", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDEN", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KTPA", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMCO", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSTL", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KLAS", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
                     ]},
-                    { airline: "AAL", weight: 6, routes: [
-                        { origin: "KDFW", gate: "W_GATE",  types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KCLT", gate: "NE_GATE", types: ["A319", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    { airline: "UAL", weight: 6, routes: [
+                        { origin: "KORD", types: ["A320", "B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KIAH", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KEWR", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KDEN", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSFO", types: ["B739", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "AAL", weight: 7, routes: [
+                        { origin: "KDFW", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCLT", types: ["A319", "A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMIA", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KORD", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KPHL", types: ["A319", "A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPHX", types: ["A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
                     ]},
                     { airline: "FDX", weight: 4, routes: [
                         { origin: "KMEM", gate: "NW_GATE", types: ["B763", "MD11", "B77L"], banks: ["MORNING", "NIGHT"] }
@@ -514,6 +563,12 @@
                 ],
                 schedule: [
                     { airline: "SWA", weight: 38, routes: [
+                        { origin: "KSMF", types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDEN", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDAL", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMDW", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KHOU", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KBNA", types: ["B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
                         { origin: "KSJC", gate: "NW_GATE", types: ["B737", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
                         { origin: "KOAK", gate: "NW_GATE", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
                         { origin: "KLAS", gate: "NE_GATE", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
@@ -521,15 +576,29 @@
                     ]},
                     { airline: "ASA", weight: 24, routes: [
                         { origin: "KSEA", gate: "NW_GATE", types: ["B739", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
-                        { origin: "KPDX", gate: "NW_GATE", types: ["B738", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                        { origin: "KPDX", gate: "NW_GATE", types: ["B738", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSFO", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KBOS", types: ["B739", "B38M"], banks: ["MORNING", "NIGHT"] }
                     ]},
                     { airline: "UAL", weight: 14, routes: [
                         { origin: "KSFO", gate: "NW_GATE", types: ["B738", "B739", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
-                        { origin: "KDEN", gate: "NE_GATE", types: ["B739", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                        { origin: "KDEN", gate: "NE_GATE", types: ["B739", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KORD", types: ["B739", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KIAH", types: ["B738", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KEWR", types: ["B739"], banks: ["MORNING", "NIGHT"] }
+                    ]},
+                    { airline: "AAL", weight: 10, routes: [
+                        { origin: "KDFW", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPHX", types: ["A321", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCLT", types: ["A321"], banks: ["MORNING", "NIGHT"] },
+                        { origin: "KORD", types: ["B738", "A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
                     ]},
                     { airline: "DAL", weight: 12, routes: [
                         { origin: "KATL", gate: "E_GATE",  types: ["B752", "A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
-                        { origin: "KSLC", gate: "NE_GATE", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                        { origin: "KSLC", gate: "NE_GATE", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMSP", types: ["A321", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDTW", types: ["A320", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KJFK", types: ["A321", "B752"], banks: ["MORNING", "NIGHT"] }
                     ]}
                 ]
             },
@@ -562,10 +631,45 @@
                         { origin: "KMCO", gate: "SE_GATE", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
                         { origin: "KMIA", gate: "SE_GATE", types: ["A321", "B738", "B772"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
                         { origin: "KDFW", gate: "W_GATE",  types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
-                        { origin: "EGLL", gate: "NE_GATE", types: ["B772", "B789"], banks: ["AFTERNOON"] }
+                        { origin: "EGLL", gate: "NE_GATE", types: ["B772", "B789"], banks: ["AFTERNOON"] },
+                        { origin: "KEWR", types: ["A321", "A319"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KBWI", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPIT", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCMH", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KIND", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KORD", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KSTL", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KBNA", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMSY", types: ["A321", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KAUS", types: ["A321", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KIAH", types: ["A321", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDEN", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPHX", types: ["A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KLAS", types: ["A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KLAX", types: ["A321", "B772"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "KSFO", types: ["A321"], banks: ["MORNING", "NIGHT"] },
+                        { origin: "KTPA", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KFLL", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KRSW", types: ["A321", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KJAX", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KSAV", types: ["E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KCHS", types: ["A319", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
                     ]},
                     { airline: "DAL", weight: 9, routes: [
-                        { origin: "KATL", gate: "SW_GATE", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                        { origin: "KATL", types: ["B717", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KDTW", types: ["A320", "B717"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMSP", types: ["A320", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KJFK", types: ["A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "UAL", weight: 5, routes: [
+                        { origin: "KORD", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "KEWR", types: ["B738", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KIAH", types: ["A320", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "SWA", weight: 4, routes: [
+                        { origin: "KBWI", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KMDW", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KHOU", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
                     ]}
                 ]
             }
@@ -625,7 +729,12 @@
             KJFK: [40.639, -73.779], KLAS: [36.083, -115.152], KLAX: [33.943, -118.408], KLGA: [40.777, -73.873], KMCO: [28.429, -81.309],
             KMDW: [41.786, -87.752], KMEM: [35.044, -89.976], KMIA: [25.796, -80.290], KOAK: [37.720, -122.221], KORD: [41.979, -87.905],
             KPDX: [45.589, -122.598], KPHL: [39.872, -75.241], KPHX: [33.435, -112.006], KSAN: [32.734, -117.190], KSDF: [38.171, -85.735],
-            KSEA: [47.448, -122.310], KSFO: [37.620, -122.375], KSJC: [37.362, -121.929], KSLC: [40.789, -111.980], LFPG: [49.009, 2.554] };
+            KSEA: [47.448, -122.310], KSFO: [37.620, -122.375], KSJC: [37.362, -121.929], KSLC: [40.789, -111.980], LFPG: [49.009, 2.554],
+            EHAM: [52.311, 4.768], KAUS: [30.195, -97.670], KBNA: [36.124, -86.678], KCHS: [32.899, -80.041], KCMH: [39.998, -82.892],
+            KCVG: [39.049, -84.668], KDTW: [42.212, -83.353], KEWR: [40.692, -74.169], KFLL: [26.072, -80.153], KHOU: [29.645, -95.279],
+            KIAH: [29.984, -95.341], KIND: [39.717, -86.294], KJAX: [30.494, -81.688], KMCI: [39.298, -94.714], KMSP: [44.882, -93.222],
+            KMSY: [29.993, -90.258], KPIT: [40.492, -80.233], KRDU: [35.878, -78.788], KRSW: [26.536, -81.755], KSAT: [29.534, -98.470],
+            KSAV: [32.128, -81.202], KSMF: [38.695, -121.591], KSTL: [38.749, -90.370], KTPA: [27.976, -82.533] };
 
         const DAY_MODIFIERS = {
             0: { name: "SUN", rateMultiplier: 1.0,  bizBoost: 0.7 },
@@ -1301,6 +1410,7 @@
                 this.stripEls = new Map();
                 this.lastTakeoff = {};
                 this.incursionPairs = new Set();
+                this.recentCities = [];
                 this.spotterPhotos = new Map();
                 this.overflights = [];
                 this.overflightClock = 40;
@@ -2053,6 +2163,21 @@
                     this.spawnArrival() || this.spawnDeparture();
             }
 
+            // The entry gate on the side of the field facing the city.
+            gateToward(city) {
+                const position = ORIGIN_AIRPORTS[city];
+                if (!position) return CONFIG.entryGates[0].name;
+                const bearing = calculateBearing(CONFIG.airport.lat, CONFIG.airport.lon, position[0], position[1]);
+                const offBy = gate => Math.abs(((bearing - gate.angle) % 360 + 540) % 360 - 180);
+                return CONFIG.entryGates.reduce((best, gate) => offBy(gate) < offBy(best) ? gate : best).name;
+            }
+
+            // Remembers the last dozen cities flown to or from, so the schedule doesn't repeat itself.
+            noteCity(city) {
+                this.recentCities.push(city);
+                if (this.recentCities.length > 12) this.recentCities.shift();
+            }
+
             pickScheduledFlight() {
                 const dayMod = DAY_MODIFIERS[this.currentDay] || DAY_MODIFIERS[1];
                 const candidatePool = [];
@@ -2061,7 +2186,12 @@
                         if (route.banks.includes(this.currentBank)) {
                             let w = entry.weight / entry.routes.length;
                             if (route.bizHeavy) w *= dayMod.bizBoost;
-                            candidatePool.push({ airline: entry.airline, origin: route.origin, gateName: route.gate, types: route.types, weight: w });
+                            // A real bank spreads flights over many cities: each recent flight to or from this city makes it
+                            // five times less likely to come up again soon.
+                            const recent = this.recentCities.filter(city => city === route.origin).length;
+                            w *= 0.2 ** recent;
+                            candidatePool.push({ airline: entry.airline, origin: route.origin, types: route.types, weight: w,
+                                gateName: route.gate || this.gateToward(route.origin) });
                         }
                     });
                 });
@@ -2115,6 +2245,7 @@
                         if (flown !== null) plane.airborneSince = -flown;
                         plane.lastStatus = fix ? `ARR VIA ${fix.name}` : 'INBOUND';
                         plane.nextAnnounceTime = performance.now() + 2000;
+                        this.noteCity(chosen.origin);
                         this.aircraft.push(plane);
                         this.updateStrips();
                         return true;
@@ -2175,6 +2306,7 @@
                 plane.nextAnnounceTime = performance.now() + 2500;
                 // Tower holds each departure for a typical taxi-and-line-up time before releasing it.
                 plane.towerReleaseAt = 25 + Math.random() * 35;
+                this.noteCity(chosen.origin);
                 this.aircraft.push(plane);
                 this.updateStrips();
                 return true;

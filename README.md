@@ -60,7 +60,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 
 ### Settings
 
-- **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
+- **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Each airport flies its hub's real network (66 routes at Atlanta, 41 at Charlotte, 28 at San Diego), with arrivals entering from the side facing their origin, and a city that just had a flight is unlikely to come up again soon. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
 - **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
 - **TRAILS** shows the whole track of the aircraft you select as one line, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
