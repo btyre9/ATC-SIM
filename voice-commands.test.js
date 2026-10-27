@@ -246,3 +246,12 @@ test('Detroit runway names', () => {
     assert.equal(hear('Delta 228 expect runway zero three right').command, 'DAL228 EXP 03R');
     assert.equal(hear('Delta 228 cleared ILS runway four left').command, 'DAL228 L 04L');
 });
+
+test('holding instructions', () => {
+    assert.equal(hear('Delta 228 hold at chopper').command, 'DAL228 HOLD CHOPPER');
+    assert.equal(hear('Delta 228 hold northeast of chopper left turns').command, 'DAL228 HOLD CHOPPER NE LT');
+    assert.equal(hear('Delta 228 hold north east of chopper as published').command, 'DAL228 HOLD CHOPPER NE');
+    assert.equal(hear('Delta 228 hold over Rome VOR right turns').command, 'DAL228 HOLD ROME');
+    assert.equal(hear('Delta 228 descend and maintain eight thousand hold at chopper').command, 'DAL228 A 8000 HOLD CHOPPER');
+    assert.equal(hear('Delta 228 runway two seven position and hold').command, 'DAL228 LUAW');
+});

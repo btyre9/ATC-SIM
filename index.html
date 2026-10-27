@@ -329,6 +329,7 @@
                 <div>Heading</div><div id="help-say-fly"></div><code id="help-type-fly" class="text-green-300"></code>
                 <div>Speed</div><div id="help-say-speed"></div><code id="help-type-speed" class="text-green-300"></code>
                 <div>Direct</div><div id="help-say-direct"></div><code id="help-type-direct" class="text-green-300"></code>
+                <div>Hold</div><div id="help-say-hold"></div><code id="help-type-hold" class="text-green-300"></code>
                 <div>Approach</div><div id="help-say-ils"></div><code id="help-type-ils" class="text-green-300"></code>
                 <div>Go around</div><div id="help-say-ga"></div><code id="help-type-ga" class="text-green-300"></code>
                 <div>Line up</div><div id="help-say-luaw"></div><code id="help-type-luaw" class="text-green-300"></code>
@@ -350,6 +351,7 @@
                 <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
                 <li><b>Expect runway</b> tells an arrival which runway to plan for. On its own navigation it flies to that runway's final (a real approach fix 8 to 16 NM out, or a point 12 NM out) and turns onto the runway course; on vectors it keeps your heading. It still needs an approach clearance.</li>
+                <li><b>Holding:</b> "hold northeast of <i>fix</i>, left turns" puts the pattern on that side of the fix; "hold at <i>fix</i>" holds on the far side from the airport with right turns. The aircraft flies the FAA entry for its heading (direct, teardrop or parallel), 1-minute legs (1½ above 14,000 ft) and slows to the holding limit (200 kt to 6,000 ft, 230 kt to 14,000). Altitude and speed changes keep it holding; a heading, direct or approach clearance takes it out. Vector it to a 30° intercept before clearing the ILS.</li>
                 <li><b>Direct</b> works with any fix on the scope; triangles are real FAA arrival and departure fixes.</li>
             </ul>
             <p class="mt-3 text-amber-300">In this simulator, “flight level three thousand” means 3,000 feet and “flight level twelve thousand” means 12,000 feet. “Flight level three zero zero” still means 30,000 feet. Say heading digits separately: “two seven zero” for 270°. ILS clearance requires an aircraft within 30 nautical miles of the runway.</p>
@@ -997,6 +999,20 @@
             towerTakeoffSpacingSec: 60
         };
 
+        // FAA holding (AIM 5-3-8): maximum holding speed by altitude; one-minute legs at or below 14,000 ft,
+        // 1½ minutes above; standard-rate (3°/s) turns.
+        function holdingSpeed(altitude) {
+            return altitude <= 6000 ? 200 : altitude <= 14000 ? 230 : 265;
+        }
+
+        function holdShape(plane) {
+            const speed = Math.min(plane.speed, holdingSpeed(plane.altitude));
+            const legSec = plane.altitude > 14000 ? 90 : 60;
+            return { legSec, legNM: speed * legSec / 3600, radiusNM: (speed / 3600) / toRad(3) };
+        }
+
+        const HOLD_DIRECTIONS = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
+
         // The strip of pavement a runway end belongs to: 09 and 27 are one runway.
         function physicalRunway(rwyName) {
             return CONFIG.airport.runways.find(r => r.name === rwyName || r.recip === rwyName) || null;
@@ -1218,6 +1234,7 @@
                 this.arrivalFix = null;
                 this.handedOff = null;
                 this.expectedRunway = null;
+                this.hold = null;                // { fix, inbound, turn, phase, timer } while holding.
                 this.expediteTurn = false;       // Standard-rate turn until on the new heading.
                 this.expediteVertical = false;   // Best-rate climb or descent until level.
                 this.onVectors = false;      // True once the controller assigns a heading.
@@ -1242,9 +1259,85 @@
                 };
             }
 
+            /* Holding pattern: fly to the fix, enter it the FAA way (direct, teardrop or parallel, chosen by the
+               heading on arrival), then fly the racetrack: outbound turn over the fix, a timed outbound leg,
+               the inbound turn, and the inbound course back to the fix. */
+            flyHold(dt) {
+                const hold = this.hold;
+                const shape = holdShape(this);
+                const outbound = (hold.inbound + 180) % 360;
+                const holdTurn = hold.turn;                                 // 'right' or 'left'
+                const awayTurn = holdTurn === 'right' ? 'left' : 'right';
+                const sign = holdTurn === 'right' ? 1 : -1;
+                const offBy = heading => Math.abs(((this.heading - heading) % 360 + 540) % 360 - 180);
+                const steer = (heading, direction = 'shortest') => {
+                    this.targetHeading = (Math.round(heading) % 360 + 360) % 360;
+                    this.turnDirection = direction;
+                    this.expediteTurn = true;                               // Standard rate.
+                };
+                const distance = window.ATCTraffic.distanceNM(this, hold.fix);
+                const passedFix = distance < 0.5 || (distance < 2.5 && distance > hold.lastDistance);
+                hold.lastDistance = distance;
+                hold.timer -= dt * CONFIG.timeMultiplier;
+                if (this.targetSpeed > holdingSpeed(this.altitude)) this.targetSpeed = holdingSpeed(this.altitude);
+
+                switch (hold.phase) {
+                    case 'TO_FIX':
+                    case 'PARALLEL_RETURN':
+                        if (!passedFix) { steer(calculateBearing(this.lat, this.lon, hold.fix.lat, hold.fix.lon)); break; }
+                        if (hold.phase === 'TO_FIX') {
+                            // Heading on arrival, measured from the inbound course in the direction of the holding turns.
+                            const d = ((this.heading - hold.inbound) * sign % 360 + 360) % 360;
+                            hold.entry = d > 110 && d <= 180 ? 'TEARDROP' : d > 180 && d < 290 ? 'PARALLEL' : 'DIRECT';
+                            hold.timer = shape.legSec;
+                            hold.phase = hold.entry === 'DIRECT' ? 'OUTBOUND_TURN' : hold.entry;
+                            this.lastStatus = `HOLDING ${hold.fix.name} (${hold.entry.toLowerCase()} entry)`;
+                        } else {
+                            hold.phase = 'OUTBOUND_TURN';
+                        }
+                        break;
+                    case 'TEARDROP':
+                        // 30° toward the holding side of the outbound course, then turn in to the inbound course.
+                        steer(outbound - 30 * sign);
+                        if (hold.timer <= 0) hold.phase = 'INBOUND_TURN';
+                        break;
+                    case 'PARALLEL':
+                        // Outbound on the non-holding side, then turn back through the holding side to the fix.
+                        steer(outbound);
+                        if (hold.timer <= 0) hold.phase = 'PARALLEL_TURN';
+                        break;
+                    case 'PARALLEL_TURN':
+                        steer(hold.inbound + 45 * sign, awayTurn);
+                        if (offBy(hold.inbound + 45 * sign) < 5) hold.phase = 'PARALLEL_RETURN';
+                        break;
+                    case 'OUTBOUND_TURN':
+                        steer(outbound, holdTurn);
+                        if (offBy(outbound) < 3) { hold.phase = 'OUTBOUND'; hold.timer = shape.legSec; this.lastStatus = `HOLDING ${hold.fix.name}`; }
+                        break;
+                    case 'OUTBOUND':
+                        steer(outbound);
+                        if (hold.timer <= 0) hold.phase = 'INBOUND_TURN';
+                        break;
+                    case 'INBOUND_TURN':
+                        steer(hold.inbound, holdTurn);
+                        if (offBy(hold.inbound) < 30) hold.phase = 'INBOUND';
+                        break;
+                    case 'INBOUND': {
+                        // Track the inbound course like a localizer, then turn outbound over the fix.
+                        const { along, cross } = window.ATCTraffic.localizerOffset(this, { lat: hold.fix.lat, lon: hold.fix.lon, heading: hold.inbound });
+                        const relative = ((this.heading - hold.inbound) % 360 + 540) % 360 - 180;
+                        const predicted = cross + this.speed / 3600 * Math.sin(toRad(relative)) * 20;
+                        steer(hold.inbound + Math.max(-45, Math.min(45, -predicted * 60)));
+                        if (along <= 0) hold.phase = 'OUTBOUND_TURN';
+                        break;
+                    }
+                }
+            }
+
             goAround() {
                 const missed = this.missedApproach();
                 this.directTo = null;
+                this.hold = null;
                 this.alignHeading = null;
                 this.onVectors = true;
                 this.clearedForILS = false;
@@ -1309,6 +1402,7 @@
                         this.turnDirection = 'shortest';
                     }
                 }
+                if (this.hold && canTurn && !this.clearedForILS) this.flyHold(dt);
 
                 if (this.heading !== this.targetHeading && canTurn) {
                     let diff = this.targetHeading - this.heading;
@@ -2749,6 +2843,7 @@
                     fly: ['Heading one eight zero', `${id} H 180`],
                     speed: ['Reduce speed to two one zero knots', `${id} S 210`],
                     direct: [`Proceed direct ${waypoint}`, `${id} C ${waypoint}`],
+                    hold: [`Hold northeast of ${waypoint}, left turns (or "hold at ${waypoint}")`, `${id} HOLD ${waypoint} NE LT`],
                     ils: [`Cleared ILS runway ${this.radioRunway(runway)}`, `${id} L ${runway}`],
                     ga: ['Go around', `${id} GA`],
                     luaw: [`Runway ${this.radioRunway(depRunway)}, line up and wait`, `${id} LUAW`],
@@ -2994,7 +3089,7 @@
                     return;
                 }
 
-                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO', 'LUAW', 'HO', 'EXP', 'XP'];
+                const shortCommands = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'MPH', 'ABORT', 'GA', 'X', 'CTO', 'LUAW', 'HO', 'EXP', 'XP', 'HOLD'];
                 if (shortCommands.includes(id) && this.aircraft.some(plane => plane.id === this.selectedAircraftId)) {
                     raw = `${this.selectedAircraftId} ${raw}`;
                     tokens = raw.split(/\s+/);
@@ -3067,7 +3162,7 @@
                     let val = null;
                     let consumed = 1;
 
-                    const needsArg = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'EXP'].includes(cmd);
+                    const needsArg = ['H', 'HDG', 'TR', 'TL', 'A', 'ALT', 'C', 'S', 'SPD', 'L', 'ILS', 'EXP', 'HOLD'].includes(cmd);
                     if (needsArg) {
                         if (i + 1 >= tokens.length) { this.log(`Missing value for command ${cmd}`, 'error'); break; }
                         val = tokens[i+1];
@@ -3078,6 +3173,7 @@
                         case 'MPH':
                             act(() => {
                                 plane.directTo = null;
+                                plane.hold = null;
                                 plane.alignHeading = null;
                                 plane.onVectors = true;
                                 plane.clearedForILS = false;
@@ -3111,6 +3207,7 @@
                                 plane.onVectors = true; // Known now, so an "expect runway" right after keeps the vector.
                                 act(() => {
                                     plane.directTo = null;
+                                    plane.hold = null;
                                     plane.onVectors = true;
                                     plane.alignHeading = null;
                                     plane.targetHeading = deg % 360;
@@ -3131,6 +3228,7 @@
                                 plane.onVectors = true; // Known now, so an "expect runway" right after keeps the vector.
                                 act(() => {
                                     plane.directTo = null;
+                                    plane.hold = null;
                                     plane.onVectors = true;
                                     plane.alignHeading = null;
                                     plane.targetHeading = degR % 360;
@@ -3151,6 +3249,7 @@
                                 plane.onVectors = true; // Known now, so an "expect runway" right after keeps the vector.
                                 act(() => {
                                     plane.directTo = null;
+                                    plane.hold = null;
                                     plane.onVectors = true;
                                     plane.alignHeading = null;
                                     plane.targetHeading = degL % 360;
@@ -3185,13 +3284,41 @@
                             } else {
                                 const wp = window.ATCVoice.matchFix(val, CONFIG.waypoints, plane);
                                 if (wp) {
-                                    act(() => { plane.directTo = wp; plane.onVectors = false; plane.alignHeading = null; plane.expediteTurn = expedite; });
+                                    act(() => { plane.directTo = wp; plane.hold = null; plane.onVectors = false; plane.alignHeading = null; plane.expediteTurn = expedite; });
                                     plane.lastStatus = `DCT ${wp.name}`;
                                     this.log(`${id} proceeding direct ${wp.name}.`);
                                     readback(`Direct ${wp.navaid && wp.title ? wp.title : wp.name}`); // Pilots say a navaid by name: "direct Rome".
                                 } else { this.log(`Unknown Waypoint '${val}'.`, 'error'); }
                             }
                             break;
+                        case 'HOLD': {
+                            // HOLD fix [N|NE|E|SE|S|SW|W|NW] [LT|RT]: the side of the fix the pattern is on, and the turns.
+                            // Without a side, the hold is on the far side of the fix from the airport, inbound toward it.
+                            const fix = window.ATCVoice.matchFix(val, CONFIG.waypoints, plane);
+                            let side = null, turn = 'right';
+                            const next = tokens[i + 2], after = tokens[i + 3];
+                            if (next in HOLD_DIRECTIONS && !(next === 'S' && /^\d+$/.test(after || ''))) { side = next; consumed++; }
+                            if (['LT', 'LEFT', 'RT', 'RIGHT'].includes(tokens[i + consumed])) { turn = tokens[i + consumed].startsWith('L') ? 'left' : 'right'; consumed++; }
+                            if (!fix) { this.log(`Unknown Waypoint '${val}'.`, 'error'); break; }
+                            if (plane.onGround) { this.log(`${id} is on the ground.`, 'error'); break; }
+                            const nearField = window.ATCTraffic.distanceNM(fix, CONFIG.airport) < 3;
+                            const inbound = side ? (HOLD_DIRECTIONS[side] + 180) % 360 :
+                                nearField ? calculateBearing(plane.lat, plane.lon, fix.lat, fix.lon) :
+                                calculateBearing(fix.lat, fix.lon, CONFIG.airport.lat, CONFIG.airport.lon);
+                            act(() => {
+                                plane.hold = { fix, inbound: Math.round(inbound) % 360, turn, phase: 'TO_FIX', timer: 0, lastDistance: Infinity };
+                                plane.directTo = null;
+                                plane.alignHeading = null;
+                                plane.onVectors = false;
+                                plane.clearedForILS = false; plane.ilsCaptured = false;
+                            });
+                            const sideWords = { N: 'north', NE: 'northeast', E: 'east', SE: 'southeast', S: 'south', SW: 'southwest', W: 'west', NW: 'northwest' };
+                            const spokenFix = fix.navaid && fix.title ? fix.title : fix.name;
+                            plane.lastStatus = `HOLD ${side ? side + ' OF ' : ''}${fix.name}`;
+                            this.log(`${id} hold ${side ? sideWords[side] + ' of' : 'at'} ${fix.name}, inbound course ${String(Math.round(inbound) % 360).padStart(3, '0')}, ${turn} turns.`);
+                            readback(`Hold ${side ? sideWords[side] + ' of' : 'at'} ${spokenFix}, ${turn} turns`);
+                            break;
+                        }
                         case 'S': case 'SPD':
                             let spd = parseInt(val, 10);
                             if(isNaN(spd)) this.log(`Invalid speed '${val}'.`, 'error');
@@ -3248,6 +3375,7 @@
                                 act(() => {
                                     if (plane.pendingIls !== val) return;
                                     plane.directTo = null;
+                                    plane.hold = null;
                                     plane.clearedForILS = true;
                                     plane.clearedRunway = val;
                                     plane.ilsCaptured = false;
@@ -3318,7 +3446,7 @@
                             plane.expectedRunway = runway.name;
                             // On its own navigation the aircraft flies its runway transition to the final and
                             // lines up; on vectors it keeps the assigned heading and just plans for the runway.
-                            if (plane.isArrival && !plane.onVectors && !plane.clearedForILS) {
+                            if (plane.isArrival && !plane.onVectors && !plane.clearedForILS && !plane.hold) {
                                 const fix = this.finalFixFor(runway.name);
                                 act(() => {
                                     if (plane.expectedRunway !== runway.name) return;
@@ -3828,6 +3956,25 @@
 
                 // Sector boundary.
                 ring(CONFIG.sectorRadiusNM * CONFIG.scale, colors.boundary, 1.5, [6, 6]);
+                // Holding patterns, as racetracks on the holding side of each fix.
+                this.aircraft.filter(ac => ac.hold && !ac.removeMe).forEach(ac => {
+                    const { fix, inbound, turn } = ac.hold;
+                    const { legNM, radiusNM } = holdShape(ac);
+                    const sign = turn === 'right' ? 1 : -1, side = inbound + 90 * sign;
+                    const nearCenter = moveLatLng(fix.lat, fix.lon, side, radiusNM);
+                    const farCenter = moveLatLng(nearCenter.lat, nearCenter.lon, inbound + 180, legNM);
+                    const points = [];
+                    for (let k = 0; k <= 12; k++) points.push(moveLatLng(nearCenter.lat, nearCenter.lon, side + 180 + sign * 15 * k, radiusNM));
+                    for (let k = 0; k <= 12; k++) points.push(moveLatLng(farCenter.lat, farCenter.lon, side + sign * 15 * k, radiusNM));
+                    ctx.save();
+                    ctx.strokeStyle = ac.id === this.selectedAircraftId ? '#38bdf8' : 'rgba(56, 189, 248, 0.55)';
+                    ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+                    ctx.beginPath();
+                    points.forEach((p, k) => { const pt = this.map.latLngToContainerPoint([p.lat, p.lon]); k ? ctx.lineTo(pt.x, pt.y) : ctx.moveTo(pt.x, pt.y); });
+                    ctx.closePath(); ctx.stroke();
+                    ctx.restore();
+                });
+
                 // Ring the selected aircraft's arrival or departure fix.
                 const selected = this.aircraft.find(ac => ac.id === this.selectedAircraftId);
                 const routeFix = selected && (selected.directTo || selected.exitFix || CONFIG.waypoints.find(w => w.name === selected.arrivalFix));
@@ -3967,7 +4114,9 @@
                         }
                         ac.removeMe = true;
                     }
-                    if (!ac.onGround && !ac.removeMe && window.ATCTraffic.distanceNM(ac, CONFIG.airport) > CONFIG.sectorRadiusNM) {
+                    // Holds at the arrival fixes on the boundary spill a few miles outside it; that's still your aircraft.
+                    const exitRadius = CONFIG.sectorRadiusNM + (ac.hold ? 8 : 0);
+                    if (!ac.onGround && !ac.removeMe && window.ATCTraffic.distanceNM(ac, CONFIG.airport) > exitRadius) {
                         this.handleSectorExit(ac);
                     }
 

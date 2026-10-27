@@ -16,7 +16,7 @@
     const COMMAND_START = new Set([
         'DESCEND', 'CLIMB', 'MAINTAIN', 'TURN', 'FLY', 'HEADING',
         'REDUCE', 'INCREASE', 'SPEED', 'PROCEED', 'DIRECT',
-        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR', 'EXPECT', 'LINE', 'POSITION'
+        'CLEARED', 'GO', 'ABORT', 'RUNWAY', 'CONTACT', 'MONITOR', 'EXPECT', 'LINE', 'POSITION', 'HOLD'
     ]);
     const FILLER_WORDS = new Set(['OK', 'OKAY', 'UH', 'UM', 'PLEASE', 'NOW', 'AND']);
     // "Expedite" or "immediately" anywhere in a transmission asks for it to be carried out at once.
@@ -88,6 +88,8 @@
             .replace(/\bFT\b/g, 'FEET')
             .replace(/\bTAKE OFF\b/g, 'TAKEOFF')
             .replace(/\bLINEUP\b|\bLINED UP\b/g, 'LINE UP')
+            .replace(/\b(NORTH|SOUTH) (EAST|WEST)\b/g, '$1$2')
+            .replace(/\bHOLDING\b|\bHOLE\b/g, 'HOLD')
             .replace(/\bI L S\b/g, 'ILS');
     }
 
@@ -176,6 +178,16 @@
         return runway === null || runway < 1 || runway > 36 ? null : `${String(runway).padStart(2, '0')}${side}`;
     }
 
+    // A fix or navaid name as heard: "boy kin", "Rome VOR", "bravo oscar yankee kilo november". The simulator
+    // matches the heard name to a fix or navaid; here it only has to be one name, not more instructions.
+    function fixName(text) {
+        let words = text.split(' ');
+        if (words.slice(-3).join('') === 'VOR' && words.length > 3) words = words.slice(0, -3);
+        while (words.length > 1 && NAVAID_WORDS.has(words.at(-1))) words.pop();
+        if (words.length > 5 || words.some(word => COMMAND_START.has(word) || word === 'FLIGHT')) return null;
+        return words.length > 1 && words.every(word => NATO[word]) ? words.map(word => NATO[word]).join('') : words.join('');
+    }
+
     function parseInstruction(phrase, elevation, plane) {
         let match = phrase.match(/^(DESCEND|CLIMB)(?: TO)?(?: AND)?(?: MAINTAIN)?(?: AT)? (.+)$/);
         const direction = match ? match[1] : null;
@@ -212,17 +224,18 @@
             return { command: `S ${speed}` };
         }
 
-        // "Direct boy kin", "direct Rome VOR", "direct bravo oscar yankee kilo november". The simulator
-        // matches the heard name to a fix or navaid; here it only has to be one name, not more instructions.
+        // "Direct boy kin", "direct Rome VOR", "direct bravo oscar yankee kilo november".
         match = phrase.match(/^(?:PROCEED )?DIRECT(?: TO)? (.+)$/);
-        if (match) {
-            let words = match[1].split(' ');
-            if (words.slice(-3).join('') === 'VOR' && words.length > 3) words = words.slice(0, -3);
-            while (words.length > 1 && NAVAID_WORDS.has(words.at(-1))) words.pop();
-            if (words.length <= 5 && !words.some(word => COMMAND_START.has(word) || word === 'FLIGHT')) {
-                const name = words.length > 1 && words.every(word => NATO[word]) ? words.map(word => NATO[word]).join('') : words.join('');
-                return { command: `C ${name}` };
-            }
+        const directFix = match && fixName(match[1]);
+        if (directFix) return { command: `C ${directFix}` };
+
+        // "Hold at chopper", "hold northeast of chopper, left turns", "hold over Rome VOR as published".
+        match = phrase.match(/^HOLD (?:(NORTH|NORTHEAST|EAST|SOUTHEAST|SOUTH|SOUTHWEST|WEST|NORTHWEST) OF|AT|OVER) (.+?)(?: AS PUBLISHED)?(?: (LEFT|RIGHT)(?: HAND)? TURNS?)?(?: AS PUBLISHED)?$/);
+        const holdFix = match && fixName(match[2]);
+        if (holdFix) {
+            const side = match[1] ? { NORTH: 'N', NORTHEAST: 'NE', EAST: 'E', SOUTHEAST: 'SE', SOUTH: 'S', SOUTHWEST: 'SW', WEST: 'W', NORTHWEST: 'NW' }[match[1]] : '';
+            const turns = match[3] === 'LEFT' ? 'LT' : '';
+            return { command: ['HOLD', holdFix, side, turns].filter(Boolean).join(' ') };
         }
 
         if (TAKEOFF.test(phrase)) return { command: 'CTO' };
