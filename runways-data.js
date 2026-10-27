@@ -104,5 +104,73 @@ window.ATC_RUNWAYS = {
    "lengthFt": 8676,
    "widthFt": 150
   }
+ ],
+ "KDTW": [
+  {
+   "name": "03L",
+   "recip": "21R",
+   "lat1": 42.207844,
+   "lon1": -83.351223,
+   "lat2": 42.228302,
+   "lon2": -83.336145,
+   "heading": 28.6,
+   "lengthFt": 8501,
+   "widthFt": 150
+  },
+  {
+   "name": "03R",
+   "recip": "21L",
+   "lat1": 42.195622,
+   "lon1": -83.351806,
+   "lat2": 42.21969,
+   "lon2": -83.334074,
+   "heading": 28.6,
+   "lengthFt": 10001,
+   "widthFt": 150
+  },
+  {
+   "name": "04L",
+   "recip": "22R",
+   "lat1": 42.202181,
+   "lon1": -83.384005,
+   "lat2": 42.226253,
+   "lon2": -83.366285,
+   "heading": 28.6,
+   "lengthFt": 10000,
+   "widthFt": 150
+  },
+  {
+   "name": "04R",
+   "recip": "22L",
+   "lat1": 42.202332,
+   "lon1": -83.371274,
+   "lat2": 42.23122,
+   "lon2": -83.349995,
+   "heading": 28.6,
+   "lengthFt": 12003,
+   "widthFt": 200
+  },
+  {
+   "name": "09L",
+   "recip": "27R",
+   "lat1": 42.216975,
+   "lon1": -83.363172,
+   "lat2": 42.217514,
+   "lon2": -83.331036,
+   "heading": 88.7,
+   "lengthFt": 8708,
+   "widthFt": 150
+  },
+  {
+   "name": "09R",
+   "recip": "27L",
+   "lat1": 42.199023,
+   "lon1": -83.361734,
+   "lat2": 42.199546,
+   "lon2": -83.330373,
+   "heading": 88.7,
+   "lengthFt": 8500,
+   "widthFt": 150
+  }
  ]
 };

@@ -1,6 +1,6 @@
 # OpenATC Simulator
 
-A browser-based approach and departure control simulator for Atlanta (KATL), San Diego (KSAN) and Charlotte (KCLT). It has voice commands, spoken pilot readbacks, real FAA fixes, live or simulated weather, and FAA-style procedures and separation rules.
+A browser-based approach and departure control simulator for Atlanta (KATL), San Diego (KSAN), Charlotte (KCLT) and Detroit (KDTW). It has voice commands, spoken pilot readbacks, real FAA fixes, live or simulated weather, and FAA-style procedures and separation rules.
 
 ## Run it
 
@@ -60,7 +60,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 
 ### Settings
 
-- **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Each airport flies its hub's real network (66 routes at Atlanta, 41 at Charlotte, 28 at San Diego), with arrivals entering from the side facing their origin, and a city that just had a flight is unlikely to come up again soon. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
+- **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Each airport flies its hub's real network (66 routes at Atlanta, 64 at Detroit, 41 at Charlotte, 28 at San Diego), with arrivals entering from the side facing their origin, and a city that just had a flight is unlikely to come up again soon. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
 - **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
 - **TRAILS** shows the whole track of the aircraft you select as one line, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
@@ -94,6 +94,17 @@ python3 tools/build_fixes.py
 ```bash
 python3 tools/build_runways.py
 ```
+
+Both take airport codes to rebuild just those airports and keep the rest, for example `python3 tools/build_fixes.py KDTW`.
+
+### Airports
+
+| Airport | Flows | Notes |
+|---|---|---|
+| Atlanta (KATL) | West or east: land 26R/27L/28, depart 26L/27R | Delta's main hub |
+| Charlotte (KCLT) | South or north: land 19R/19L, depart 18/19L | American's hub |
+| Detroit (KDTW) | South or north: land 22R/21L, depart 22L/21R (north: land 04L/03R, depart 04R/03L) | Delta hub with Europe and Asia flights; arrivals use the outer runways, departures the inner ones next to the terminals |
+| San Diego (KSAN) | West or east on its single runway 27/09 | Southwest and Alaska focus |
 
 ## Photo credits
 

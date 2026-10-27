@@ -239,3 +239,10 @@ test('line up and wait phrases', () => {
     assert.equal(hear('Delta 228 position and hold').command, 'DAL228 LUAW');
     assert.equal(choose(['lineup and wait'], aircraft, airlines, 1026, 'AAL101').command, 'AAL101 LUAW');
 });
+
+test('Detroit runway names', () => {
+    assert.equal(hear('Delta 228 cleared ILS runway two two right').command, 'DAL228 L 22R');
+    assert.equal(hear('Delta 228 cleared ILS runway two one left').command, 'DAL228 L 21L');
+    assert.equal(hear('Delta 228 expect runway zero three right').command, 'DAL228 EXP 03R');
+    assert.equal(hear('Delta 228 cleared ILS runway four left').command, 'DAL228 L 04L');
+});

@@ -3,10 +3,12 @@
 Each FAA runway is a pavement outline. The runway ends are the midpoints of its two short sides;
 each end is matched to its designator by comparing the runway number with the true bearing.
 Run from the project folder:  python3 tools/build_runways.py
+To rebuild only some airports and keep the rest:  python3 tools/build_runways.py KDTW
 """
 import json
 import math
 import re
+import sys
 import urllib.parse
 import urllib.request
 
@@ -16,6 +18,7 @@ SECTORS = {
     'KATL': (33.6407, -84.4277),
     'KSAN': (32.7336, -117.1897),
     'KCLT': (35.2140, -80.9431),
+    'KDTW': (42.2124, -83.3534),
 }
 SEARCH_NM = 3
 
@@ -89,9 +92,17 @@ def own_runways(features, lat, lon):
     return [f for f in features if f['attributes']['AIRPORT_ID'] == nearest]
 
 
+def load_existing():
+    with open('runways-data.js') as source:
+        return json.loads(source.read().split('=', 1)[1].strip().rstrip(';'))
+
+
 def main():
-    data = {}
+    only = set(sys.argv[1:])
+    data = load_existing() if only else {}
     for sector, position in SECTORS.items():
+        if only and sector not in only:
+            continue
         runways = [r for r in (runway(f) for f in own_runways(fetch(*position), *position)) if r]
         data[sector] = sorted(runways, key=lambda r: r['name'])
         print(sector, [(r['name'], r['recip'], r['heading'], r['lengthFt']) for r in data[sector]])

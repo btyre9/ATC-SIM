@@ -2398,5 +2398,604 @@ window.ATC_FIXES = {
     "departure": "MTCHL"
    }
   }
+ },
+ "KDTW": {
+  "fixes": [
+   {
+    "name": "BROZZ",
+    "lat": 42.2244,
+    "lon": -84.1549,
+    "kind": "SID",
+    "tier": 1
+   },
+   {
+    "name": "CEESL",
+    "lat": 41.82412,
+    "lon": -84.14005,
+    "kind": "ENRT",
+    "tier": 1
+   },
+   {
+    "name": "DIXSN",
+    "lat": 42.81232,
+    "lon": -83.90807,
+    "kind": "ENRT",
+    "tier": 1
+   },
+   {
+    "name": "FERRL",
+    "lat": 42.41653,
+    "lon": -82.60926,
+    "kind": "STAR",
+    "tier": 1
+   },
+   {
+    "name": "FLOKA",
+    "lat": 42.79088,
+    "lon": -82.87193,
+    "kind": "SID",
+    "tier": 1
+   },
+   {
+    "name": "HHOWE",
+    "lat": 42.25643,
+    "lon": -82.46835,
+    "kind": "SID",
+    "tier": 1
+   },
+   {
+    "name": "JAXII",
+    "lat": 42.78381,
+    "lon": -83.85511,
+    "kind": "SID",
+    "tier": 1
+   },
+   {
+    "name": "JWELS",
+    "lat": 41.69907,
+    "lon": -83.78973,
+    "kind": "SID",
+    "tier": 1
+   },
+   {
+    "name": "KZLOV",
+    "lat": 42.07357,
+    "lon": -82.7354,
+    "kind": "SID",
+    "tier": 1
+   },
+   {
+    "name": "PADDE",
+    "lat": 42.28584,
+    "lon": -84.47445,
+    "kind": "ENRT",
+    "tier": 1
+   },
+   {
+    "name": "WNGNT",
+    "lat": 42.45076,
+    "lon": -82.32672,
+    "kind": "STAR",
+    "tier": 1
+   },
+   {
+    "name": "WOOST",
+    "lat": 41.69579,
+    "lon": -82.78919,
+    "kind": "ENRT",
+    "tier": 1
+   },
+   {
+    "name": "ANNTS",
+    "lat": 41.68357,
+    "lon": -83.7906,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "CCOBB",
+    "lat": 42.22891,
+    "lon": -84.3791,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "CLVIN",
+    "lat": 41.39322,
+    "lon": -83.55464,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "DORRT",
+    "lat": 41.90959,
+    "lon": -83.86965,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "DUNKS",
+    "lat": 42.42742,
+    "lon": -84.19425,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "HARWL",
+    "lat": 42.26396,
+    "lon": -84.19409,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "HUUTZ",
+    "lat": 41.70519,
+    "lon": -83.58994,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "LIDDS",
+    "lat": 42.03173,
+    "lon": -82.51077,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "LOALA",
+    "lat": 42.90037,
+    "lon": -83.36907,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "MAARS",
+    "lat": 42.08834,
+    "lon": -82.48624,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "MTRCT",
+    "lat": 42.43111,
+    "lon": -84.32998,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "PAVYL",
+    "lat": 42.14303,
+    "lon": -82.45018,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "PHAUL",
+    "lat": 41.70904,
+    "lon": -83.41198,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "PISTN",
+    "lat": 42.89237,
+    "lon": -83.13647,
+    "kind": "SID",
+    "tier": 2
+   },
+   {
+    "name": "DELOW",
+    "lat": 42.46025,
+    "lon": -83.0676,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "ILPUT",
+    "lat": 42.30571,
+    "lon": -83.29438,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "JEKAV",
+    "lat": 42.62287,
+    "lon": -83.66446,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "JUSKI",
+    "lat": 42.04084,
+    "lon": -83.42882,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "JUSUL",
+    "lat": 42.03332,
+    "lon": -83.59033,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "KUPNE",
+    "lat": 42.4401,
+    "lon": -83.44028,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "MACCS",
+    "lat": 42.01775,
+    "lon": -83.14035,
+    "kind": "IAP",
+    "tier": 3
+   },
+   {
+    "name": "ADG",
+    "lat": 41.86999,
+    "lon": -84.07749,
+    "kind": "OTHER",
+    "tier": 4
+   },
+   {
+    "name": "ANEWA",
+    "lat": 41.61169,
+    "lon": -83.6058,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "ANOVE",
+    "lat": 41.9505,
+    "lon": -83.48744,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "BERYS",
+    "lat": 42.90944,
+    "lon": -83.29994,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "BOOTT",
+    "lat": 42.71062,
+    "lon": -83.01873,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "BURDZ",
+    "lat": 41.84329,
+    "lon": -83.28267,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "CFGCQ",
+    "lat": 42.65906,
+    "lon": -82.51032,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "CFGFT",
+    "lat": 42.38374,
+    "lon": -82.81786,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "CFHFC",
+    "lat": 42.06382,
+    "lon": -83.14213,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "CRL",
+    "lat": 42.04803,
+    "lon": -83.45758,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "DAFLU",
+    "lat": 42.37909,
+    "lon": -82.68878,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "DXO",
+    "lat": 42.21314,
+    "lon": -83.36667,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "FNT",
+    "lat": 42.96677,
+    "lon": -83.74699,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "FOODO",
+    "lat": 41.67663,
+    "lon": -82.60402,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "GADAV",
+    "lat": 42.70764,
+    "lon": -82.49019,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "HANKY",
+    "lat": 42.96209,
+    "lon": -83.36665,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "HHRNT",
+    "lat": 42.88065,
+    "lon": -83.17539,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "IDEAS",
+    "lat": 41.77145,
+    "lon": -83.55183,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "JISTR",
+    "lat": 42.38374,
+    "lon": -82.81786,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "JXN",
+    "lat": 42.25925,
+    "lon": -84.45855,
+    "kind": "OTHER",
+    "tier": 4
+   },
+   {
+    "name": "KC72Q",
+    "lat": 42.00001,
+    "lon": -84.0,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "KC75Q",
+    "lat": 42.50001,
+    "lon": -84.0,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "LYNTN",
+    "lat": 41.71783,
+    "lon": -82.96417,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "MAYZE",
+    "lat": 41.43853,
+    "lon": -83.66408,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "MTC",
+    "lat": 42.6129,
+    "lon": -82.83178,
+    "kind": "OTHER",
+    "tier": 4
+   },
+   {
+    "name": "NELLS",
+    "lat": 41.93493,
+    "lon": -83.4962,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "POOFE",
+    "lat": 41.81207,
+    "lon": -83.09018,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "PSI",
+    "lat": 42.70087,
+    "lon": -83.53278,
+    "kind": "OTHER",
+    "tier": 4
+   },
+   {
+    "name": "RONZY",
+    "lat": 42.02459,
+    "lon": -83.14222,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "RPTER",
+    "lat": 41.71209,
+    "lon": -83.25131,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "RRONS",
+    "lat": 42.68371,
+    "lon": -82.7495,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "STIEN",
+    "lat": 41.99624,
+    "lon": -83.42696,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "STUNK",
+    "lat": 41.68667,
+    "lon": -82.70063,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "SVM",
+    "lat": 42.40865,
+    "lon": -83.59391,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "TOL",
+    "lat": 41.59371,
+    "lon": -83.79937,
+    "kind": "OTHER",
+    "tier": 4
+   },
+   {
+    "name": "TRESL",
+    "lat": 42.54195,
+    "lon": -83.59369,
+    "kind": "ENRT",
+    "tier": 4
+   },
+   {
+    "name": "WASPP",
+    "lat": 42.18696,
+    "lon": -83.24742,
+    "kind": "ENRT",
+    "tier": 4
+   }
+  ],
+  "navaids": [
+   {
+    "name": "ADG",
+    "title": "Adrian",
+    "lat": 41.86999,
+    "lon": -84.07749,
+    "type": "NDB"
+   },
+   {
+    "name": "CRL",
+    "title": "Carleton",
+    "lat": 42.04803,
+    "lon": -83.45758,
+    "type": "VOR"
+   },
+   {
+    "name": "DXO",
+    "title": "Detroit",
+    "lat": 42.21314,
+    "lon": -83.36667,
+    "type": "VOR"
+   },
+   {
+    "name": "ECK",
+    "title": "Peck",
+    "lat": 43.25589,
+    "lon": -82.71793,
+    "type": "TACAN"
+   },
+   {
+    "name": "FNT",
+    "title": "Flint",
+    "lat": 42.96677,
+    "lon": -83.74699,
+    "type": "VORTAC"
+   },
+   {
+    "name": "JXN",
+    "title": "Jackson",
+    "lat": 42.25925,
+    "lon": -84.45855,
+    "type": "DME"
+   },
+   {
+    "name": "MTC",
+    "title": "Selfridge",
+    "lat": 42.6129,
+    "lon": -82.83178,
+    "type": "TACAN"
+   },
+   {
+    "name": "PSI",
+    "title": "Pontiac",
+    "lat": 42.70087,
+    "lon": -83.53278,
+    "type": "DME"
+   },
+   {
+    "name": "SVM",
+    "title": "Salem",
+    "lat": 42.40865,
+    "lon": -83.59391,
+    "type": "VORTAC"
+   },
+   {
+    "name": "TII",
+    "title": "Tiffin",
+    "lat": 41.09467,
+    "lon": -83.21498,
+    "type": "NDB"
+   },
+   {
+    "name": "TOL",
+    "title": "Toledo",
+    "lat": 41.59371,
+    "lon": -83.79937,
+    "type": "TACAN"
+   }
+  ],
+  "gates": {
+   "NE_GATE": {
+    "arrival": "FERRL",
+    "departure": "FLOKA"
+   },
+   "E_GATE": {
+    "arrival": "WNGNT",
+    "departure": "HHOWE"
+   },
+   "SE_GATE": {
+    "arrival": "WOOST",
+    "departure": "KZLOV"
+   },
+   "SW_GATE": {
+    "arrival": "CEESL",
+    "departure": "JWELS"
+   },
+   "W_GATE": {
+    "arrival": "PADDE",
+    "departure": "BROZZ"
+   },
+   "NW_GATE": {
+    "arrival": "DIXSN",
+    "departure": "JAXII"
+   }
+  }
  }
 };
