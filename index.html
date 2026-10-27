@@ -1379,12 +1379,12 @@
 
                 daySelect.addEventListener('change', (e) => {
                     this.currentDay = parseInt(e.target.value, 10);
-                    this.resetSpawnTimer();
+                    this.changeSchedule();
                 });
 
                 document.getElementById('bank-select').addEventListener('change', (e) => {
                     this.currentBank = e.target.value;
-                    this.resetSpawnTimer();
+                    this.changeSchedule();
                 });
 
                 document.getElementById('wind-box').addEventListener('click', () => {
@@ -1738,11 +1738,31 @@
                 this.log(`New shift started at ${CONFIG.airport.id}.`, 'system');
             }
 
+            // After the map settles; a second change before then replaces the first.
+            queueInitialTraffic() {
+                clearTimeout(this.initialTrafficTimer);
+                this.initialTrafficTimer = setTimeout(() => this.spawnInitialTraffic(), 600);
+            }
+
+            // Busier banks start with one more arrival, quieter ones with one fewer.
             spawnInitialTraffic() {
                 this.updateScale();
                 const workload = WORKLOADS[this.workload];
-                for (let i = 0; i < workload.initialArrivals; i++) this.spawnArrival();
+                const bankMod = BANK_MODIFIERS[this.currentBank] || BANK_MODIFIERS.AFTERNOON;
+                const arrivals = Math.max(1, workload.initialArrivals + Math.sign(bankMod.capAdjust));
+                for (let i = 0; i < arrivals; i++) this.spawnArrival();
                 this.spawnDeparture();
+            }
+
+            // A different day or time of day is a different traffic picture (airlines, routes, rate),
+            // so the shift restarts with traffic from the new schedule, as when switching sectors.
+            changeSchedule() {
+                this.resetSpawnTimer();
+                this.clearTraffic();
+                this.resetShift();
+                const bank = document.getElementById('bank-select').selectedOptions[0].textContent;
+                this.log(`Schedule changed to ${DAY_MODIFIERS[this.currentDay].name}, ${bank}. New shift with that traffic.`, 'system');
+                this.queueInitialTraffic();
             }
 
             switchSector(sectorId) {
@@ -1760,7 +1780,7 @@
                 this.setZoom(this.currentZoom);
                 this.log(`Switched sector to ${newSector.id} (${newSector.name}).`, 'system');
 
-                setTimeout(() => this.spawnInitialTraffic(), 600);
+                this.queueInitialTraffic();
             }
 
             // Uses the real wind when given; otherwise a wind down the runway from the weather preset.
