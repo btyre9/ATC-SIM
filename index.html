@@ -2203,6 +2203,7 @@
 
                 this.setZoom('WIDE');
                 this.map.on('zoomend', () => this.updateScale());
+                document.getElementById('radar-container').addEventListener('wheel', (e) => this.zoomByWheel(e), { passive: false });
                 this.map.on('mousedown', (e) => this.handleMapClick(e));
 
                 setTimeout(() => this.spawnInitialTraffic(), 500);
@@ -2317,20 +2318,45 @@
 
             setZoom(level) {
                 this.currentZoom = level;
+                this.highlightZoomButton(level);
+                this.map.fitBounds(this.zoomBounds(level), { padding: [0,0], animate: true });
+                setTimeout(() => this.updateScale(), 500);
+            }
+
+            highlightZoomButton(level) {
                 ['wide', 'app', 'twr'].forEach(l => {
                     const btn = document.getElementById(`zoom-${l}`);
-                    btn.className = (l === level.toLowerCase()) 
+                    btn.className = (level && l === level.toLowerCase())
                         ? "px-2.5 py-0.5 text-[10px] font-bold bg-slate-600 text-white rounded shadow-inner border border-slate-500 transition-colors"
                         : "px-2.5 py-0.5 text-[10px] font-bold text-slate-400 hover:bg-slate-700 hover:text-white rounded transition-colors";
                 });
+            }
 
-                const rangeMiles = CONFIG.zoomLevels[level];
+            zoomBounds(level) {
+                const rangeDeg = CONFIG.zoomLevels[level] / 69.0;
                 const lat = CONFIG.airport.lat;
                 const lng = CONFIG.airport.lon;
-                const rangeDeg = rangeMiles / 69.0;
-                
-                this.map.fitBounds([[lat - rangeDeg, lng - rangeDeg], [lat + rangeDeg, lng + rangeDeg]], { padding: [0,0], animate: true });
-                setTimeout(() => this.updateScale(), 500); 
+                return [[lat - rangeDeg, lng - rangeDeg], [lat + rangeDeg, lng + rangeDeg]];
+            }
+
+            // Ctrl + scroll zooms one step per wheel notch, centered on the airport, between the WIDE and TWR ranges.
+            // Plain scrolling does nothing. Small trackpad deltas add up to a step.
+            zoomByWheel(e) {
+                if (!e.ctrlKey) return;
+                e.preventDefault(); // Otherwise Chrome zooms the whole page.
+                if (Math.sign(e.deltaY) !== Math.sign(this.wheelDelta)) this.wheelDelta = 0;
+                this.wheelDelta = (this.wheelDelta || 0) + e.deltaY;
+                if (Math.abs(this.wheelDelta) < 100) return;
+                const step = this.wheelDelta < 0 ? 1 : -1;
+                this.wheelDelta = 0;
+
+                const zoomOf = level => this.map.getBoundsZoom(this.zoomBounds(level));
+                const zoom = Math.min(zoomOf('TWR'), Math.max(zoomOf('WIDE'), this.map.getZoom() + step));
+                if (zoom === this.map.getZoom()) return;
+                const level = Object.keys(CONFIG.zoomLevels).find(l => zoomOf(l) === zoom);
+                if (level) this.currentZoom = level;
+                this.highlightZoomButton(level);
+                this.map.setZoom(zoom, { animate: false });
             }
 
             togglePause() {
