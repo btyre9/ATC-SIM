@@ -193,6 +193,10 @@
             </div>
 
             <div class="flex flex-wrap gap-x-4 gap-y-1 text-sm items-center whitespace-nowrap">
+                <!-- SIM CLOCK -->
+                <div class="text-xs font-bold font-mono text-amber-300 bg-slate-900 px-3 py-1 rounded border border-slate-600" title="Sim time at the airport: starts at the schedule bank's start time, runs at sim speed and stops when paused">
+                    <span class="text-[10px] text-slate-400">LCL</span> <span id="sim-clock">--:--:--</span>
+                </div>
                 <button id="wx-btn" type="button" class="px-2.5 py-1 text-[10px] font-bold bg-sky-900 text-sky-100 hover:bg-sky-800 rounded border border-sky-700" title="Choose weather: clear, cloudy, showers, storms, or live">WX: --</button>
                 <button id="settings-btn" type="button" class="px-2.5 py-1 text-[10px] font-bold bg-slate-700 text-white hover:bg-slate-600 rounded border border-slate-500" title="Map, workload, departures, and background traffic">SETTINGS</button>
                 <!-- WIND INDICATOR -->
@@ -860,10 +864,10 @@
 
         // Banks scale the workload's spacing between new aircraft and its traffic limit.
         const BANK_MODIFIERS = {
-            MORNING:   { rateFactor: 0.9,  capAdjust: 0,  departureShare: 0.5,  label: "HIGH (AM RUSH)" },
-            MIDDAY:    { rateFactor: 1.15, capAdjust: -1, departureShare: 0.4,  label: "MODERATE (MIDDAY)" },
-            AFTERNOON: { rateFactor: 0.85, capAdjust: 1,  departureShare: 0.4,  label: "PEAK (PM + INTL)" },
-            NIGHT:     { rateFactor: 1.6,  capAdjust: -2, departureShare: 0.35, label: "LOW (CARGO/REDEYE)" }
+            MORNING:   { rateFactor: 0.9,  capAdjust: 0,  departureShare: 0.5,  label: "HIGH (AM RUSH)",     startHour: 7 },
+            MIDDAY:    { rateFactor: 1.15, capAdjust: -1, departureShare: 0.4,  label: "MODERATE (MIDDAY)",  startHour: 11 },
+            AFTERNOON: { rateFactor: 0.85, capAdjust: 1,  departureShare: 0.4,  label: "PEAK (PM + INTL)",   startHour: 15 },
+            NIGHT:     { rateFactor: 1.6,  capAdjust: -2, departureShare: 0.35, label: "LOW (CARGO/REDEYE)", startHour: 21 }
         };
 
         // One controller's share of traffic. Real TRACONs split busy airports across several feeder,
@@ -2062,6 +2066,17 @@
                 this.spawnClock = 0;
                 document.getElementById('score-display').textContent = '0';
                 this.loadBest();
+                this.updateClock();
+            }
+
+            // Sim time on the airport's clock: the bank's start time plus time on position, at sim speed.
+            updateClock() {
+                const bank = BANK_MODIFIERS[this.currentBank] || BANK_MODIFIERS.AFTERNOON;
+                const seconds = Math.floor(bank.startHour * 3600 + this.stats.simSeconds) % 86400;
+                const pad = n => String(n).padStart(2, '0');
+                const text = `${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`;
+                const clock = document.getElementById('sim-clock');
+                if (clock.textContent !== text) clock.textContent = text;
             }
 
             newShift() {
@@ -4056,6 +4071,7 @@
                 this.lastTime = timestamp;
                 const simDt = dt * CONFIG.timeMultiplier;
                 this.stats.simSeconds += simDt;
+                this.updateClock();
 
                 this.spawnClock += simDt;
                 if (this.spawnClock >= this.spawnIntervalSec) {
