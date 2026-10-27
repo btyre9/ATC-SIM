@@ -57,30 +57,6 @@ window.ATC_PHOTOS = {
    "file": "File:USAirways N946UW Embraer 190.JPG",
    "category": "Embraer 190 of American Airlines"
   },
-  "ASA|B38M": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg/500px-Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Rene Hernandez2",
-   "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_(Los_Angeles)_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg",
-   "file": "File:Boeing 737 MAX 8 - N813AK - Alaska Airlines Flight AS1354 (Los Angeles) - Takeoff Guatemala City La Aurora GUA MGGT.jpg",
-   "category": "Boeing 737-8 MAX of Alaska Airlines"
-  },
-  "ASA|B738": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg/500px-Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Frank Kovalchek from Anchorage, Alaska, USA",
-   "license": "CC BY 2.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Air_737_touching_down_at_ANC_(6863673681).jpg",
-   "file": "File:Alaska Air 737 touching down at ANC (6863673681).jpg",
-   "category": "Boeing 737-800 of Alaska Airlines"
-  },
-  "ASA|B739": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg/500px-Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Adam Moreira (AEMoreira042281)",
-   "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Airlines_Boeing_737-990(ER)_N248AK_approaching_EWR_Airport.jpg",
-   "file": "File:Alaska Airlines Boeing 737-990(ER) N248AK approaching EWR Airport.jpg",
-   "category": "Current Boeing 737-900ER of Alaska Airlines"
-  },
   "DAL|A320": {
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Delta_Airbus_A320_N325US_BWI_MD1.jpg/500px-Delta_Airbus_A320_N325US_BWI_MD1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
    "artist": "Acroterion",
@@ -232,6 +208,46 @@ window.ATC_PHOTOS = {
    "source": "https://commons.wikimedia.org/wiki/File:United_Boeing_737-900ER_N34460_on_final_approach_to_Boston_March_2025_1.jpg",
    "file": "File:United Boeing 737-900ER N34460 on final approach to Boston March 2025 1.jpg",
    "category": "Current Boeing 737-900ER of United Airlines"
+  },
+  "ASA|B38M": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg/500px-Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Rene Hernandez2",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_(Los_Angeles)_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg",
+   "file": "File:Boeing 737 MAX 8 - N813AK - Alaska Airlines Flight AS1354 (Los Angeles) - Takeoff Guatemala City La Aurora GUA MGGT.jpg",
+   "category": "Boeing 737-8 MAX of Alaska Airlines"
+  },
+  "ASA|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg/500px-Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Frank Kovalchek from Anchorage, Alaska, USA",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Air_737_touching_down_at_ANC_(6863673681).jpg",
+   "file": "File:Alaska Air 737 touching down at ANC (6863673681).jpg",
+   "category": "Boeing 737-800 of Alaska Airlines"
+  },
+  "ASA|B739": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg/500px-Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Adam Moreira (AEMoreira042281)",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Airlines_Boeing_737-990(ER)_N248AK_approaching_EWR_Airport.jpg",
+   "file": "File:Alaska Airlines Boeing 737-990(ER) N248AK approaching EWR Airport.jpg",
+   "category": "Current Boeing 737-900ER of Alaska Airlines"
+  },
+  "UPS|A300": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg/500px-UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "4300streetcar",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg",
+   "file": "File:UPS Airbus A300-600RF N125UP after departing Runway 27 Boston Feb 2025 1.jpg",
+   "category": "Current Airbus A300 of UPS Airlines"
+  },
+  "UPS|B752": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/9aa_-_United_Parcel_Service_Boeing_757-24APF%3B_N407UP%40PIE%3B26.01.1998_%285183212758%29.jpg/500px-9aa_-_United_Parcel_Service_Boeing_757-24APF%3B_N407UP%40PIE%3B26.01.1998_%285183212758%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Aero Icarus from Z\u00fcrich, Switzerland",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:9aa_-_United_Parcel_Service_Boeing_757-24APF;_N407UP@PIE;26.01.1998_(5183212758).jpg",
+   "file": "File:9aa - United Parcel Service Boeing 757-24APF; N407UP@PIE;26.01.1998 (5183212758).jpg",
+   "category": "Current Boeing 757-200PF of UPS Airlines"
   },
   "UPS|B763": {
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/UPS_N354UP_run_5X166%28Hong_Kong_International_Airport_to_Singapore_Changi_Airport%29_12-03-2026.jpg/500px-UPS_N354UP_run_5X166%28Hong_Kong_International_Airport_to_Singapore_Changi_Airport%29_12-03-2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -473,29 +489,6 @@ window.ATC_PHOTOS = {
    "N948UW",
    "N958UW"
   ],
-  "ASA|B38M": [
-   "N801AK",
-   "N803AK",
-   "N806AK",
-   "N809AK",
-   "N813AK"
-  ],
-  "ASA|B738": [
-   "N519AS",
-   "N524AS",
-   "N538AS",
-   "N548AS",
-   "N549AS",
-   "N556AS"
-  ],
-  "ASA|B739": [
-   "N268AK",
-   "N290AK",
-   "N433AS",
-   "N435AS",
-   "N457AS",
-   "N486AS"
-  ],
   "DAL|A320": [
    "N329NW",
    "N334NW",
@@ -647,6 +640,45 @@ window.ATC_PHOTOS = {
    "N66893",
    "N69835",
    "N72405"
+  ],
+  "ASA|B38M": [
+   "N801AK",
+   "N803AK",
+   "N806AK",
+   "N809AK",
+   "N813AK"
+  ],
+  "ASA|B738": [
+   "N519AS",
+   "N524AS",
+   "N538AS",
+   "N548AS",
+   "N549AS",
+   "N556AS"
+  ],
+  "ASA|B739": [
+   "N268AK",
+   "N290AK",
+   "N433AS",
+   "N435AS",
+   "N457AS",
+   "N486AS"
+  ],
+  "UPS|A300": [
+   "N121UP",
+   "N136UP",
+   "N148UP",
+   "N162UP",
+   "N169UP",
+   "N172UP"
+  ],
+  "UPS|B752": [
+   "N413UP",
+   "N414UP",
+   "N428UP",
+   "N446UP",
+   "N454UP",
+   "N455UP"
   ],
   "UPS|B763": [
    "N301UP",

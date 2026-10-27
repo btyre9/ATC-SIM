@@ -538,7 +538,7 @@
                         { origin: "KMEM", gate: "NW_GATE", types: ["B763", "MD11", "B77L"], banks: ["MORNING", "NIGHT"] }
                     ]},
                     { airline: "UPS", weight: 3, routes: [
-                        { origin: "KSDF", gate: "NW_GATE", types: ["B752", "B763", "MD11"], banks: ["MORNING", "NIGHT"] }
+                        { origin: "KSDF", gate: "NW_GATE", types: ["B752", "B763", "A300"], banks: ["MORNING", "NIGHT"] }
                     ]}
                 ]
             },
@@ -576,7 +576,7 @@
                     ]},
                     { airline: "ASA", weight: 24, routes: [
                         { origin: "KSEA", gate: "NW_GATE", types: ["B739", "B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
-                        { origin: "KPDX", gate: "NW_GATE", types: ["B738", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KPDX", gate: "NW_GATE", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
                         { origin: "KSFO", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
                         { origin: "KBOS", types: ["B739", "B38M"], banks: ["MORNING", "NIGHT"] }
                     ]},
@@ -2219,8 +2219,11 @@
                 const id = chosen && this.newFlightId(chosen.airline);
                 if (!id) return false;
 
+                // Enter on the side facing the origin: its own gate, or a neighboring one when that is busy. Never the far
+                // side of the airport; when all three are blocked, the arrival waits and tries again a few seconds later.
                 const preferredGate = CONFIG.entryGates.find(g => g.name === chosen.gateName) || CONFIG.entryGates[0];
-                const orderedGates = [preferredGate, ...CONFIG.entryGates.filter(g => g.name !== preferredGate.name)];
+                const gateOffset = gate => Math.abs(((gate.angle - preferredGate.angle) % 360 + 540) % 360 - 180);
+                const orderedGates = CONFIG.entryGates.filter(gate => gateOffset(gate) <= 45).sort((a, b) => gateOffset(a) - gateOffset(b));
                 // Vary the usual STAR crossing altitudes, keeping higher ones as overflow levels.
                 const altitudes = [...CONFIG.entryAltitudes.slice(0, 3).sort(() => Math.random() - 0.5), ...CONFIG.entryAltitudes.slice(3)];
                 const airborne = this.aircraft.filter(ac => !ac.onGround);
@@ -3476,14 +3479,19 @@
                 figure.dataset.loaded = 'pending';
                 this.planespottersPhoto(ac.registration).then(spotted => {
                     const airline = AIRLINES.find(item => item.id === ac.id.slice(0, 3));
-                    const livery = window.ATC_PHOTOS?.liveries?.[`${ac.id.slice(0, 3)}|${ac.type}`];
+                    const liveries = window.ATC_PHOTOS?.liveries || {};
+                    const airlineCode = ac.id.slice(0, 3);
+                    // A type photo shows whatever airline Wikipedia picked, so this airline's livery on another type is the better stand-in.
+                    const ownKey = `${airlineCode}|${ac.type}`;
+                    const liveryKey = liveries[ownKey] ? ownKey : Object.keys(liveries).find(key => key.startsWith(`${airlineCode}|`));
+                    const livery = liveryKey && liveries[liveryKey];
                     const commons = livery || window.ATC_PHOTOS?.types?.[ac.type];
                     const photo = spotted ? {
                         url: spotted.thumbnail_large?.src || spotted.thumbnail?.src, source: spotted.link,
                         label: `${ac.registration}`, credit: `${spotted.photographer} / Planespotters.net`
                     } : commons && {
                         url: commons.url, source: commons.source,
-                        label: livery ? `${airline ? airline.name : ac.id.slice(0, 3)} ${ac.type}` : `Typical ${ac.type}`,
+                        label: livery ? `${airline ? airline.name : airlineCode} ${liveryKey.split('|')[1]}${liveryKey === ownKey ? '' : ' (livery)'}` : `Typical ${ac.type}`,
                         credit: `${commons.artist}, ${commons.license}`
                     };
                     figure.dataset.loaded = photo ? 'done' : 'none';

@@ -2,17 +2,21 @@
 
 - liveries: for each airline and type in the schedules, a photo from the Wikimedia Commons fleet
   category "<Type> of <Airline>" (or its per-aircraft subcategories), so it shows that airline's livery.
-- types: the lead image of each type's Wikipedia article, used when no livery photo is found.
+- types: the lead image of each type's Wikipedia article, used when the airline has no livery photo at all.
+  These show whatever airline Wikipedia chose, so every scheduled airline and type should have a livery photo;
+  the build lists any that don't.
 - fleets: real registrations for each airline and type, taken from the Commons per-aircraft categories
   and kept only when Planespotters.net has a photo of that aircraft in that airline and type. The sim
   fetches the Planespotters photo live when the aircraft is selected.
 
 Run from the project folder:  python3 tools/build_photos.py
+To rebuild only some airlines and keep everything else:  python3 tools/build_photos.py UPS ASA
 """
 import html
 import json
 import random
 import re
+import sys
 import time
 import urllib.parse
 import urllib.request
@@ -35,12 +39,13 @@ COMMONS_TYPES = {
     'A319': ['Airbus A319', 'Airbus A319-100'], 'A320': ['Airbus A320', 'Airbus A320-200'],
     'A321': ['Airbus A321', 'Airbus A321-200', 'Airbus A321neo'],
     'B737': ['Boeing 737-700'], 'B738': ['Boeing 737-800'], 'B739': ['Boeing 737-900ER', 'Boeing 737-900'],
-    'B38M': ['Boeing 737 MAX 8', 'Boeing 737-8 MAX', 'Boeing 737-8'], 'B752': ['Boeing 757-200'], 'A300': ['Airbus A300', 'Airbus A300-600'],
+    'B38M': ['Boeing 737 MAX 8', 'Boeing 737-8 MAX', 'Boeing 737-8'], 'B752': ['Boeing 757-200', 'Boeing 757-200PF', 'Boeing 757'],
+    'A300': ['Airbus A300', 'Airbus A300-600', 'Airbus A300-600F'],
     'B763': ['Boeing 767-300ER', 'Boeing 767-300', 'Boeing 767-300F'], 'B764': ['Boeing 767-400ER'],
     'A333': ['Airbus A330-300'], 'A359': ['Airbus A350-900'],
     'B772': ['Boeing 777-200ER', 'Boeing 777-200'], 'B77L': ['Boeing 777F', 'Boeing 777-200LR'],
     'B77W': ['Boeing 777-300ER'], 'B789': ['Boeing 787-9'],
-    'MD11': ['McDonnell Douglas MD-11F', 'McDonnell Douglas MD-11'], 'A343': ['Airbus A340-300'],
+    'MD11': ['McDonnell Douglas MD-11F', 'McDonnell Douglas MD-11(F)', 'McDonnell Douglas MD-11'], 'A343': ['Airbus A340-300'],
     'B748': ['Boeing 747-8F', 'Boeing 747-8I', 'Boeing 747-8'], 'A388': ['Airbus A380-800', 'Airbus A380'],
 }
 AIRLINES = {
@@ -71,6 +76,7 @@ EXCLUDE_FILES = {
     'File:Delta A321 at Airbus Mobile.jpg',
     'File:Aircraft on ramp at Exuma International Airport.jpg',
     'File:FEMA - 15566 - Photograph by George Armstrong taken on 09-04-2005 in Georgia.jpg',
+    'File:UPS Boeing 767 landing with Boeing 757 in background.jpg',
 }
 API = 'https://commons.wikimedia.org/w/api.php'
 PLANESPOTTERS = 'https://api.planespotters.net/pub/photos/reg/'
@@ -85,7 +91,7 @@ TYPE_SLUGS = {
     'B77L': r'777-f|777f|777-2\w\wlr', 'B77W': r'777-3', 'B789': r'787-9',
     'A319': r'a319', 'A320': r'a320', 'A321': r'a321', 'A333': r'a330-3', 'A359': r'a350-9', 'A343': r'a340-3',
     'E190': r'erj-190|e190|embraer-190', 'CRJ7': r'crj-?7|cl-600-2c10', 'CRJ9': r'crj-?9|cl-600-2d24',
-    'MD11': r'md-11', 'B748': r'747-8', 'A388': r'a380',
+    'MD11': r'md-11', 'B748': r'747-8', 'A388': r'a380', 'A300': r'a300',
 }
 FLEET_SIZE = 6        # Registrations kept per airline and type.
 FLEET_CHECKS = 14     # Planespotters lookups tried per airline and type.
@@ -262,17 +268,29 @@ def scheduled_combinations():
     return sorted(pairs)
 
 
+def load_existing():
+    with open('photos-data.js') as source:
+        return json.loads(source.read().split('=', 1)[1].strip().rstrip(';'))
+
+
 def main():
-    types = {}
-    cache = {}
-    for icao, article in ARTICLES.items():
-        if article not in cache:
-            cache[article] = type_photo(article)
-        if cache[article]:
-            types[icao] = cache[article]
-    liveries, fleets = {}, {}
+    only = set(sys.argv[1:])
+    if only:
+        # Partial rebuild: keep other airlines' entries and the type photos, redo the named airlines.
+        existing = load_existing()
+        types = existing['types']
+        keep = lambda entries: {key: value for key, value in entries.items() if key.split('|')[0] not in only}
+        liveries, fleets = keep(existing['liveries']), keep(existing['fleets'])
+    else:
+        types, cache = {}, {}
+        for icao, article in ARTICLES.items():
+            if article not in cache:
+                cache[article] = type_photo(article)
+            if cache[article]:
+                types[icao] = cache[article]
+        liveries, fleets = {}, {}
     for airline, icao in scheduled_combinations():
-        if airline not in AIRLINES:
+        if airline not in AIRLINES or (only and airline not in only):
             continue
         photo = livery_photo(airline, icao)
         if photo:
@@ -286,6 +304,10 @@ def main():
         out.write('/* Generated by tools/build_photos.py from Wikimedia Commons and Planespotters.net checks. Do not edit by hand. */\n')
         out.write(f'window.ATC_PHOTOS = {json.dumps({"liveries": liveries, "types": types, "fleets": fleets}, indent=1)};\n')
     print(f'{len(liveries)} livery photos, {len(types)} type photos, {sum(map(len, fleets.values()))} registrations')
+    missing = [f'{airline} {icao}' for airline, icao in scheduled_combinations()
+               if airline in AIRLINES and f'{airline}|{icao}' not in liveries]
+    if missing:
+        print('No livery photo (the sim shows the airline on another type):', ', '.join(missing))
 
 
 if __name__ == '__main__':

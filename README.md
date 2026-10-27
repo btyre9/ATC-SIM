@@ -82,7 +82,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 | `serve.py`, `start-atc.command` | Local server and launcher |
 | `tools/build_fixes.py` | Regenerates `fixes-data.js` from the FAA Designated Points dataset |
 | `tools/build_runways.py` | Regenerates `runways-data.js` from the FAA Runways dataset |
-| `tools/build_photos.py` | Regenerates `photos-data.js`: registrations from Commons fleet categories, checked against Planespotters.net, and fallback photos |
+| `tools/build_photos.py` | Regenerates `photos-data.js`: registrations from Commons fleet categories, checked against Planespotters.net, and fallback photos. `python3 tools/build_photos.py UPS` redoes one airline and keeps the rest |
 | `vendor/` | Kokoro JS browser bundle (Apache 2.0) |
 
 FAA fixes change on the 56-day chart cycle, and runways are occasionally renumbered as magnetic north drifts (Charlotte's are now 01L/19R, 01R/19L and 18/36). Refresh both with:
