@@ -66,6 +66,8 @@ Once a departure has been handed to center and read back the frequency, it is dr
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
 - **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
 - **TRAILS** shows the whole track of the aircraft you select as one line, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
+- **WIDE / APP / TWR** set the scope range. Hold Ctrl and scroll over the scope to zoom in steps between them, centered on the airport: no farther out than WIDE and no closer than TWR. A trackpad pinch works too.
+- **LCL** is the sim clock, in the airport's local time. It starts at the start of the chosen time of day (07:00, 11:00, 15:00 or 21:00), runs at sim speed, stops when paused and restarts with each new shift.
 
 ## Files
 
