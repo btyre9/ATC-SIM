@@ -3,7 +3,9 @@
     'use strict';
 
     class PilotRadio {
-        constructor(synth, Utterance, onError = () => {}) {
+        constructor(synth, Utterance, onError = () => {}, effect = null) {
+            // Radio static around each transmission (radio-effect.js).
+            this.effect = effect;
             this.synth = synth;
             this.Utterance = Utterance;
             this.onError = onError;
@@ -43,6 +45,7 @@
         }
 
         stopCurrent() {
+            if (this.active) this.effect?.unkey(null, true);
             this.active = null;
             this.activeItem = null;
             if (this.supported) this.synth.cancel();
@@ -71,6 +74,7 @@
             utterance.volume = 1;
             const selectedVoice = this.availableVoices().find(voice => voice.voiceURI === this.voiceURI);
             if (selectedVoice) utterance.voice = selectedVoice;
+            utterance.onstart = () => { if (this.active === utterance) this.effect?.keyUp(); };
             utterance.onend = () => this.finish(utterance);
             utterance.onerror = event => {
                 if (this.active === utterance && !['canceled', 'interrupted'].includes(event.error)) {
@@ -89,6 +93,7 @@
 
         finish(utterance) {
             if (this.active !== utterance) return;
+            this.effect?.unkey();
             this.active = null;
             this.activeItem = null;
             this.playNext();

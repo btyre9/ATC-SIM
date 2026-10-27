@@ -39,6 +39,8 @@
             this.loadModel = options.loadModel || loadWorkerModel;
             this.AudioContext = options.AudioContext || root.AudioContext || root.webkitAudioContext;
             this.random = options.random || Math.random;
+            // Radio band, grit and static (radio-effect.js).
+            this.effect = options.effect || null;
             this.enabled = false;
             this.listening = false;
             this.queue = [];
@@ -130,6 +132,7 @@
             this.active = null;
             this.preemptAfterGeneration = false;
             if (this.source) {
+                this.effect?.unkey(null, true);
                 this.source.onended = null;
                 try { this.source.stop(); } catch (_) { /* Already stopped. */ }
                 this.source.disconnect();
@@ -182,17 +185,20 @@
                 buffer.copyToChannel(samples, 0);
                 const source = this.context.createBufferSource();
                 source.buffer = buffer;
-                source.connect(this.context.destination);
+                source.connect(this.effect ? this.effect.voiceInput(this.context) : this.context.destination);
                 this.source = source;
                 source.onended = () => {
                     if (this.source !== source) return;
+                    this.effect?.unkey(this.context);
                     source.disconnect();
                     this.source = null;
                     this.active = null;
                     this.onStatus('Kokoro ready.');
                     this.playNext();
                 };
-                source.start();
+                // The mic click comes a moment before the first word.
+                this.effect?.keyUp(this.context);
+                source.start(this.context.currentTime + (this.effect ? 0.06 : 0));
             } catch (error) {
                 if (token !== this.generation) return;
                 if (this.preemptAfterGeneration) {

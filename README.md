@@ -27,7 +27,7 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 | `LUAW` | "Runway two seven, line up and wait" (or "position and hold") | Taxi onto the runway and wait (manual departure mode) |
 | `CTO` | "Runway two seven, cleared for takeoff" | Takeoff; from the hold-short line it lines up first, then rolls (manual departure mode) |
 
-Pilots read back right away and act 3–6 seconds later, like setting the autopilot.
+Pilots read back right away and act 3–6 seconds later, like setting the autopilot. Transmissions sound like a VHF radio: a mic click, a light hiss while the pilot talks and a squelch tail at the end. Kokoro voices also get the radio's narrow band. Turn it off with **Radio static** in the pilot voice settings.
 
 ### Procedures
 
@@ -81,6 +81,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 | `photos-data.js` | Real registrations per airline and type, plus freely licensed fallback photos with credit (generated) |
 | `voice-commands.js` | Speech transcript to command parser |
 | `pilot-radio.js`, `kokoro-radio.js`, `kokoro-worker.js` | Spoken pilot transmissions; Kokoro runs in a background worker |
+| `radio-effect.js` | Radio sound: mic click, hiss, squelch tail, and the radio band for Kokoro voices |
 | `serve.py`, `start-atc.command` | Local server and launcher |
 | `tools/build_fixes.py` | Regenerates `fixes-data.js` from the FAA Designated Points dataset |
 | `tools/build_runways.py` | Regenerates `runways-data.js` from the FAA Runways dataset |
