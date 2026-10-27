@@ -1648,6 +1648,23 @@
 
                 this.storms = [];
                 this.weatherMode = this.loadSetting('atcWeatherMode', 'THUNDERSTORMS', [...Object.keys(window.ATCWeatherControl.PRESETS), 'LIVE']);
+
+                // Start options in the address, e.g. ?sector=KSAN&bank=MIDDAY&wx=CLEAR (start-atc.bat uses these).
+                // They apply to this load only; saved settings are unchanged.
+                const launch = new URLSearchParams(location.search);
+                const launchSector = SECTORS[launch.get('sector')];
+                if (launchSector) {
+                    CONFIG.currentSectorId = launchSector.id;
+                    CONFIG.airport = launchSector;
+                    CONFIG.secondaryAirports = launchSector.secondaryAirports;
+                    CONFIG.waypoints = sectorWaypoints(launchSector);
+                    document.getElementById('sector-select').value = launchSector.id;
+                }
+                if (BANK_MODIFIERS[launch.get('bank')]) {
+                    this.currentBank = launch.get('bank');
+                    document.getElementById('bank-select').value = this.currentBank;
+                }
+                if (window.ATCWeatherControl.PRESETS[launch.get('wx')] || launch.get('wx') === 'LIVE') this.weatherMode = launch.get('wx');
                 this.mapStyle = this.loadSetting('atcMapStyle', 'LIGHT', Object.keys(MAP_STYLES));
                 this.mapBrightness = Number(this.loadSetting('atcMapBrightness', '60',
                     Array.from({ length: 16 }, (_, i) => String(25 + i * 5))));
