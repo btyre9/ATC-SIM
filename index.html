@@ -4,6 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OpenATC Simulator - Multi-Sector & Weather</title>
+    <script>
+        // On a static host (GitHub Pages) a service worker supplies the headers serve.py sends, so Kokoro
+        // voices run multithreaded. The page reloads once, on the first visit, when the worker takes over;
+        // a browser that still can't isolate the page just runs Kokoro on one thread.
+        if (!window.crossOriginIsolated && window.isSecureContext && 'serviceWorker' in navigator) {
+            const firstVisit = !navigator.serviceWorker.controller;
+            navigator.serviceWorker.register('isolation-worker.js').catch(() => {});
+            if (firstVisit) navigator.serviceWorker.addEventListener('controllerchange', () => location.reload(), { once: true });
+        }
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Leaflet Map CSS & JS -->

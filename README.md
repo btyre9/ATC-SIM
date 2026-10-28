@@ -2,7 +2,11 @@
 
 A browser-based approach and departure control simulator for Atlanta (KATL), San Diego (KSAN), Charlotte (KCLT) and Detroit (KDTW). It has voice commands, spoken pilot readbacks, real FAA fixes, live or simulated weather, and FAA-style procedures and separation rules.
 
-## Run it
+## Play online
+
+Open **https://btyre9.github.io/ATC-SIM/** in Chrome. Nothing to install; it updates whenever `main` changes. The first visit reloads once while `isolation-worker.js` sets up full-speed Kokoro voices. Settings, best scores and the emergency timer are kept in each player's own browser. The CARTO basemap needs a player's own key (SETTINGS); without one the sim uses OpenFreeMap.
+
+## Run it locally
 
 Double-click `start-atc.command` (macOS). It starts `serve.py` at `http://127.0.0.1:8000/index.html` and opens Chrome. Use the same address each time so Chrome remembers microphone permission.
 
@@ -101,7 +105,8 @@ Once a departure has been handed to center and read back the frequency, it is dr
 | File | Purpose |
 |---|---|
 | `index.html` | Sector data, aircraft model, game loop and UI |
-| `traffic-logic.js` | Separation minimums, conflict prediction, safe arrival entry |
+| `traffic-logic.js` | Aircraft climb and descent performance, separation minimums, conflict prediction, safe arrival entry |
+| `isolation-worker.js` | On GitHub Pages, adds the headers `serve.py` sends so Kokoro voices run multithreaded |
 | `emergency-logic.js` | When emergencies may happen, which kinds fit an aircraft, and the pilot's declaration |
 | `weather-control.js` | Weather presets, NWS observation parsing, storm cells from NEXRAD pixels |
 | `weather-logic.js` | Pilot weather deviation requests |
