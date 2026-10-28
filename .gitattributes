@@ -1,1 +1,3 @@
+# Keep Mac launchers and scripts runnable even when the folder is checked out on Windows.
+* text=auto eol=lf
 *.bat text eol=crlf
