@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { distanceNM, separationFor, predictLoss, findConflicts, entryIsClear } = require('./traffic-logic');
+const { distanceNM, separationFor, predictLoss, findConflicts, entryIsClear, performanceFor, verticalRateFpm } = require('./traffic-logic');
 
 const airport = { lat: 33, lon: -84, elevation: 1000 };
 const standard = { lateralNM: 3, verticalFt: 1000 };
@@ -82,4 +82,26 @@ test('localizer offset measures distance out on final and off the centerline', (
     assert.ok(localizerOffset(at(-1, 0), threshold).along < 0, 'past the threshold');
     // Runway 18 (landing south): the final is north of the threshold.
     assert.ok(Math.abs(localizerOffset(at(0, 8), { ...threshold, heading: 180 }).along - 8) < 0.05);
+});
+
+test('climb rates depend on the type and fall off with altitude', () => {
+    const narrow = { performance: performanceFor('B738'), altitude: 2000, targetAltitude: 10000, speed: 250, targetSpeed: 250 };
+    const heavy = { ...narrow, performance: performanceFor('B77W') };
+    assert.ok(verticalRateFpm(narrow) > verticalRateFpm(heavy));
+    assert.ok(verticalRateFpm({ ...narrow, altitude: 12000, targetAltitude: 16000 }) < verticalRateFpm(narrow));
+    assert.ok(verticalRateFpm({ ...narrow, targetSpeed: 290 }) < verticalRateFpm(narrow));
+});
+
+test('slowing down flattens a descent, less so with speedbrakes', () => {
+    const descending = { performance: performanceFor('A320'), altitude: 11000, targetAltitude: 5000, speed: 250, targetSpeed: 250 };
+    const normal = verticalRateFpm(descending);
+    assert.ok(normal > 1500 && normal < 2000);
+    assert.equal(verticalRateFpm({ ...descending, targetSpeed: 210 }), normal * 0.5);
+    assert.ok(verticalRateFpm({ ...descending, expediteVertical: true }) > 2500);
+    assert.equal(verticalRateFpm({ ...descending, targetSpeed: 210, ilsCaptured: true }), normal);
+});
+
+test('an emergency descent is much faster than a normal one', () => {
+    const plane = { altitude: 30000, targetAltitude: 10000, speed: 280, targetSpeed: 280, emergency: { descendTo: 10000 } };
+    assert.ok(verticalRateFpm(plane) >= 4000);
 });

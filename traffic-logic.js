@@ -3,7 +3,46 @@
     'use strict';
 
     const radians = degrees => degrees * Math.PI / 180;
-    const CLIMB_FPM = 2100; // Matches the simulator's 35 ft per second climb and descent rate.
+    /* Airliner performance. climbFpm is the climb rate near sea level, falling off 2.5% per 1,000 ft;
+       rotateKt is liftoff; initialClimbKt (about V2 + 15) is flown to 1,000 ft above the field;
+       takeoffAccel is knots per second on the takeoff roll. */
+    const PERFORMANCE = {
+        regional: { climbFpm: 3000, rotateKt: 135, initialClimbKt: 160, takeoffAccel: 4.2 },
+        narrowbody: { climbFpm: 3000, rotateKt: 145, initialClimbKt: 165, takeoffAccel: 4.0 },
+        b757: { climbFpm: 3800, rotateKt: 140, initialClimbKt: 160, takeoffAccel: 4.5 },
+        widebody: { climbFpm: 2500, rotateKt: 155, initialClimbKt: 175, takeoffAccel: 3.4 },
+        jumbo: { climbFpm: 2200, rotateKt: 165, initialClimbKt: 180, takeoffAccel: 3.0 }
+    };
+    const TYPE_CLASS = {
+        B717: 'regional', E170: 'regional', E175: 'regional', E190: 'regional', CRJ7: 'regional', CRJ9: 'regional',
+        B752: 'b757', B753: 'b757',
+        A300: 'widebody', A333: 'widebody', A343: 'widebody', A359: 'widebody', B763: 'widebody', B764: 'widebody',
+        B772: 'widebody', B77L: 'widebody', B77W: 'widebody', B789: 'widebody', MD11: 'widebody',
+        B748: 'jumbo', A388: 'jumbo'
+    };
+    const EMERGENCY_DESCENT_FPM = 5000;
+
+    function performanceFor(type) {
+        return PERFORMANCE[TYPE_CLASS[type] || 'narrowbody'];
+    }
+
+    /* Climb or descent rate right now. Idle descents run about 1,400 ft/min near the ground and 1,700 at
+       10,000 ft (roughly the 3-to-1 path at 250 kt). Expediting adds 25% to a climb and 60% to a descent
+       (speedbrakes). Changing speed takes energy: accelerating flattens a climb, slowing flattens a descent. */
+    function verticalRateFpm(plane) {
+        const perf = plane.performance || PERFORMANCE.narrowbody;
+        const climbing = (plane.targetAltitude ?? plane.altitude) > plane.altitude;
+        const thousands = Math.max(0, plane.altitude) / 1000;
+        const emergency = plane.emergency || {};
+        if (!climbing && emergency.descendTo) return EMERGENCY_DESCENT_FPM;
+        let rate = climbing ? perf.climbFpm * (1 - 0.025 * thousands) : 1400 + 30 * thousands;
+        if (climbing && emergency.climbFactor) rate *= emergency.climbFactor;
+        if (plane.expediteVertical) rate *= climbing ? 1.25 : 1.6;
+        const speedChange = (plane.targetSpeed ?? plane.speed) - plane.speed;
+        if (climbing && speedChange > 5) rate *= 0.6;
+        if (!climbing && speedChange < -5 && !plane.ilsCaptured) rate *= plane.expediteVertical ? 0.75 : 0.5;
+        return rate;
+    }
     const PARALLEL_FINAL_NM = 2.5; // FAA in-trail minimum for aircraft established on the same final.
 
     const velocity = (heading, knots) => ({
@@ -34,7 +73,7 @@
         };
     }
 
-    function altitudeAfter(plane, minutes, climbFpm = CLIMB_FPM) {
+    function altitudeAfter(plane, minutes, climbFpm = verticalRateFpm(plane)) {
         const target = plane.targetAltitude ?? plane.altitude;
         const change = Math.min(Math.abs(target - plane.altitude), climbFpm * minutes);
         return plane.altitude + Math.sign(target - plane.altitude) * change;
@@ -105,6 +144,6 @@
         });
     }
 
-    root.ATCTraffic = { offsetNM, distanceNM, localizerOffset, altitudeAfter, separationFor, predictLoss, findConflicts, entryIsClear };
+    root.ATCTraffic = { offsetNM, distanceNM, localizerOffset, performanceFor, verticalRateFpm, altitudeAfter, separationFor, predictLoss, findConflicts, entryIsClear };
     if (typeof module !== 'undefined') module.exports = root.ATCTraffic;
 })(typeof window !== 'undefined' ? window : globalThis);

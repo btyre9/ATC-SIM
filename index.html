@@ -1219,6 +1219,7 @@
             constructor(id, type, lat, lon, heading, altitude, speed, isArrival, origin, dest) {
                 this.id = id;
                 this.type = type;
+                this.performance = window.ATCTraffic.performanceFor(type);
                 this.origin = origin;
                 this.dest = dest;
                 this.lat = lat;
@@ -1398,6 +1399,13 @@
                     this.pendingActions = this.pendingActions.filter(action => action.at > this.simAge);
                     due.forEach(action => action.apply());
                 }
+                // Departure speeds until the controller assigns one: climb speed to 1,000 ft above the field,
+                // then 250 kt, then 290 kt above 10,000 ft.
+                if (!this.isArrival && !this.speedAssigned && (this.takeoffCleared || !this.onGround)) {
+                    const agl = this.altitude - CONFIG.airport.elevation;
+                    this.targetSpeed = this.onGround || agl < 1000 ? this.performance.initialClimbKt :
+                        this.altitude < 10000 ? 250 : 290;
+                }
                 // Lining up: taxi from the hold-short line to the threshold, turning onto the runway heading.
                 if (this.lineUp) {
                     const threshold = getRunwayDetails(this.departureRunway);
@@ -1466,8 +1474,7 @@
                 }
 
                 if (!this.onGround && this.altitude !== this.targetAltitude) {
-                    const engineOut = this.emergency?.climbFactor && this.targetAltitude > this.altitude ? this.emergency.climbFactor : 1;
-                    const climbRate = 35 * (this.expediteVertical ? 1.7 : 1) * engineOut * CONFIG.timeMultiplier * dt;
+                    const climbRate = window.ATCTraffic.verticalRateFpm(this) / 60 * CONFIG.timeMultiplier * dt;
                     if (Math.abs(this.targetAltitude - this.altitude) < climbRate) {
                         this.altitude = this.targetAltitude;
                         this.expediteVertical = false;
@@ -1478,7 +1485,9 @@
                 if (this.emergency?.maxSpeed && !this.onGround && this.targetSpeed > this.emergency.maxSpeed) this.targetSpeed = this.emergency.maxSpeed;
                 if (this.speed !== this.targetSpeed) {
                     let accRate = 0.8 * CONFIG.timeMultiplier * dt; 
-                    if (this.onGround && this.takeoffCleared) accRate = 4.0 * CONFIG.timeMultiplier * dt;
+                    if (this.onGround && this.takeoffCleared) accRate = this.performance.takeoffAccel * CONFIG.timeMultiplier * dt;
+                    // Just after liftoff the aircraft is still at takeoff thrust, quickly reaching its climb speed.
+                    else if (!this.isArrival && this.speed < this.performance.initialClimbKt) accRate = 2.5 * CONFIG.timeMultiplier * dt;
                     if (this.rollout) accRate = 5.0 * CONFIG.timeMultiplier * dt;
 
                     if (Math.abs(this.targetSpeed - this.speed) < accRate) this.speed = this.targetSpeed;
@@ -1486,8 +1495,7 @@
                 }
 
                 if (!this.onGround || (this.onGround && this.takeoffCleared) || this.rollout) {
-                    if(this.onGround && this.takeoffCleared && this.speed < 160) this.targetSpeed = 250;
-                    if(this.onGround && this.speed > 140 && !this.rollout) {
+                    if(this.onGround && this.speed >= this.performance.rotateKt && !this.rollout) {
                         this.onGround = false;
                         this.lastStatus = this.directTo ? `SID ${this.directTo.name}` : "AIRBORNE";
                     }
@@ -3532,7 +3540,7 @@
                                     this.log(`${id}: keep speed at 160 kt or more until established on final.`, 'error');
                                     readback('Unable, minimum one six zero knots until established');
                                 } else {
-                                    act(() => { plane.targetSpeed = spd; });
+                                    act(() => { plane.targetSpeed = spd; plane.speedAssigned = true; });
                                     this.log(`${id} speed ${spd} knots.`);
                                     readback(`Speed ${spd} knots`);
                                 }
