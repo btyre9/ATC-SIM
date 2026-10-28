@@ -1019,8 +1019,18 @@
             towerTakeoffSpacingSec: 60
         };
 
+        /* Turn rate in degrees per second at this speed: standard rate (3°/s) or 25° of bank, whichever is
+           less, the way airliner autopilots turn (and the AIM 5-3-8 holding rule). An immediate turn uses 30°.
+           At 250 kt that is about 2°/s; at 180 kt and below, standard rate. */
+        const BANK_DEG = 25, EXPEDITE_BANK_DEG = 30;
+        const ROLL_SEC = 4;   // Time to roll into (or out of) the full bank.
+        function turnRate(speed, expedite = false) {
+            const rate = 1091 * Math.tan(toRad(expedite ? EXPEDITE_BANK_DEG : BANK_DEG)) / Math.max(speed, 120);
+            return expedite ? rate : Math.min(3, rate);
+        }
+
         // FAA holding (AIM 5-3-8): maximum holding speed by altitude; one-minute legs at or below 14,000 ft,
-        // 1½ minutes above; standard-rate (3°/s) turns.
+        // 1½ minutes above; turns at standard rate or 25° of bank.
         function holdingSpeed(altitude) {
             return altitude <= 6000 ? 200 : altitude <= 14000 ? 230 : 265;
         }
@@ -1028,7 +1038,7 @@
         function holdShape(plane) {
             const speed = Math.min(plane.speed, holdingSpeed(plane.altitude));
             const legSec = plane.altitude > 14000 ? 90 : 60;
-            return { legSec, legNM: speed * legSec / 3600, radiusNM: (speed / 3600) / toRad(3) };
+            return { legSec, legNM: speed * legSec / 3600, radiusNM: (speed / 3600) / toRad(turnRate(speed)) };
         }
 
         const HOLD_DIRECTIONS = { N: 0, NE: 45, E: 90, SE: 135, S: 180, SW: 225, W: 270, NW: 315 };
@@ -1255,7 +1265,8 @@
                 this.handedOff = null;
                 this.expectedRunway = null;
                 this.hold = null;                // { fix, inbound, turn, phase, timer } while holding.
-                this.expediteTurn = false;       // Standard-rate turn until on the new heading.
+                this.expediteTurn = false;       // 30° bank until on the new heading.
+                this.rollRate = 0;               // Current turn rate, deg/s; builds up and eases off with the bank.
                 this.expediteVertical = false;   // Best-rate climb or descent until level.
                 this.onVectors = false;      // True once the controller assigns a heading.
                 this.alignHeading = null;    // Runway course to turn onto at the final fix.
@@ -1293,7 +1304,7 @@
                 const steer = (heading, direction = 'shortest') => {
                     this.targetHeading = (Math.round(heading) % 360 + 360) % 360;
                     this.turnDirection = direction;
-                    this.expediteTurn = true;                               // Standard rate.
+                    this.expediteTurn = false;
                 };
                 const distance = window.ATCTraffic.distanceNM(this, hold.fix);
                 const passedFix = distance < 0.5 || (distance < 2.5 && distance > hold.lastDistance);
@@ -1432,13 +1443,23 @@
                     if (this.turnDirection === 'right' && diff < 0) diff += 360;
                     if (this.turnDirection === 'left' && diff > 0) diff -= 360;
                     
-                    const turnRate = 1.5 * (this.expediteTurn ? 2 : 1) * CONFIG.timeMultiplier * dt;
-                    if (Math.abs(diff) < turnRate) {
+                    // Roll into the bank, hold it, and roll out so the turn ends on the heading.
+                    const simDt = CONFIG.timeMultiplier * dt;
+                    const fullRate = turnRate(this.speed, this.expediteTurn);
+                    const rollAccel = fullRate / ROLL_SEC;
+                    const direction = Math.sign(diff);
+                    if (Math.sign(this.rollRate) !== direction) this.rollRate = 0;
+                    const rate = Math.min(fullRate, Math.abs(this.rollRate) + rollAccel * simDt,
+                        Math.sqrt(2 * rollAccel * Math.abs(diff)) + rollAccel * simDt);
+                    const step = rate * simDt;
+                    if (Math.abs(diff) <= step) {
                         this.heading = this.targetHeading;
                         this.turnDirection = 'shortest';
                         this.expediteTurn = false;
+                        this.rollRate = 0;
                     } else {
-                        this.heading += (diff > 0 ? turnRate : -turnRate);
+                        this.heading += direction * step;
+                        this.rollRate = direction * rate;
                     }
                     if (this.heading < 0) this.heading += 360;
                     if (this.heading >= 360) this.heading -= 360;
@@ -1529,8 +1550,9 @@
                                 this.turnDirection = 'shortest';
                             }
                             // Lead the turn so the aircraft rolls out on the centerline.
-                            const turnRadius = (this.speed / 3600) / toRad(1.5); // NM, at the 1.5 deg/s turn rate
-                            const lead = Math.max(0.15, turnRadius * (1 - Math.cos(toRad(Math.abs(relative)))));
+                            const turnRadius = (this.speed / 3600) / toRad(turnRate(this.speed)); // NM
+                            const rollOut = this.speed / 3600 * ROLL_SEC / 2 * Math.sin(toRad(Math.abs(relative)));
+                            const lead = Math.max(0.15, turnRadius * (1 - Math.cos(toRad(Math.abs(relative)))) + rollOut);
                             if (Math.abs(cross) <= lead && along > 0.5 && along < 30) {
                                 this.ilsCaptured = true;
                             } else {
