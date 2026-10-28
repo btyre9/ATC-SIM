@@ -27,7 +27,7 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 | `LUAW` | "Runway two seven, line up and wait" (or "position and hold") | Taxi onto the runway and wait (manual departure mode) |
 | `CTO` | "Runway two seven, cleared for takeoff" | Takeoff; from the hold-short line it lines up first, then rolls (manual departure mode) |
 
-Pilots read back right away and act 3–6 seconds later, like setting the autopilot. Turns follow the autopilot too: 25° of bank, capped at standard rate (3° per second), with a few seconds to roll in and out. That is about 2° per second at 250 kt and the full 3° per second at 180 kt or slower, so a 90° turn takes 35–50 seconds.
+Pilots read back right away and act 3–6 seconds later, like setting the autopilot. Turns follow the autopilot too: 25° of bank, capped at standard rate (3° per second), with a few seconds to roll in and out. That is about 2° per second at 250 kt and the full 3° per second at 180 kt or slower, so a 90° turn takes 35–50 seconds. Transmissions sound like a VHF radio: a mic click, a light hiss while the pilot talks and a squelch tail at the end. Kokoro voices also get the radio's narrow band. Turn it off with **Radio static** in the pilot voice settings.
 
 Climbs and descents follow the aircraft type and altitude:
 
@@ -40,7 +40,7 @@ Climbs and descents follow the aircraft type and altitude:
 
 - Departures hold their climb speed to 1,000 ft above the field, then lower the nose and accelerate to 250 kt (290 kt above 10,000 ft) unless you assign a speed. Climbs flatten while they accelerate. A narrowbody reaches 10,000 ft about 5 minutes after takeoff.
 - Descents are idle descents: about 1,400 ft/min near the ground and 1,700 at 10,000 ft, close to the 3-to-1 rule (12,000 to 4,000 ft takes about 20 NM at 250 kt). Slowing down at the same time halves the descent rate, so "descend and reduce speed" takes longer than either alone. Expedite uses speedbrakes. Once established on the ILS, gear and flaps let it slow and descend together.
-- An emergency descent runs about 5,000 ft/min. Transmissions sound like a VHF radio: a mic click, a light hiss while the pilot talks and a squelch tail at the end. Kokoro voices also get the radio's narrow band. Turn it off with **Radio static** in the pilot voice settings.
+- An emergency descent runs about 5,000 ft/min.
 
 ### Procedures
 
