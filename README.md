@@ -38,6 +38,19 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 - **Rules:** 250 kt maximum below 10,000 ft (14 CFR 91.117) and 160 kt minimum until established. Separation is 3 NM or 1,000 ft, or 2.5 NM on the same final; parallel ILS approaches are exempt. Pilots refuse clearances that break these rules and say why.
 - **Runways:** one aircraft on a runway at a time, and both ends count (San Diego's 09 and 27 are one runway). Tower lines a departure up only when the runway is clear and the next arrival is at least 2 minutes out, and clears it for takeoff with at least a minute to spare. Pilots refuse to enter a runway they can see is occupied, but they can't see an arrival behind them: lining up or clearing a departure with an arrival inside 1 NM is a runway incursion. An arrival that finds the runway occupied goes around.
 - **Runway changes:** when the wind swings to the other flow, waiting departures taxi to the new runway (lined-up ones back to a hold-short line), and approach and expect-runway clearances to the old runway are cancelled, except for arrivals established inside 5 NM. The log lists who to re-clear.
+- **Emergencies** are rare: never more than one in any 3 hours of real play (counted across sessions and kept by RESET ALL SETTINGS), and about every 5 hours on average after that; never in a shift's first 10 minutes. A pilot on your frequency declares a mayday (pan-pan for a medical), gives souls on board and fuel remaining, and squawks 7700; the aircraft, data block and strip turn red.
+
+  | Emergency | Who | What changes |
+  |---|---|---|
+  | Engine failure | Departure or arrival | Departures turn back; half the climb rate, 210 kt maximum |
+  | Bird strike | Departure below 5,000 ft | Lost an engine: as above |
+  | Smoke in the cabin | Departure or arrival | Wants an immediate landing |
+  | Emergency fuel | Arrival | 20–25 minutes of fuel left |
+  | Loss of pressurization | Any aircraft above 11,000 ft | Emergency descent to 10,000 ft |
+  | Hydraulic failure | Arrival | 165 kt final, then stops on the runway and closes it for about 8 minutes (red X); pilots won't accept an approach to it |
+  | Medical (pan-pan) | Passenger arrivals | Priority handling |
+
+  Practice one from the browser console with `atcGame.triggerEmergency()` or, for example, `atcGame.triggerEmergency('HYDRAULIC', 'DAL228')`. Turn them off in SETTINGS.
 - **Overflights** cross at FL300–FL400 on hemispheric-rule levels. They are on another frequency, but climbing your traffic into them still counts as a conflict.
 
 | Event | Points |
@@ -49,6 +62,7 @@ Pilots read back right away and act 3–6 seconds later, like setting the autopi
 | Go-around, runway occupied | −15 |
 | Separation loss | −50 |
 | Runway incursion | −200 |
+| Emergency on the ground within 15 minutes (after that) | +50 (+25) |
 | Arrival lost from airspace | −75 |
 | Midair collision | −300 |
 
@@ -64,7 +78,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 
 - **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Each airport flies its hub's real network (66 routes at Atlanta, 64 at Detroit, 41 at Charlotte, 28 at San Diego), with arrivals entering from the side facing their origin, and a city that just had a flight is unlikely to come up again soon. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
 - **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
-- **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), and overflights on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
+- **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), overflights on or off, and emergencies on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
 - **TRAILS** shows the whole track of the aircraft you select as one line, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
 - **WIDE / APP / TWR** set the scope range. Hold Ctrl and scroll over the scope to zoom in steps between them, centered on the airport: no farther out than WIDE and no closer than TWR. A trackpad pinch works too.
 - **LCL** is the sim clock, in the airport's local time. It starts at the start of the chosen time of day (07:00, 11:00, 15:00 or 21:00), runs at sim speed, stops when paused and restarts with each new shift.
@@ -75,6 +89,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 |---|---|
 | `index.html` | Sector data, aircraft model, game loop and UI |
 | `traffic-logic.js` | Separation minimums, conflict prediction, safe arrival entry |
+| `emergency-logic.js` | When emergencies may happen, which kinds fit an aircraft, and the pilot's declaration |
 | `weather-control.js` | Weather presets, NWS observation parsing, storm cells from NEXRAD pixels |
 | `weather-logic.js` | Pilot weather deviation requests |
 | `aircraft-icons.js` | Type-specific silhouettes from real dimensions and engine layouts |

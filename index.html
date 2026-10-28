@@ -92,6 +92,10 @@
             border-left: 4px solid #38bdf8;
             background-color: #1e293b;
         }
+        .strip-emergency {
+            border-left-color: #ef4444;
+            background-color: #3b1d24;
+        }
         
         .aircraft-label {
             position: absolute;
@@ -288,6 +292,11 @@
                     High-altitude overflights
                 </label>
                 <p class="text-slate-400 mt-1">Background jets crossing at FL300 and above. They are on another frequency and never call you.</p>
+                <label class="flex items-center gap-2 text-slate-300 font-bold mt-3">
+                    <input id="emergencies-toggle" type="checkbox" class="accent-red-500">
+                    Emergencies (rare)
+                </label>
+                <p class="text-slate-400 mt-1">At most one in any 3 hours of play, about every 5 hours on average: engine failures, smoke, medical, fuel, hydraulics, pressurization.</p>
                 <div class="border-t border-slate-700 mt-4 pt-3">
                     <button id="reset-settings" type="button" class="w-full bg-red-900 hover:bg-red-800 text-white px-3 py-2 rounded font-bold border border-red-700">RESET ALL SETTINGS</button>
                     <p class="text-slate-500 mt-1">Restores the default weather, map and brightness, workload, departures, overflights, trails and pilot voice. Best scores and any CARTO key are kept.</p>
@@ -352,6 +361,7 @@
                 <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta, Charlotte and Detroit, 3,000 at San Diego), 210 kt. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Runways:</b> one aircraft on a runway at a time, counting both ends (09 and 27 are one runway). Don't line up or clear a departure with an aircraft on the runway or an arrival inside about 2 minutes; tower waits for that. Entering a runway with an aircraft on it or an arrival inside 1 NM is a runway incursion (−200). An arrival finding the runway occupied goes around.</li>
                 <li><b>Runway changes:</b> when the wind swings, departures taxi to the new runway and approach clearances to the old one are cancelled (except arrivals established inside 5 NM). Re-clear those arrivals.</li>
+                <li><b>Emergencies</b> are rare: at most one in any 3 hours of play. The pilot declares a mayday (or pan-pan for a medical), squawks 7700 and goes red on the scope and strips. Give them priority: vectors and the approach to the runway they ask for. A departure with a problem turns back as an arrival. A hydraulic failure stops on the runway and closes it for about 8 minutes, so move other arrivals to another runway or hold them. Landing within 15 minutes earns +50 (+25 after that). Turn them off in SETTINGS.</li>
                 <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
                 <li><b>Expect runway</b> tells an arrival which runway to plan for. On its own navigation it flies to that runway's final (a real approach fix 8 to 16 NM out, or a point 12 NM out) and turns onto the runway course; on vectors it keeps your heading. It still needs an approach clearance.</li>
@@ -443,6 +453,7 @@
     <script src="kokoro-radio.js"></script>
     <script src="weather-logic.js"></script>
     <script src="traffic-logic.js"></script>
+    <script src="emergency-logic.js"></script>
     <script src="weather-control.js"></script>
     <script src="fixes-data.js"></script>
     <script src="runways-data.js"></script>
@@ -1434,7 +1445,8 @@
                 }
 
                 if (!this.onGround && this.altitude !== this.targetAltitude) {
-                    const climbRate = 35 * (this.expediteVertical ? 1.7 : 1) * CONFIG.timeMultiplier * dt;
+                    const engineOut = this.emergency?.climbFactor && this.targetAltitude > this.altitude ? this.emergency.climbFactor : 1;
+                    const climbRate = 35 * (this.expediteVertical ? 1.7 : 1) * engineOut * CONFIG.timeMultiplier * dt;
                     if (Math.abs(this.targetAltitude - this.altitude) < climbRate) {
                         this.altitude = this.targetAltitude;
                         this.expediteVertical = false;
@@ -1442,6 +1454,7 @@
                     else this.altitude += (this.targetAltitude > this.altitude ? climbRate : -climbRate);
                 }
 
+                if (this.emergency?.maxSpeed && !this.onGround && this.targetSpeed > this.emergency.maxSpeed) this.targetSpeed = this.emergency.maxSpeed;
                 if (this.speed !== this.targetSpeed) {
                     let accRate = 0.8 * CONFIG.timeMultiplier * dt; 
                     if (this.onGround && this.takeoffCleared) accRate = 4.0 * CONFIG.timeMultiplier * dt;
@@ -1536,8 +1549,10 @@
                             const correction = Math.max(-30, Math.min(30, -predicted * 60));
                             this.targetHeading = (course + correction + 360) % 360;
                             this.turnDirection = 'shortest';
-                            if (along < 6) this.targetSpeed = Math.min(this.targetSpeed, 150);
-                            if (along < 2) this.targetSpeed = Math.min(this.targetSpeed, 135);
+                            // A hydraulic failure means a faster, flapless final.
+                            const finalSpeed = this.emergency?.finalSpeed || 135;
+                            if (along < 6) this.targetSpeed = Math.min(this.targetSpeed, Math.max(150, finalSpeed));
+                            if (along < 2) this.targetSpeed = Math.min(this.targetSpeed, finalSpeed);
 
                             // Glideslope: from below, hold altitude until it comes down to meet the aircraft;
                             // from above (or once on it), follow it down.
@@ -1677,6 +1692,16 @@
                 this.workload = this.loadSetting('atcWorkload', 'STANDARD', Object.keys(WORKLOADS));
                 this.departureMode = this.loadSetting('atcDepartureMode', 'TOWER', ['TOWER', 'MANUAL']);
                 this.overflightsOn = this.loadSetting('atcOverflights', 'ON', ['ON', 'OFF']) === 'ON';
+                this.emergenciesOn = this.loadSetting('atcEmergencies', 'ON', ['ON', 'OFF']) === 'ON';
+                // Real (unpaused) play time across sessions, for the one-emergency-per-3-hours rule. Kept by
+                // "reset all settings" (the atcStats_ prefix), or a reset would undo the rule.
+                let stored = {};
+                try { stored = { play: localStorage.getItem('atcStats_playSeconds'), last: localStorage.getItem('atcStats_lastEmergency') }; }
+                catch (_) { /* Counts this session only. */ }
+                this.playSeconds = Number(stored.play) || 0;
+                this.lastEmergencyAt = stored.last === null || stored.last === undefined ? null : Number(stored.last);
+                this.emergencyClock = 0;
+                this.playSaveClock = 0;
                 this.trailsOn = this.loadSetting('atcTrails', 'ON', ['ON', 'OFF']) === 'ON';
                 this.initMap();
                 this.activeFlowIndex = Math.random() > 0.5 ? 0 : 1;
@@ -1735,7 +1760,7 @@
 
             newStats() {
                 return { landed: 0, handedOff: 0, badHandoffs: 0, goArounds: 0, losses: 0,
-                    collisions: 0, incursions: 0, lost: 0, minutesInSector: [], simSeconds: 0 };
+                    collisions: 0, incursions: 0, emergencies: 0, emergenciesLanded: 0, lost: 0, minutesInSector: [], simSeconds: 0 };
             }
 
             loadSetting(key, fallback, allowed) {
@@ -2020,6 +2045,12 @@
                     this.updateStrips();
                 };
 
+                const emergencies = document.getElementById('emergencies-toggle');
+                emergencies.checked = this.emergenciesOn;
+                emergencies.onchange = () => {
+                    this.emergenciesOn = emergencies.checked;
+                    this.saveSetting('atcEmergencies', this.emergenciesOn ? 'ON' : 'OFF');
+                };
                 const overflights = document.getElementById('overflights-toggle');
                 overflights.checked = this.overflightsOn;
                 overflights.onchange = () => {
@@ -2037,7 +2068,7 @@
                     if (!window.confirm('Reset all settings to their defaults? Best scores are kept.')) return;
                     try {
                         Object.keys(localStorage)
-                            .filter(key => key.startsWith('atc') && !key.startsWith('atcBest_') && key !== 'atcCartoBasemapKey')
+                            .filter(key => key.startsWith('atc') && !key.startsWith('atcBest_') && !key.startsWith('atcStats_') && key !== 'atcCartoBasemapKey')
                             .forEach(key => localStorage.removeItem(key));
                     } catch (_) { /* Nothing saved to clear. */ }
                     location.reload();
@@ -2059,6 +2090,7 @@
 
             resetShift() {
                 this.score = 0;
+                this.shiftPlaySeconds = 0;
                 this.stats = this.newStats();
                 this.activeLosses.clear();
                 this.incursionPairs.clear();
@@ -2070,6 +2102,79 @@
             }
 
             // Sim time on the airport's clock: the bank's start time plus time on position, at sim speed.
+            // Counts real play time (not sim time, not paused) and checks once a minute whether an emergency happens.
+            trackPlayTime(dt) {
+                this.playSeconds += dt;
+                this.shiftPlaySeconds = (this.shiftPlaySeconds || 0) + dt;
+                this.playSaveClock += dt;
+                if (this.playSaveClock >= 15) {
+                    this.playSaveClock = 0;
+                    try { localStorage.setItem('atcStats_playSeconds', String(Math.round(this.playSeconds))); }
+                    catch (_) { /* Counts this session only. */ }
+                }
+                this.emergencyClock += dt;
+                if (this.emergencyClock < window.ATCEmergency.CHECK_EVERY_SEC) return;
+                this.emergencyClock = 0;
+                const allowed = window.ATCEmergency.mayDeclare({ enabled: this.emergenciesOn, playSeconds: this.playSeconds,
+                    lastEmergencyAt: this.lastEmergencyAt, shiftSeconds: this.shiftPlaySeconds,
+                    active: this.aircraft.some(ac => ac.emergency && !ac.removeMe) });
+                if (allowed && Math.random() < window.ATCEmergency.CHANCE_PER_CHECK) this.triggerEmergency();
+            }
+
+            // Aircraft that could declare: airborne and on your frequency; arrivals not already on a short final.
+            emergencyCandidates() {
+                return this.aircraft.filter(ac => !ac.onGround && !ac.removeMe && !ac.handedOff && !ac.emergency &&
+                    ac.hasCheckedIn && ac.altitude - CONFIG.airport.elevation >= 1000 &&
+                    (!ac.isArrival || window.ATCTraffic.distanceNM(ac, CONFIG.airport) > 8));
+            }
+
+            // Also callable from the console for practice: atcGame.triggerEmergency('HYDRAULIC', 'DAL228').
+            triggerEmergency(key = null, id = null) {
+                const candidates = this.emergencyCandidates().filter(ac => !id || ac.id === id);
+                const plane = key && candidates.find(ac => window.ATCEmergency.typesFor(ac).includes(key));
+                const choice = key ? plane && { plane, key } : window.ATCEmergency.choose(candidates);
+                if (!choice) return false;
+                this.declareEmergency(choice.plane, choice.key);
+                return true;
+            }
+
+            declareEmergency(plane, key) {
+                const type = window.ATCEmergency.TYPES[key];
+                const returning = !plane.isArrival;
+                const flow = CONFIG.airport.flows[this.activeFlowIndex] || CONFIG.airport.flows[0];
+                const runway = plane.expectedRunway || (plane.clearedForILS && plane.clearedRunway) || flow.arrRwys[0];
+                const souls = window.ATCEmergency.soulsOnBoard(plane);
+                const fuel = window.ATCEmergency.fuelMinutes(plane, key);
+                plane.emergency = { key, ...type, declaredAt: this.stats.simSeconds, souls, fuel };
+                plane.hold = null;
+                if (returning) {
+                    // A departure turning back becomes an arrival: it stops its climb and flies present heading for vectors.
+                    plane.isArrival = true;
+                    plane.directTo = null;
+                    plane.exitFix = null;
+                    plane.onVectors = true;
+                    plane.targetHeading = Math.round(plane.heading) % 360;
+                    const levelOff = Math.max(Math.ceil(plane.altitude / 1000) * 1000, Math.ceil((CONFIG.airport.elevation + 3000) / 1000) * 1000);
+                    plane.targetAltitude = Math.min(plane.targetAltitude, levelOff);
+                    const strip = this.stripEls.get(plane.id);
+                    if (strip) { strip.remove(); this.stripEls.delete(plane.id); }
+                }
+                if (type.descendTo && plane.altitude > type.descendTo) {
+                    plane.targetAltitude = type.descendTo;
+                    plane.expediteVertical = true;
+                }
+                if (type.maxSpeed) plane.targetSpeed = Math.min(plane.targetSpeed, type.maxSpeed);
+                plane.lastStatus = `${type.mayday ? 'MAYDAY' : 'PAN-PAN'} ${type.tag}`;
+                this.stats.emergencies++;
+                this.lastEmergencyAt = this.playSeconds;
+                try { localStorage.setItem('atcStats_lastEmergency', String(Math.round(this.playSeconds))); }
+                catch (_) { /* The 3-hour rule holds for this session. */ }
+                this.log(`EMERGENCY: ${plane.id} ${type.label.toLowerCase()}${returning ? ', returning to land' : ''}. ${souls} souls, ${fuel} min fuel. Give it priority to runway ${runway}.`, 'error');
+                this.pilotTransmission(plane, window.ATCEmergency.declaration({ key, facility: this.radioFacility(returning ? 'Departure' : 'Approach'),
+                    callsign: this.radioCallsign(plane), runway: this.radioRunway(runway), souls, fuel, returning }), true);
+                this.updateStrips();
+            }
+
             updateClock() {
                 const bank = BANK_MODIFIERS[this.currentBank] || BANK_MODIFIERS.AFTERNOON;
                 const seconds = Math.floor(bank.startHour * 3600 + this.stats.simSeconds) % 86400;
@@ -3427,6 +3532,13 @@
                                 break;
                             }
                             
+                            const closedBy = this.aircraft.find(other => other.disabledUntil && !other.removeMe && runwayIsOccupiedBy(other, val));
+                            if (closedBy) {
+                                this.log(`${id}: runway ${val} is closed (${closedBy.id} disabled on it).`, 'error');
+                                readback(`Unable, runway ${this.radioRunway(val)} is closed`);
+                                break;
+                            }
+
                             let diff = Math.abs(CONFIG.wind.dir - rwyInfo.heading);
                             if (diff > 180) diff = 360 - diff;
                             // FAA JO 7110.65 5-9-1: intercept at 30 degrees or less, from at or below the glideslope.
@@ -3644,6 +3756,7 @@
                     ['Separation losses', stats.losses, true],
                     ['Runway incursions', stats.incursions, true],
                     ['Midair collisions', stats.collisions, true],
+                    ['Emergencies landed', stats.emergencies ? `${stats.emergenciesLanded} of ${stats.emergencies}` : 'none', false],
                     ['Arrivals lost from your airspace', stats.lost, true],
                     ['Average time in your airspace', times.length ? `${(times.reduce((a, b) => a + b, 0) / times.length).toFixed(1)} min` : '—', false]
                 ];
@@ -3696,7 +3809,7 @@
                         <div class="shrink-0 bg-slate-800 rounded p-1 border border-slate-600 mt-1"><img src="${getAirlineLogo(ac.id.substring(0, 3))}" class="w-6 h-6 object-contain opacity-90"></div>
                         <div class="flex-grow min-w-0">
                             <div class="flex justify-between font-bold text-sm">
-                                <span><span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span><span data-f="ils" class="hidden ml-1.5 text-emerald-300 font-bold"></span><span data-f="talking" class="hidden ml-1.5 text-[9px] text-emerald-300 animate-pulse">● TRANSMITTING</span></span>
+                                <span><span class="${ac.isArrival ? 'text-amber-300' : 'text-sky-300'}">${ac.id}</span><span data-f="ils" class="hidden ml-1.5 text-emerald-300 font-bold"></span><span data-f="emergency" class="hidden ml-1.5 text-red-400 font-bold"></span><span data-f="talking" class="hidden ml-1.5 text-[9px] text-emerald-300 animate-pulse">● TRANSMITTING</span></span>
                                 <span class="text-slate-400 text-[10px]">${ac.type}${ac.registration ? ` · ${ac.registration}` : ''}</span>
                             </div>
                             <div class="text-[10px] text-slate-400">Say “${spokenCallsign}”</div>
@@ -3844,6 +3957,9 @@
                     const ilsRunway = this.ilsRunwayFor(ac);
                     set('ils', ilsRunway ? `▼ ILS ${ilsRunway}` : '');
                     el.querySelector('[data-f="ils"]').classList.toggle('hidden', !ilsRunway);
+                    set('emergency', ac.emergency ? `${ac.emergency.mayday ? '7700' : 'PAN'} ${ac.emergency.label.toUpperCase()}` : '');
+                    el.querySelector('[data-f="emergency"]').classList.toggle('hidden', !ac.emergency);
+                    el.classList.toggle('strip-emergency', Boolean(ac.emergency));
                     const talking = this.isTalking(ac);
                     el.querySelector('[data-f="talking"]').classList.toggle('hidden', !talking);
                     el.classList.toggle('ring-1', talking && ac.id !== this.selectedAircraftId);
@@ -3879,7 +3995,8 @@
                 }
                 const nameColor = alert === 'loss' ? 'db-loss' : alert === 'predicted' ? 'db-predicted' :
                     ac.id === this.selectedAircraftId ? 'db-selected' : ac.handedOff === 'CENTER' ? 'db-dim' : 'db-callsign';
-                const tag = alert ? ` <span class="${alert === 'loss' ? 'db-loss' : 'db-predicted'}">CA</span>` : '';
+                const tag = (alert ? ` <span class="${alert === 'loss' ? 'db-loss' : 'db-predicted'}">CA</span>` : '') +
+                    (ac.emergency ? ` <span class="db-loss">${ac.emergency.mayday ? '7700' : 'PAN'} ${ac.emergency.tag}</span>` : '');
                 let html;
                 if (ac.onGround && !ac.isArrival && !ac.takeoffCleared) {
                     html = `<span class="font-bold ${nameColor}">${ac.id}</span><br><span class="db-runway">${ac.lineUp || ac.linedUp ? 'LUAW' : 'RWY'} ${ac.departureRunway}</span> <span class="db-info">${ac.type}</span>`;
@@ -4072,6 +4189,7 @@
                 const simDt = dt * CONFIG.timeMultiplier;
                 this.stats.simSeconds += simDt;
                 this.updateClock();
+                this.trackPlayTime(dt);
 
                 this.spawnClock += simDt;
                 if (this.spawnClock >= this.spawnIntervalSec) {
@@ -4124,6 +4242,19 @@
                     this.ctx.fillText(r.name, a.x - ux * gap, a.y - uy * gap);
                     this.ctx.fillText(r.recip, b.x + ux * gap, b.y + uy * gap);
                     this.ctx.textBaseline = 'alphabetic';
+                });
+                // A runway closed by a disabled aircraft gets a red X.
+                this.aircraft.filter(ac => ac.disabledUntil && !ac.removeMe).forEach(ac => {
+                    const r = physicalRunway(ac.clearedRunway);
+                    const mid = this.map.latLngToContainerPoint([(r.lat1 + r.lat2) / 2, (r.lon1 + r.lon2) / 2]);
+                    const arm = Math.max(8, CONFIG.scale * 0.35);
+                    this.ctx.save();
+                    this.ctx.strokeStyle = '#ef4444'; this.ctx.lineWidth = 3; this.ctx.lineCap = 'round';
+                    this.ctx.beginPath();
+                    this.ctx.moveTo(mid.x - arm, mid.y - arm); this.ctx.lineTo(mid.x + arm, mid.y + arm);
+                    this.ctx.moveTo(mid.x + arm, mid.y - arm); this.ctx.lineTo(mid.x - arm, mid.y + arm);
+                    this.ctx.stroke();
+                    this.ctx.restore();
                 });
 
                 this.updateOverflights(dt, colors);
@@ -4179,13 +4310,33 @@
                         this.log(`${ac.id} airborne off runway ${ac.departureRunway}.`);
                     }
 
-                    if (ac.rollout && ac.speed <= 12 && !ac.removeMe) {
+                    if (ac.rollout && ac.speed <= 12 && !ac.removeMe && !ac.landedScored) {
+                        ac.landedScored = true;
                         this.stats.landed++;
                         this.stats.minutesInSector.push(ac.simAge / 60);
                         this.addScore(25, `${ac.id} landed safely`);
                         if (!ac.handedOff) {
                             this.stats.badHandoffs++;
                             this.addScore(-10, `${ac.id} landed without a handoff to tower`, 'error');
+                        }
+                        if (ac.emergency) {
+                            const minutes = (this.stats.simSeconds - ac.emergency.declaredAt) / 60;
+                            this.stats.emergenciesLanded++;
+                            this.addScore(minutes <= 15 ? 50 : 25, `${ac.id} emergency handled: on the ground ${minutes.toFixed(0)} min after declaring`);
+                        }
+                        if (ac.emergency?.closesRunwaySec) {
+                            // Disabled on the runway until it is towed clear; the runway stays occupied meanwhile.
+                            const runway = physicalRunway(ac.clearedRunway);
+                            ac.disabledUntil = this.stats.simSeconds + ac.emergency.closesRunwaySec;
+                            ac.targetSpeed = 0;
+                            ac.lastStatus = 'DISABLED ON RWY';
+                            this.log(`Tower: runway ${runway.name}/${runway.recip} closed, ${ac.id} disabled on the runway for about ${Math.round(ac.emergency.closesRunwaySec / 60)} minutes.`, 'error');
+                        }
+                    }
+                    if (ac.landedScored && !ac.removeMe && this.stats.simSeconds >= (ac.disabledUntil || 0)) {
+                        if (ac.disabledUntil) {
+                            const runway = physicalRunway(ac.clearedRunway);
+                            this.log(`Tower: ${ac.id} towed clear, runway ${runway.name}/${runway.recip} open.`, 'system');
                         }
                         ac.removeMe = true;
                     }
@@ -4199,7 +4350,7 @@
 
                     // The dark outline keeps the yellow readable on light and dark maps.
                     // Handed off to center: drawn gray, no longer your traffic. Arrivals with tower stay yellow.
-                    const sprite = this.aircraftSprite(ac.type, ac.handedOff === 'CENTER' ? colors.handedOff : colors.aircraft, colors.aircraftEdge);
+                    const sprite = this.aircraftSprite(ac.type, ac.emergency ? '#ef4444' : ac.handedOff === 'CENTER' ? colors.handedOff : colors.aircraft, colors.aircraftEdge);
                     const size = window.ATCAircraftIcons.screenSize(ac.type);
                     this.ctx.save();
                     this.ctx.translate(ac.x, ac.y);
