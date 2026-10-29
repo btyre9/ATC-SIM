@@ -255,3 +255,17 @@ test('holding instructions', () => {
     assert.equal(hear('Delta 228 descend and maintain eight thousand hold at chopper').command, 'DAL228 A 8000 HOLD CHOPPER');
     assert.equal(hear('Delta 228 runway two seven position and hold').command, 'DAL228 LUAW');
 });
+
+test('Schiphol callsigns and European flight levels below the US transition altitude', () => {
+    const europe = [{ id: 'KLM', name: 'KLM' }, { id: 'KLC', name: 'City' }, { id: 'TRA', name: 'Transavia' },
+        { id: 'AFR', name: 'Airfrans' }, { id: 'CND', name: 'Dutch Corendon' }];
+    const traffic = [{ id: 'KLM1234', altitude: 9000 }, { id: 'KLC1567', altitude: 8000 }, { id: 'TRA5821', altitude: 7000 },
+        { id: 'AFR1640', altitude: 10000 }, { id: 'CND613', altitude: 9000 }];
+    const heard = text => parse(text, traffic, europe, -11);
+    assert.equal(heard('KLM one two three four descend to flight level seven zero').command, 'KLM1234 A 7000');
+    assert.equal(heard('K L M 1234 descend to altitude two thousand feet').command, 'KLM1234 A 2000');
+    assert.equal(heard('City one five six seven descend flight level six zero').command, 'KLC1567 A 6000');
+    assert.equal(heard('Transavia 5821 climb flight level one zero zero').command, 'TRA5821 A 10000');
+    assert.equal(heard('Air France 1640 cleared ILS approach runway one eight right').command, 'AFR1640 L 18R');
+    assert.equal(heard('Corendon 613 contact Schiphol Tower one one eight decimal two eight').command, 'CND613 HO');
+});

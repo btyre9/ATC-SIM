@@ -14,11 +14,13 @@
         jumbo: { climbFpm: 2200, rotateKt: 165, initialClimbKt: 180, takeoffAccel: 3.0 }
     };
     const TYPE_CLASS = {
-        B717: 'regional', E170: 'regional', E175: 'regional', E190: 'regional', CRJ7: 'regional', CRJ9: 'regional',
+        B717: 'regional', E170: 'regional', E175: 'regional', E75L: 'regional', E190: 'regional', E295: 'regional',
+        CRJ7: 'regional', CRJ9: 'regional',
         B752: 'b757', B753: 'b757',
-        A300: 'widebody', A333: 'widebody', A343: 'widebody', A359: 'widebody', B763: 'widebody', B764: 'widebody',
-        B772: 'widebody', B77L: 'widebody', B77W: 'widebody', B789: 'widebody', MD11: 'widebody',
-        B748: 'jumbo', A388: 'jumbo'
+        A300: 'widebody', A332: 'widebody', A333: 'widebody', A339: 'widebody', A343: 'widebody', A359: 'widebody',
+        B763: 'widebody', B764: 'widebody', B772: 'widebody', B77L: 'widebody', B77W: 'widebody', B789: 'widebody', B78X: 'widebody',
+        MD11: 'widebody',
+        B744: 'jumbo', B748: 'jumbo', A388: 'jumbo'
     };
     const EMERGENCY_DESCENT_FPM = 5000;
 

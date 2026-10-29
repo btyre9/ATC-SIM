@@ -77,3 +77,48 @@ test('storm cells are grouped from radar levels, ignoring specks and light rain'
     assert.ok(cells[0].lon > airport.lon && Math.abs(cells[0].lat - airport.lat) < 0.03);
     assert.ok(Math.abs(cells[0].radiusNM - Math.sqrt(16 / Math.PI)) < 0.01);
 });
+
+test('Schiphol picks the first usable combination of its preference table', () => {
+    // True courses of the first end of each runway pair (AIP AD 2.12).
+    const headings = { '04': 41.25, '06': 57.92, '09': 86.78, '18C': 183.22, '18L': 183.25, '18R': 183.2 };
+    const recip = { '22': '04', '24': '06', '27': '09', '36C': '18C', '36R': '18L', '36L': '18R' };
+    const courseOf = runway => headings[runway] ?? (headings[recip[runway]] + 180) % 360;
+    const flows = [
+        { name: 'NORTH', period: 'DAY', arrRwys: ['06', '36R'], depRwys: ['36L', '36C'], windDir: 20 },
+        { name: 'SOUTH', period: 'DAY', arrRwys: ['18R', '18C'], depRwys: ['24', '18L'], windDir: 210 },
+        { name: 'NORTHEAST', period: 'DAY', arrRwys: ['06', '36R'], depRwys: ['09', '36L'], windDir: 70 },
+        { name: 'WEST', period: 'DAY', arrRwys: ['27', '18R'], depRwys: ['24', '18L'], windDir: 250 },
+        { name: 'NIGHT NORTH', period: 'NIGHT', arrRwys: ['06'], depRwys: ['36L'], windDir: 30 },
+        { name: 'NIGHT SOUTH', period: 'NIGHT', arrRwys: ['18R'], depRwys: ['24'], windDir: 210 }
+    ];
+    const pick = (dir, speed, period = 'DAY', gust = 0) => flows[W.preferredFlow(flows, { dir, speed, gust }, courseOf, period)].name;
+    assert.equal(pick(30, 10), 'NORTH');
+    assert.equal(pick(210, 12), 'SOUTH');
+    assert.equal(pick(250, 12), 'SOUTH', 'a light westerly still uses the preferred south flow');
+    assert.equal(pick(70, 20), 'NORTHEAST', 'too much crosswind on 36L for it to be the primary departure runway');
+    assert.equal(pick(265, 25), 'WEST', 'a strong westerly brings in 27');
+    assert.equal(pick(265, 12, 'DAY', 28), 'WEST', 'gusts 10 kt above the wind count');
+    assert.equal(pick(120, 4), 'NORTH', 'up to 5 kt of tailwind keeps the preferred runways');
+    assert.equal(pick(200, 8, 'NIGHT'), 'NIGHT SOUTH');
+    assert.equal(pick(null, 0, 'NIGHT'), 'NIGHT NORTH');
+});
+
+test('IEM METAR observations and metric ATIS visibility', () => {
+    const observation = W.parseIemObservation({ data: [{ raw: 'COR EHAM 291825Z 24018G31KT 9999 TSRA FEW011CB 11/11 Q1030 RMK X',
+        sknt: 18, drct: 240, gust: '31', utc_valid: '2026-10-29T18:25:00Z' }] }, 'EHAM');
+    assert.deepEqual(observation.wind, { dir: 240, speed: 18, gust: 31 });
+    assert.equal(observation.raw, 'EHAM 291825Z 24018G31KT 9999 TSRA FEW011CB 11/11 Q1030');
+    assert.equal(observation.thunder, true);
+    assert.equal(W.parseIemObservation({ data: [{ raw: 'EHAM 291855Z VRB02KT CAVOK', sknt: 2, drct: 0 }] }, 'EHAM').wind.dir, null);
+    assert.equal(W.atisText('EHAM', 'CLEAR', { dir: 240, speed: 8, gust: 0 }, { metric: true }), 'EHAM 24008KT 9999 SKC');
+    assert.equal(W.atisText('EHAM', 'SEVERE', { dir: 240, speed: 20, gust: 35 }, { metric: true }), 'EHAM 24020G35KT 3200 +TSRA OVC025CB');
+});
+
+test('RainViewer Universal Blue colors classify like NEXRAD bands', () => {
+    assert.equal(W.classifyRadarPixel(0x00, 0x55, 0x88, 255), 0); // 30 dBZ
+    assert.equal(W.classifyRadarPixel(0xff, 0xee, 0x00, 255), 2); // 35 dBZ
+    assert.equal(W.classifyRadarPixel(0xff, 0xaa, 0x00, 255), 2); // 40 dBZ
+    assert.equal(W.classifyRadarPixel(0xff, 0x44, 0x00, 255), 3); // 45 dBZ
+    assert.equal(W.classifyRadarPixel(0xff, 0xaa, 0xff, 255), 3); // 55 dBZ
+    assert.equal(W.classifyRadarPixel(0x0f, 0x4f, 0xff, 255), 0); // 50 dBZ snow
+});

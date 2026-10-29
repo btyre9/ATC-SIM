@@ -57,6 +57,158 @@ window.ATC_PHOTOS = {
    "file": "File:USAirways N946UW Embraer 190.JPG",
    "category": "Embraer 190 of American Airlines"
   },
+  "FDX|B763": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a7/FedEx_Boeing_767-300F_N102FE_landing_at_Taoyuan_February_2026.jpg/500px-FedEx_Boeing_767-300F_N102FE_landing_at_Taoyuan_February_2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "4300streetcar",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:FedEx_Boeing_767-300F_N102FE_landing_at_Taoyuan_February_2026.jpg",
+   "file": "File:FedEx Boeing 767-300F N102FE landing at Taoyuan February 2026.jpg",
+   "category": "Current Boeing 767-300F of FedEx Express"
+  },
+  "FDX|B77L": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/N840FD_%2819_Mar_2025%29.jpg/500px-N840FD_%2819_Mar_2025%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Dltl2010",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:N840FD_(19_Mar_2025).jpg",
+   "file": "File:N840FD (19 Mar 2025).jpg",
+   "category": "Current Boeing 777F of FedEx Express"
+  },
+  "FDX|MD11": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Fedex_MD-11F_N628FE_at_BNE_%2823756940623%29.jpg/500px-Fedex_MD-11F_N628FE_at_BNE_%2823756940623%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "G B_NZ",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Fedex_MD-11F_N628FE_at_BNE_(23756940623).jpg",
+   "file": "File:Fedex MD-11F N628FE at BNE (23756940623).jpg",
+   "category": "McDonnell Douglas MD-11F of FedEx Express"
+  },
+  "SWA|B38M": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Boeing_737_MAX_8_-_Southwest_Airlines_-_N8891Q.jpg/500px-Boeing_737_MAX_8_-_Southwest_Airlines_-_N8891Q.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Oleg Yunakov",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737_MAX_8_-_Southwest_Airlines_-_N8891Q.jpg",
+   "file": "File:Boeing 737 MAX 8 - Southwest Airlines - N8891Q.jpg",
+   "category": "Boeing 737-8 MAX of Southwest Airlines"
+  },
+  "SWA|B737": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Southwest_737-700_N238WN_%40IND.jpg/500px-Southwest_737-700_N238WN_%40IND.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "AVA Navigate",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Southwest_737-700_N238WN_@IND.jpg",
+   "file": "File:Southwest 737-700 N238WN @IND.jpg",
+   "category": "Boeing 737-700 of Southwest Airlines"
+  },
+  "SWA|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/N8619F_Boeing_737-8H4_Southwest_MIA_19.1.23_%2852766802354%29.jpg/500px-N8619F_Boeing_737-8H4_Southwest_MIA_19.1.23_%2852766802354%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Colin Cooke Photo",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:N8619F_Boeing_737-8H4_Southwest_MIA_19.1.23_(52766802354).jpg",
+   "file": "File:N8619F Boeing 737-8H4 Southwest MIA 19.1.23 (52766802354).jpg",
+   "category": "Boeing 737-800 of Southwest Airlines"
+  },
+  "ASA|B38M": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg/500px-Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Rene Hernandez2",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_(Los_Angeles)_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg",
+   "file": "File:Boeing 737 MAX 8 - N813AK - Alaska Airlines Flight AS1354 (Los Angeles) - Takeoff Guatemala City La Aurora GUA MGGT.jpg",
+   "category": "Boeing 737-8 MAX of Alaska Airlines"
+  },
+  "ASA|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg/500px-Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Frank Kovalchek from Anchorage, Alaska, USA",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Air_737_touching_down_at_ANC_(6863673681).jpg",
+   "file": "File:Alaska Air 737 touching down at ANC (6863673681).jpg",
+   "category": "Boeing 737-800 of Alaska Airlines"
+  },
+  "ASA|B739": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg/500px-Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Adam Moreira (AEMoreira042281)",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Airlines_Boeing_737-990(ER)_N248AK_approaching_EWR_Airport.jpg",
+   "file": "File:Alaska Airlines Boeing 737-990(ER) N248AK approaching EWR Airport.jpg",
+   "category": "Current Boeing 737-900ER of Alaska Airlines"
+  },
+  "UPS|A300": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg/500px-UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "4300streetcar",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg",
+   "file": "File:UPS Airbus A300-600RF N125UP after departing Runway 27 Boston Feb 2025 1.jpg",
+   "category": "Current Airbus A300 of UPS Airlines"
+  },
+  "UPS|B752": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/9aa_-_United_Parcel_Service_Boeing_757-24APF%3B_N407UP%40PIE%3B26.01.1998_%285183212758%29.jpg/500px-9aa_-_United_Parcel_Service_Boeing_757-24APF%3B_N407UP%40PIE%3B26.01.1998_%285183212758%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Aero Icarus from Z\u00fcrich, Switzerland",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:9aa_-_United_Parcel_Service_Boeing_757-24APF;_N407UP@PIE;26.01.1998_(5183212758).jpg",
+   "file": "File:9aa - United Parcel Service Boeing 757-24APF; N407UP@PIE;26.01.1998 (5183212758).jpg",
+   "category": "Current Boeing 757-200PF of UPS Airlines"
+  },
+  "UPS|B763": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/UPS_N354UP_run_5X166%28Hong_Kong_International_Airport_to_Singapore_Changi_Airport%29_12-03-2026.jpg/500px-UPS_N354UP_run_5X166%28Hong_Kong_International_Airport_to_Singapore_Changi_Airport%29_12-03-2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "LN9267",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:UPS_N354UP_run_5X166(Hong_Kong_International_Airport_to_Singapore_Changi_Airport)_12-03-2026.jpg",
+   "file": "File:UPS N354UP run 5X166(Hong Kong International Airport to Singapore Changi Airport) 12-03-2026.jpg",
+   "category": "Boeing 767-300F of UPS Airlines"
+  },
+  "AFR|A319": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0c/Air_France_Airbus_A319_F-GRXF_at_Schiphol_03-03-2022.jpg/500px-Air_France_Airbus_A319_F-GRXF_at_Schiphol_03-03-2022.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Robbie Klinkenberg",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Air_France_Airbus_A319_F-GRXF_at_Schiphol_03-03-2022.jpg",
+   "file": "File:Air France Airbus A319 F-GRXF at Schiphol 03-03-2022.jpg",
+   "category": "Current Airbus A319 of Air France"
+  },
+  "AFR|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/F-GKXG_%28aircraft%29_landing_at_Orly_Airport%2C_August_26th%2C_2016.jpg/500px-F-GKXG_%28aircraft%29_landing_at_Orly_Airport%2C_August_26th%2C_2016.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Habib M\u2019henni",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:F-GKXG_(aircraft)_landing_at_Orly_Airport,_August_26th,_2016.jpg",
+   "file": "File:F-GKXG (aircraft) landing at Orly Airport, August 26th, 2016.jpg",
+   "category": "Current Airbus A320 of Air France"
+  },
+  "BAW|A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/G-TTNA_landing_into_Heathrow.jpg/500px-G-TTNA_landing_into_Heathrow.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "BBell245",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:G-TTNA_landing_into_Heathrow.jpg",
+   "file": "File:G-TTNA landing into Heathrow.jpg",
+   "category": "Airbus A320neo of British Airways"
+  },
+  "BAW|A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/20251011_British_Airways_G-NEOV_EGLL.jpg/500px-20251011_British_Airways_G-NEOV_EGLL.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alex Noble",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:20251011_British_Airways_G-NEOV_EGLL.jpg",
+   "file": "File:20251011 British Airways G-NEOV EGLL.jpg",
+   "category": "Current Airbus A321neo of British Airways"
+  },
+  "BAW|A319": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/British_Airways_Airbus_A319_on_approach_to_Leeds_Bradford_Airport_seen_from_the_Old_Ball_car_park_%2830th_December_2013%29_001.JPG/500px-British_Airways_Airbus_A319_on_approach_to_Leeds_Bradford_Airport_seen_from_the_Old_Ball_car_park_%2830th_December_2013%29_001.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Mtaylor848",
+   "license": "CC BY-SA 3.0",
+   "source": "https://commons.wikimedia.org/wiki/File:British_Airways_Airbus_A319_on_approach_to_Leeds_Bradford_Airport_seen_from_the_Old_Ball_car_park_(30th_December_2013)_001.JPG",
+   "file": "File:British Airways Airbus A319 on approach to Leeds Bradford Airport seen from the Old Ball car park (30th December 2013) 001.JPG",
+   "category": "Airbus A319 of British Airways"
+  },
+  "BAW|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/53/GB_Airways_aircraft_landing_at_Gibraltar_Airport.jpg/500px-GB_Airways_aircraft_landing_at_Gibraltar_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "RedCoat",
+   "license": "CC BY-SA 2.5",
+   "source": "https://commons.wikimedia.org/wiki/File:GB_Airways_aircraft_landing_at_Gibraltar_Airport.jpg",
+   "file": "File:GB Airways aircraft landing at Gibraltar Airport.jpg",
+   "category": "Airbus A320 of British Airways"
+  },
+  "CFE|E190": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/BA_E190_-_G-LCAB.jpg/500px-BA_E190_-_G-LCAB.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Styyx",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:BA_E190_-_G-LCAB.jpg",
+   "file": "File:BA E190 - G-LCAB.jpg",
+   "category": "Current Embraer 190 of BA CityFlyer"
+  },
   "DAL|A320": {
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f4/Delta_Airbus_A320_N325US_BWI_MD1.jpg/500px-Delta_Airbus_A320_N325US_BWI_MD1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
    "artist": "Acroterion",
@@ -80,6 +232,14 @@ window.ATC_PHOTOS = {
    "source": "https://commons.wikimedia.org/wiki/File:Delta_A330_over_the_approach_lights_in_ATL.jpg",
    "file": "File:Delta A330 over the approach lights in ATL.jpg",
    "category": "Airbus A330-300 of Delta Air Lines"
+  },
+  "DAL|A339": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/Delta_Airbus_A330-900_N402DX_departing_Boston_June_2025_1.jpg/500px-Delta_Airbus_A330-900_N402DX_departing_Boston_June_2025_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "4300streetcar",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Delta_Airbus_A330-900_N402DX_departing_Boston_June_2025_1.jpg",
+   "file": "File:Delta Airbus A330-900 N402DX departing Boston June 2025 1.jpg",
+   "category": "Current Airbus A330-900neo of Delta Air Lines"
   },
   "DAL|A359": {
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fa/Delta_N502DN_AirbusA350-900_HSV_Landing.jpg/500px-Delta_N502DN_AirbusA350-900_HSV_Landing.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -137,53 +297,237 @@ window.ATC_PHOTOS = {
    "file": "File:Boeing 767-400ER N843MH of Delta Air Lines landing at Los Angeles International Airport, September 2023.jpg",
    "category": "Boeing 767-400ER of Delta Air Lines"
   },
-  "FDX|B763": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a7/FedEx_Boeing_767-300F_N102FE_landing_at_Taoyuan_February_2026.jpg/500px-FedEx_Boeing_767-300F_N102FE_landing_at_Taoyuan_February_2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "4300streetcar",
+  "DLH|A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fd/D-AIJD_%2851217385882%29.jpg/500px-D-AIJD_%2851217385882%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Ting Chen",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:D-AIJD_(51217385882).jpg",
+   "file": "File:D-AIJD (51217385882).jpg",
+   "category": "Current Airbus A320neo of Lufthansa"
+  },
+  "DLH|A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ac/D-AIEA_06072019LHR_%2848315751997%29.jpg/500px-D-AIEA_06072019LHR_%2848315751997%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "John Taggart from Claydon Banbury, Oxfordshire",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:D-AIEA_06072019LHR_(48315751997).jpg",
+   "file": "File:D-AIEA 06072019LHR (48315751997).jpg",
+   "category": "Current Airbus A321neo of Lufthansa"
+  },
+  "DLH|A319": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/Lufthansa_A319_%28D-AIBA%29_%40_MAN%2C_Feb_2014.jpg/500px-Lufthansa_A319_%28D-AIBA%29_%40_MAN%2C_Feb_2014.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Riik@mctr",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Lufthansa_A319_(D-AIBA)_@_MAN,_Feb_2014.jpg",
+   "file": "File:Lufthansa A319 (D-AIBA) @ MAN, Feb 2014.jpg",
+   "category": "Current Airbus A319 of Lufthansa"
+  },
+  "DLH|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Lufthansa_Airbus_A320-200_%28D-AIUP%29_at_Frankfurt_Airport.jpg/500px-Lufthansa_Airbus_A320-200_%28D-AIUP%29_at_Frankfurt_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "tjdarmstadt",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Lufthansa_Airbus_A320-200_(D-AIUP)_at_Frankfurt_Airport.jpg",
+   "file": "File:Lufthansa Airbus A320-200 (D-AIUP) at Frankfurt Airport.jpg",
+   "category": "Airbus A320 of Lufthansa"
+  },
+  "KLM|A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a2/KLM_Airbus_A321neo_%28PH-AXA%29_%40_MAN%2C_2025-07-16_%2801%29.jpg/500px-KLM_Airbus_A321neo_%28PH-AXA%29_%40_MAN%2C_2025-07-16_%2801%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Photograph by Mike Peel (www.mikepeel.net).",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_Airbus_A321neo_(PH-AXA)_@_MAN,_2025-07-16_(01).jpg",
+   "file": "File:KLM Airbus A321neo (PH-AXA) @ MAN, 2025-07-16 (01).jpg",
+   "category": "Current Airbus A321neo of KLM"
+  },
+  "KLM|A332": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d1/KLM_Airbus_A330-200_PH-AOA_MD1.jpg/500px-KLM_Airbus_A330-200_PH-AOA_MD1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Acroterion",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_Airbus_A330-200_PH-AOA_MD1.jpg",
+   "file": "File:KLM Airbus A330-200 PH-AOA MD1.jpg",
+   "category": "Current Airbus A330-200 of KLM"
+  },
+  "KLM|A333": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/13/KLM_A330-300_on_short_final_for_runway_06_%2832995485585%29.jpg/500px-KLM_A330-300_on_short_final_for_runway_06_%2832995485585%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Nicky Boogaard from Hardinxveld-Giessendam, Netherlands",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_A330-300_on_short_final_for_runway_06_(32995485585).jpg",
+   "file": "File:KLM A330-300 on short final for runway 06 (32995485585).jpg",
+   "category": "Airbus A330-300 of KLM"
+  },
+  "KLM|B737": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c9/KLM_Boeing_737-700_PH-BGF_%2828134068350%29.jpg/500px-KLM_Boeing_737-700_PH-BGF_%2828134068350%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alec Wilson from Khon Kaen, Thailand",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_Boeing_737-700_PH-BGF_(28134068350).jpg",
+   "file": "File:KLM Boeing 737-700 PH-BGF (28134068350).jpg",
+   "category": "Current Boeing 737-700 of KLM"
+  },
+  "KLM|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Boeing_737-800_PH-BCA_KLM_takeoff_at_Schiphol.JPG/500px-Boeing_737-800_PH-BCA_KLM_takeoff_at_Schiphol.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alf van Beem",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737-800_PH-BCA_KLM_takeoff_at_Schiphol.JPG",
+   "file": "File:Boeing 737-800 PH-BCA KLM takeoff at Schiphol.JPG",
+   "category": "Current Boeing 737-800 of KLM"
+  },
+  "KLM|B739": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/279ab_-_KLM_Boeing_737-9K2%2C_PH-BXO%40LHR%2C01.03.2004_-_Flickr_-_Aero_Icarus.jpg/500px-279ab_-_KLM_Boeing_737-9K2%2C_PH-BXO%40LHR%2C01.03.2004_-_Flickr_-_Aero_Icarus.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Aero Icarus from Z\u00fcrich, Switzerland",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:279ab_-_KLM_Boeing_737-9K2,_PH-BXO@LHR,01.03.2004_-_Flickr_-_Aero_Icarus.jpg",
+   "file": "File:279ab - KLM Boeing 737-9K2, PH-BXO@LHR,01.03.2004 - Flickr - Aero Icarus.jpg",
+   "category": "Current Boeing 737-900 of KLM"
+  },
+  "KLM|B772": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Ken_H._KLM_B777-200ER_on_final_for_R-W16L%281%29._%287618865148%29.jpg/500px-Ken_H._KLM_B777-200ER_on_final_for_R-W16L%281%29._%287618865148%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "ken H from Yokohama, Kanagawa-ken, Japan",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Ken_H._KLM_B777-200ER_on_final_for_R-W16L(1)._(7618865148).jpg",
+   "file": "File:Ken H. KLM B777-200ER on final for R-W16L(1). (7618865148).jpg",
+   "category": "Boeing 777-200ER of KLM"
+  },
+  "KLM|B77W": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/00/%28SGP-Singapore%29_KLM_Boeing_777-306ER_PH-BVA_%40_WSSS_2026-01-29.jpg/500px-%28SGP-Singapore%29_KLM_Boeing_777-306ER_PH-BVA_%40_WSSS_2026-01-29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "S5A-0043",
    "license": "CC BY 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:FedEx_Boeing_767-300F_N102FE_landing_at_Taoyuan_February_2026.jpg",
-   "file": "File:FedEx Boeing 767-300F N102FE landing at Taoyuan February 2026.jpg",
-   "category": "Current Boeing 767-300F of FedEx Express"
+   "source": "https://commons.wikimedia.org/wiki/File:(SGP-Singapore)_KLM_Boeing_777-306ER_PH-BVA_@_WSSS_2026-01-29.jpg",
+   "file": "File:(SGP-Singapore) KLM Boeing 777-306ER PH-BVA @ WSSS 2026-01-29.jpg",
+   "category": "Current Boeing 777-300ER of KLM"
   },
-  "FDX|B77L": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8f/N840FD_%2819_Mar_2025%29.jpg/500px-N840FD_%2819_Mar_2025%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Dltl2010",
+  "KLM|B789": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/58/KLM_B787-9_%28PH-BHD%29_on_final_at_Schiphol_runway_18R_pic1.jpg/500px-KLM_B787-9_%28PH-BHD%29_on_final_at_Schiphol_runway_18R_pic1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alf van Beem",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_B787-9_(PH-BHD)_on_final_at_Schiphol_runway_18R_pic1.jpg",
+   "file": "File:KLM B787-9 (PH-BHD) on final at Schiphol runway 18R pic1.jpg",
+   "category": "Current Boeing 787-9 of KLM"
+  },
+  "KLM|B78X": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3b/KLM_Royal_Dutch_Airlines_Boeing_787-10_Dreamliner_PH-BKC_approaching_JFK_Airport.jpg/500px-KLM_Royal_Dutch_Airlines_Boeing_787-10_Dreamliner_PH-BKC_approaching_JFK_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Adam Moreira (AEMoreira042281)",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_Royal_Dutch_Airlines_Boeing_787-10_Dreamliner_PH-BKC_approaching_JFK_Airport.jpg",
+   "file": "File:KLM Royal Dutch Airlines Boeing 787-10 Dreamliner PH-BKC approaching JFK Airport.jpg",
+   "category": "Current Boeing 787-10 of KLM"
+  },
+  "MPH|B744": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/Boeing_747_KLM_Cargo_PH-CKA_landing_at_Schiphol.JPG/500px-Boeing_747_KLM_Cargo_PH-CKA_landing_at_Schiphol.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "AlfvanBeem",
    "license": "CC0",
-   "source": "https://commons.wikimedia.org/wiki/File:N840FD_(19_Mar_2025).jpg",
-   "file": "File:N840FD (19 Mar 2025).jpg",
-   "category": "Current Boeing 777F of FedEx Express"
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_747_KLM_Cargo_PH-CKA_landing_at_Schiphol.JPG",
+   "file": "File:Boeing 747 KLM Cargo PH-CKA landing at Schiphol.JPG",
+   "category": "Current Boeing 747-400ERF of Martinair"
   },
-  "FDX|MD11": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Fedex_MD-11F_N628FE_at_BNE_%2823756940623%29.jpg/500px-Fedex_MD-11F_N628FE_at_BNE_%2823756940623%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "G B_NZ",
+  "QTR|B77L": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/A7-BFA_Boeing_777F_%285356479177%29_%282%29.jpg/500px-A7-BFA_Boeing_777F_%285356479177%29_%282%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Bj\u00f6rn Strey",
    "license": "CC BY-SA 2.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Fedex_MD-11F_N628FE_at_BNE_(23756940623).jpg",
-   "file": "File:Fedex MD-11F N628FE at BNE (23756940623).jpg",
-   "category": "McDonnell Douglas MD-11F of FedEx Express"
+   "source": "https://commons.wikimedia.org/wiki/File:A7-BFA_Boeing_777F_(5356479177)_(2).jpg",
+   "file": "File:A7-BFA Boeing 777F (5356479177) (2).jpg",
+   "category": "Current Boeing 777F of Qatar Airways Cargo"
   },
-  "SWA|B38M": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7d/Boeing_737_MAX_8_-_Southwest_Airlines_-_N8891Q.jpg/500px-Boeing_737_MAX_8_-_Southwest_Airlines_-_N8891Q.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Oleg Yunakov",
-   "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737_MAX_8_-_Southwest_Airlines_-_N8891Q.jpg",
-   "file": "File:Boeing 737 MAX 8 - Southwest Airlines - N8891Q.jpg",
-   "category": "Boeing 737-8 MAX of Southwest Airlines"
-  },
-  "SWA|B737": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/85/Southwest_737-700_N238WN_%40IND.jpg/500px-Southwest_737-700_N238WN_%40IND.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "AVA Navigate",
-   "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Southwest_737-700_N238WN_@IND.jpg",
-   "file": "File:Southwest 737-700 N238WN @IND.jpg",
-   "category": "Boeing 737-700 of Southwest Airlines"
-  },
-  "SWA|B738": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/38/N8619F_Boeing_737-8H4_Southwest_MIA_19.1.23_%2852766802354%29.jpg/500px-N8619F_Boeing_737-8H4_Southwest_MIA_19.1.23_%2852766802354%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Colin Cooke Photo",
+  "SAS|A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cc/Airbus_A320-251N_%27LN-RGO%27_SAS_Scandinavian_Airline_System.jpg/500px-Airbus_A320-251N_%27LN-RGO%27_SAS_Scandinavian_Airline_System.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Markus Eigenheer",
    "license": "CC BY-SA 2.0",
-   "source": "https://commons.wikimedia.org/wiki/File:N8619F_Boeing_737-8H4_Southwest_MIA_19.1.23_(52766802354).jpg",
-   "file": "File:N8619F Boeing 737-8H4 Southwest MIA 19.1.23 (52766802354).jpg",
-   "category": "Boeing 737-800 of Southwest Airlines"
+   "source": "https://commons.wikimedia.org/wiki/File:Airbus_A320-251N_%27LN-RGO%27_SAS_Scandinavian_Airline_System.jpg",
+   "file": "File:Airbus A320-251N 'LN-RGO' SAS Scandinavian Airline System.jpg",
+   "category": "Current Airbus A320neo of SAS Scandinavian Airlines"
+  },
+  "SAS|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b0/OY-KAP_A320_SAS_ARN_02.jpg/500px-OY-KAP_A320_SAS_ARN_02.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Bene Riob\u00f3",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:OY-KAP_A320_SAS_ARN_02.jpg",
+   "file": "File:OY-KAP A320 SAS ARN 02.jpg",
+   "category": "Current Airbus A320 of SAS Scandinavian Airlines"
+  },
+  "TFL|B38M": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/PH-TFN_TUI_Fly_landing_at_Madeira_Airport_May_2023_2.jpg/500px-PH-TFN_TUI_Fly_landing_at_Madeira_Airport_May_2023_2.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Jon Kolbert",
+   "license": "CC BY-SA 3.0",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-TFN_TUI_Fly_landing_at_Madeira_Airport_May_2023_2.jpg",
+   "file": "File:PH-TFN TUI Fly landing at Madeira Airport May 2023 2.jpg",
+   "category": "Current Boeing 737-8 MAX of TUI Airlines Netherlands"
+  },
+  "TFL|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/da/C-FDBD_Boeing_737-800_TUI_Airlines_Netherlands_sunnycars_AMS_2019-06-01_%2811a%29.jpg/500px-C-FDBD_Boeing_737-800_TUI_Airlines_Netherlands_sunnycars_AMS_2019-06-01_%2811a%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Marvin Mutz",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:C-FDBD_Boeing_737-800_TUI_Airlines_Netherlands_sunnycars_AMS_2019-06-01_(11a).jpg",
+   "file": "File:C-FDBD Boeing 737-800 TUI Airlines Netherlands sunnycars AMS 2019-06-01 (11a).jpg",
+   "category": "Boeing 737-800 of TUI Airlines Netherlands"
+  },
+  "THY|A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/TC-LPL_A321neo_Turkish_ARN_01.jpg/500px-TC-LPL_A321neo_Turkish_ARN_01.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Bene Riob\u00f3",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:TC-LPL_A321neo_Turkish_ARN_01.jpg",
+   "file": "File:TC-LPL A321neo Turkish ARN 01.jpg",
+   "category": "Current Airbus A321neo of Turkish Airlines"
+  },
+  "THY|A321": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5d/TC-JSS.jpg/500px-TC-JSS.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Valentin Hintikka",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:TC-JSS.jpg",
+   "file": "File:TC-JSS.jpg",
+   "category": "Airbus A321 of Turkish Airlines"
+  },
+  "THY|A333": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2a/%28THA-Bangkok%29_Turkish_Airlines_Airbus_A330-303_TC-JOA_%40_VTBS_2024-02-09.jpg/500px-%28THA-Bangkok%29_Turkish_Airlines_Airbus_A330-303_TC-JOA_%40_VTBS_2024-02-09.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "S5A-0043",
+   "license": "Attribution",
+   "source": "https://commons.wikimedia.org/wiki/File:(THA-Bangkok)_Turkish_Airlines_Airbus_A330-303_TC-JOA_@_VTBS_2024-02-09.jpg",
+   "file": "File:(THA-Bangkok) Turkish Airlines Airbus A330-303 TC-JOA @ VTBS 2024-02-09.jpg",
+   "category": "Airbus A330-300 of Turkish Airlines"
+  },
+  "THY|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Turkisch_B737-800_cross_wind_take_off_%286487331697%29.jpg/500px-Turkisch_B737-800_cross_wind_take_off_%286487331697%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Maarten Visser from Capelle aan den IJssel, Nederland",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Turkisch_B737-800_cross_wind_take_off_(6487331697).jpg",
+   "file": "File:Turkisch B737-800 cross wind take off (6487331697).jpg",
+   "category": "Boeing 737-800 of Turkish Airlines"
+  },
+  "TRA|A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/19/PH-YHU_at_AMS_20261006.jpg/500px-PH-YHU_at_AMS_20261006.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "VynedJ",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-YHU_at_AMS_20261006.jpg",
+   "file": "File:PH-YHU at AMS 20261006.jpg",
+   "category": "Airbus A321neo of Transavia"
+  },
+  "TRA|B737": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/PH-XRB_Transavia_Boeing_737-7K2%28WL%29_takeoff_from_Schiphol_%28AMS_-_EHAM%29%2C_The_Netherlands%2C_11june2014%2C_pic-1.JPG/500px-PH-XRB_Transavia_Boeing_737-7K2%28WL%29_takeoff_from_Schiphol_%28AMS_-_EHAM%29%2C_The_Netherlands%2C_11june2014%2C_pic-1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alf van Beem",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-XRB_Transavia_Boeing_737-7K2(WL)_takeoff_from_Schiphol_(AMS_-_EHAM),_The_Netherlands,_11june2014,_pic-1.JPG",
+   "file": "File:PH-XRB Transavia Boeing 737-7K2(WL) takeoff from Schiphol (AMS - EHAM), The Netherlands, 11june2014, pic-1.JPG",
+   "category": "Boeing 737-700 of Transavia"
+  },
+  "TRA|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/Transavia_F-HTVS_B737-800.jpg/500px-Transavia_F-HTVS_B737-800.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Zima Savolainen",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Transavia_F-HTVS_B737-800.jpg",
+   "file": "File:Transavia F-HTVS B737-800.jpg",
+   "category": "Boeing 737-800 of Transavia"
+  },
+  "UAE|A388": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Airbus_380_Emirates_take_off_from_Leonardo_Da_Vinci_Airport_-_panoramio.jpg/500px-Airbus_380_Emirates_take_off_from_Leonardo_Da_Vinci_Airport_-_panoramio.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Michele Sirchi",
+   "license": "CC BY-SA 3.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Airbus_380_Emirates_take_off_from_Leonardo_Da_Vinci_Airport_-_panoramio.jpg",
+   "file": "File:Airbus 380 Emirates take off from Leonardo Da Vinci Airport - panoramio.jpg",
+   "category": "Airbus A380 of Emirates"
+  },
+  "UAE|B77W": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/2011-06-28_11-47-23_South_Africa_-_Bonaero_Park_D-AIME_A6-EBR.jpg/500px-2011-06-28_11-47-23_South_Africa_-_Bonaero_Park_D-AIME_A6-EBR.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Hansueli Krapf This file was uploaded with Commonist.",
+   "license": "CC BY-SA 3.0",
+   "source": "https://commons.wikimedia.org/wiki/File:2011-06-28_11-47-23_South_Africa_-_Bonaero_Park_D-AIME_A6-EBR.jpg",
+   "file": "File:2011-06-28 11-47-23 South Africa - Bonaero Park D-AIME A6-EBR.jpg",
+   "category": "Current Boeing 777-300ER of Emirates"
   },
   "UAL|A320": {
    "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/United_Airlines_Airbus_A320_N1902U_landing_at_San_Francisco_January_2026.jpg/500px-United_Airlines_Airbus_A320_N1902U_landing_at_San_Francisco_January_2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
@@ -209,53 +553,149 @@ window.ATC_PHOTOS = {
    "file": "File:United Boeing 737-900ER N34460 on final approach to Boston March 2025 1.jpg",
    "category": "Current Boeing 737-900ER of United Airlines"
   },
-  "ASA|B38M": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg/500px-Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_%28Los_Angeles%29_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Rene Hernandez2",
-   "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Boeing_737_MAX_8_-_N813AK_-_Alaska_Airlines_Flight_AS1354_(Los_Angeles)_-_Takeoff_Guatemala_City_La_Aurora_GUA_MGGT.jpg",
-   "file": "File:Boeing 737 MAX 8 - N813AK - Alaska Airlines Flight AS1354 (Los Angeles) - Takeoff Guatemala City La Aurora GUA MGGT.jpg",
-   "category": "Boeing 737-8 MAX of Alaska Airlines"
-  },
-  "ASA|B738": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e5/Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg/500px-Alaska_Air_737_touching_down_at_ANC_%286863673681%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Frank Kovalchek from Anchorage, Alaska, USA",
-   "license": "CC BY 2.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Air_737_touching_down_at_ANC_(6863673681).jpg",
-   "file": "File:Alaska Air 737 touching down at ANC (6863673681).jpg",
-   "category": "Boeing 737-800 of Alaska Airlines"
-  },
-  "ASA|B739": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg/500px-Alaska_Airlines_Boeing_737-990%28ER%29_N248AK_approaching_EWR_Airport.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Adam Moreira (AEMoreira042281)",
-   "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:Alaska_Airlines_Boeing_737-990(ER)_N248AK_approaching_EWR_Airport.jpg",
-   "file": "File:Alaska Airlines Boeing 737-990(ER) N248AK approaching EWR Airport.jpg",
-   "category": "Current Boeing 737-900ER of Alaska Airlines"
-  },
-  "UPS|A300": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg/500px-UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "4300streetcar",
-   "license": "CC BY 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:UPS_Airbus_A300-600RF_N125UP_after_departing_Runway_27_Boston_Feb_2025_1.jpg",
-   "file": "File:UPS Airbus A300-600RF N125UP after departing Runway 27 Boston Feb 2025 1.jpg",
-   "category": "Current Airbus A300 of UPS Airlines"
-  },
-  "UPS|B752": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c7/9aa_-_United_Parcel_Service_Boeing_757-24APF%3B_N407UP%40PIE%3B26.01.1998_%285183212758%29.jpg/500px-9aa_-_United_Parcel_Service_Boeing_757-24APF%3B_N407UP%40PIE%3B26.01.1998_%285183212758%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "Aero Icarus from Z\u00fcrich, Switzerland",
+  "UAL|B763": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fb/Boeing_767-300ER_of_United_Airlines_%283056922422%29.jpg/500px-Boeing_767-300ER_of_United_Airlines_%283056922422%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "allen watkin from London, UK",
    "license": "CC BY-SA 2.0",
-   "source": "https://commons.wikimedia.org/wiki/File:9aa_-_United_Parcel_Service_Boeing_757-24APF;_N407UP@PIE;26.01.1998_(5183212758).jpg",
-   "file": "File:9aa - United Parcel Service Boeing 757-24APF; N407UP@PIE;26.01.1998 (5183212758).jpg",
-   "category": "Current Boeing 757-200PF of UPS Airlines"
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_767-300ER_of_United_Airlines_(3056922422).jpg",
+   "file": "File:Boeing 767-300ER of United Airlines (3056922422).jpg",
+   "category": "Boeing 767-300ER of United Airlines"
   },
-  "UPS|B763": {
-   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/UPS_N354UP_run_5X166%28Hong_Kong_International_Airport_to_Singapore_Changi_Airport%29_12-03-2026.jpg/500px-UPS_N354UP_run_5X166%28Hong_Kong_International_Airport_to_Singapore_Changi_Airport%29_12-03-2026.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
-   "artist": "LN9267",
+  "UAL|B772": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/94/A_United_777-200ER_departs_LAX_%289565478735%29.jpg/500px-A_United_777-200ER_departs_LAX_%289565478735%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Angelo DeSantis from Berkeley, US",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:A_United_777-200ER_departs_LAX_(9565478735).jpg",
+   "file": "File:A United 777-200ER departs LAX (9565478735).jpg",
+   "category": "Boeing 777-200ER of United Airlines"
+  },
+  "UAL|B789": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/United_Boeing_787-9_Dreamliner_departing_SFO_%2826804192250%29.jpg/500px-United_Boeing_787-9_Dreamliner_departing_SFO_%2826804192250%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Bill Abbott",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:United_Boeing_787-9_Dreamliner_departing_SFO_(26804192250).jpg",
+   "file": "File:United Boeing 787-9 Dreamliner departing SFO (26804192250).jpg",
+   "category": "Boeing 787-9 of United Airlines"
+  },
+  "CND|B39M": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0e/PH-CDP_%2853630188958%29.jpg/500px-PH-CDP_%2853630188958%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alec Wilson from Hampton-in-Arden, United Kingdom",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-CDP_(53630188958).jpg",
+   "file": "File:PH-CDP (53630188958).jpg",
+   "category": "Current Boeing 737-9 MAX of Corendon Dutch Airlines"
+  },
+  "CND|B738": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/PH-CDE_Corendon_Boeing_737-800_takeoff_from_Schiphol_%28AMS_-_EHAM%29%2C_The_Netherlands%2C_17may2014%2C_pic-1.JPG/500px-PH-CDE_Corendon_Boeing_737-800_takeoff_from_Schiphol_%28AMS_-_EHAM%29%2C_The_Netherlands%2C_17may2014%2C_pic-1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alf van Beem",
+   "license": "CC0",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-CDE_Corendon_Boeing_737-800_takeoff_from_Schiphol_(AMS_-_EHAM),_The_Netherlands,_17may2014,_pic-1.JPG",
+   "file": "File:PH-CDE Corendon Boeing 737-800 takeoff from Schiphol (AMS - EHAM), The Netherlands, 17may2014, pic-1.JPG",
+   "category": "Boeing 737-800 of Corendon Dutch Airlines"
+  },
+  "EJU|A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e6/OE-LSL_18-6-22_Schiphol_%2852643726177%29.jpg/500px-OE-LSL_18-6-22_Schiphol_%2852643726177%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Pete Macklin",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:OE-LSL_18-6-22_Schiphol_(52643726177).jpg",
+   "file": "File:OE-LSL 18-6-22 Schiphol (52643726177).jpg",
+   "category": "Airbus A320neo of EasyJet Europe"
+  },
+  "EJU|A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/42/EasyJet_Europe_A321neo_%28OE-ISC%29_%40_MXP%2C_May_2022.jpg/500px-EasyJet_Europe_A321neo_%28OE-ISC%29_%40_MXP%2C_May_2022.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Ardfern",
    "license": "CC BY-SA 4.0",
-   "source": "https://commons.wikimedia.org/wiki/File:UPS_N354UP_run_5X166(Hong_Kong_International_Airport_to_Singapore_Changi_Airport)_12-03-2026.jpg",
-   "file": "File:UPS N354UP run 5X166(Hong Kong International Airport to Singapore Changi Airport) 12-03-2026.jpg",
-   "category": "Boeing 767-300F of UPS Airlines"
+   "source": "https://commons.wikimedia.org/wiki/File:EasyJet_Europe_A321neo_(OE-ISC)_@_MXP,_May_2022.jpg",
+   "file": "File:EasyJet Europe A321neo (OE-ISC) @ MXP, May 2022.jpg",
+   "category": "Current Airbus A321neo of EasyJet Europe"
+  },
+  "EJU|A319": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/EasyJet_Europe_Airbus_A319_OE-LKD_at_Schiphol_24-11-2022.jpg/500px-EasyJet_Europe_Airbus_A319_OE-LKD_at_Schiphol_24-11-2022.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Robbie Klinkenberg",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:EasyJet_Europe_Airbus_A319_OE-LKD_at_Schiphol_24-11-2022.jpg",
+   "file": "File:EasyJet Europe Airbus A319 OE-LKD at Schiphol 24-11-2022.jpg",
+   "category": "Current Airbus A319 of EasyJet Europe"
+  },
+  "EJU|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/81/EasyJet%2C_Airbus_A320neo%2C_G-UZHW.jpg/500px-EasyJet%2C_Airbus_A320neo%2C_G-UZHW.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Aviation404",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:EasyJet,_Airbus_A320neo,_G-UZHW.jpg",
+   "file": "File:EasyJet, Airbus A320neo, G-UZHW.jpg",
+   "category": "Airbus A320 of EasyJet Europe"
+  },
+  "EZY|A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a0/EasyJet_A320-251%28N%29%2C_G-UZHA%2C_MSN_7649_%2805_2017%29%2C_as_U2_2776_Paris_%28CDG%29_-_Bristol_%28BRS%29.jpg/500px-EasyJet_A320-251%28N%29%2C_G-UZHA%2C_MSN_7649_%2805_2017%29%2C_as_U2_2776_Paris_%28CDG%29_-_Bristol_%28BRS%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Charles",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:EasyJet_A320-251(N),_G-UZHA,_MSN_7649_(05_2017),_as_U2_2776_Paris_(CDG)_-_Bristol_(BRS).jpg",
+   "file": "File:EasyJet A320-251(N), G-UZHA, MSN 7649 (05 2017), as U2 2776 Paris (CDG) - Bristol (BRS).jpg",
+   "category": "Current Airbus A320neo of EasyJet"
+  },
+  "EZY|A319": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9e/Easyjet.takeoff.closeup.300506.arp.jpg/500px-Easyjet.takeoff.closeup.300506.arp.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Arpingstone",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:Easyjet.takeoff.closeup.300506.arp.jpg",
+   "file": "File:Easyjet.takeoff.closeup.300506.arp.jpg",
+   "category": "Airbus A319 of EasyJet"
+  },
+  "EZY|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Airbus_A320_-_MSN_6831_OE-IZF_%282%29.jpg/500px-Airbus_A320_-_MSN_6831_OE-IZF_%282%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Ibex73",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Airbus_A320_-_MSN_6831_OE-IZF_(2).jpg",
+   "file": "File:Airbus A320 - MSN 6831 OE-IZF (2).jpg",
+   "category": "Airbus A320 of EasyJet"
+  },
+  "KLC|E190": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/KLM_Cityhopper_E-190_seconds_from_touchdown_%2832312596672%29.jpg/500px-KLM_Cityhopper_E-190_seconds_from_touchdown_%2832312596672%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Nicky Boogaard from Hardinxveld-Giessendam, Netherlands",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_Cityhopper_E-190_seconds_from_touchdown_(32312596672).jpg",
+   "file": "File:KLM Cityhopper E-190 seconds from touchdown (32312596672).jpg",
+   "category": "Embraer 190 of KLM cityhopper"
+  },
+  "KLC|E295": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/PH-NXF_AIRCRAFT_Embraer_E195-E2_-1b.jpg/500px-PH-NXF_AIRCRAFT_Embraer_E195-E2_-1b.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Sg1959",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-NXF_AIRCRAFT_Embraer_E195-E2_-1b.jpg",
+   "file": "File:PH-NXF AIRCRAFT Embraer E195-E2 -1b.jpg",
+   "category": "Embraer 195-E2 of KLM cityhopper"
+  },
+  "KLC|E75L": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/86/PH-EXG_KLM_Cityhopper_Embraer_ERJ-175STD_%28ERJ-170-200%29_landing_at_Schiphol_%28AMS_-_EHAM%29%2C_The_Netherlands_pic1.JPG/500px-PH-EXG_KLM_Cityhopper_Embraer_ERJ-175STD_%28ERJ-170-200%29_landing_at_Schiphol_%28AMS_-_EHAM%29%2C_The_Netherlands_pic1.JPG?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Alf van Beem",
+   "license": "Public domain",
+   "source": "https://commons.wikimedia.org/wiki/File:PH-EXG_KLM_Cityhopper_Embraer_ERJ-175STD_(ERJ-170-200)_landing_at_Schiphol_(AMS_-_EHAM),_The_Netherlands_pic1.JPG",
+   "file": "File:PH-EXG KLM Cityhopper Embraer ERJ-175STD (ERJ-170-200) landing at Schiphol (AMS - EHAM), The Netherlands pic1.JPG",
+   "category": "Current Embraer 175 of KLM cityhopper"
+  },
+  "VLG|A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b9/Barcelona_Vueling_Airbus_A320_EC-NAF.jpg/500px-Barcelona_Vueling_Airbus_A320_EC-NAF.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Ad Meskens You are free to use this picture for any purpose as long as you credit its author, Ad Meskens. Example: \u00a9 Ad Meskens / Wikimedia Commons If you use this work outside of the Wikimedia projects, a message or a copy is very much appreciated. This image is not in the public domain. A statement such as \"From Wikimedia Commons\" or similar is not by itself sufficient. If you do not provide clear attribution to the author you do not comply with the terms of the file's license and you may not use this file. If you are unable or unwilling to provide attribution you should contact Ad Meskens to negotiate a different license.",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Barcelona_Vueling_Airbus_A320_EC-NAF.jpg",
+   "file": "File:Barcelona Vueling Airbus A320 EC-NAF.jpg",
+   "category": "Current Airbus A320neo of Vueling Airlines"
+  },
+  "VLG|A320": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/77/Vueling_EC-OJG_A320.jpg/500px-Vueling_EC-OJG_A320.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Zima Savolainen",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Vueling_EC-OJG_A320.jpg",
+   "file": "File:Vueling EC-OJG A320.jpg",
+   "category": "Airbus A320 of Vueling Airlines"
+  },
+  "VLG|A321": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/EC-MGY_20022016LHR_%2825186857596%29.jpg/500px-EC-MGY_20022016LHR_%2825186857596%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "John Taggart from Claydon Banbury, Oxfordshire",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:EC-MGY_20022016LHR_(25186857596).jpg",
+   "file": "File:EC-MGY 20022016LHR (25186857596).jpg",
+   "category": "Current Airbus A321 of Vueling Airlines"
   }
  },
  "types": {
@@ -433,6 +873,69 @@ window.ATC_PHOTOS = {
    "license": "CC BY-SA 2.0",
    "source": "https://commons.wikimedia.org/wiki/File:A6-EDY_A380_Emirates_31_jan_2013_jfk_(8442269364)_(cropped).jpg",
    "article": "Airbus A380"
+  },
+  "E75L": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3d/KLM_Cityhopper_-_Embraer_190LR_-_AN2571563.jpg/500px-KLM_Cityhopper_-_Embraer_190LR_-_AN2571563.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Richard Vandervord",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:KLM_Cityhopper_-_Embraer_190LR_-_AN2571563.jpg",
+   "article": "Embraer E-Jet family"
+  },
+  "E295": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b3/Wider%C3%B8e%2C_LN-WEA%2C_Embraer_E190-E2_%40_HEL.jpg/500px-Wider%C3%B8e%2C_LN-WEA%2C_Embraer_E190-E2_%40_HEL.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "Valentin Hintikka from Finland",
+   "license": "CC BY 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Wider%C3%B8e,_LN-WEA,_Embraer_E190-E2_@_HEL.jpg",
+   "article": "Embraer E-Jet E2 family"
+  },
+  "A20N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4d/IndiGo_Airbus_A320neo_F-WWDG_%28to_VT-ITI%29_%2828915135713%29.jpg/500px-IndiGo_Airbus_A320neo_F-WWDG_%28to_VT-ITI%29_%2828915135713%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "BriYYZ from Toronto, Canada",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:IndiGo_Airbus_A320neo_F-WWDG_(to_VT-ITI)_(28915135713).jpg",
+   "article": "Airbus A320neo family"
+  },
+  "A21N": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e9/HA-LVA%40PEK_%2820200403093313%29.jpg/500px-HA-LVA%40PEK_%2820200403093313%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "N509FZ",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:HA-LVA@PEK_(20200403093313).jpg",
+   "article": "Airbus A321neo"
+  },
+  "A332": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Delta_Air_Lines_Airbus_A330-300_N830NW_departing_Boston_July_2026_1.jpg/500px-Delta_Air_Lines_Airbus_A330-300_N830NW_departing_Boston_July_2026_1.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "4300streetcar",
+   "license": "CC BY 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Delta_Air_Lines_Airbus_A330-300_N830NW_departing_Boston_July_2026_1.jpg",
+   "article": "Airbus A330"
+  },
+  "A339": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Airbus_A330neo_F-WTTN_37.jpg/500px-Airbus_A330neo_F-WTTN_37.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "New York-air",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Airbus_A330neo_F-WTTN_37.jpg",
+   "article": "Airbus A330neo"
+  },
+  "B78X": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4e/Boeing_787_N1015B_ANA_Airlines_%2827611880663%29_%28cropped%29.jpg/500px-Boeing_787_N1015B_ANA_Airlines_%2827611880663%29_%28cropped%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "pjs2005 from Hampshire, UK",
+   "license": "CC BY-SA 2.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Boeing_787_N1015B_ANA_Airlines_(27611880663)_(cropped).jpg",
+   "article": "Boeing 787 Dreamliner"
+  },
+  "B744": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/48/Frankfurt_Airport_Lufthansa_Boeing_747-430_D-ABVY_%28DSC09727%29.jpg/500px-Frankfurt_Airport_Lufthansa_Boeing_747-430_D-ABVY_%28DSC09727%29.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "MarcelX42",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Frankfurt_Airport_Lufthansa_Boeing_747-430_D-ABVY_(DSC09727).jpg",
+   "article": "Boeing 747-400"
+  },
+  "B39M": {
+   "url": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/32/Alaska_737_Max_9.jpg/500px-Alaska_737_Max_9.jpg?utm_source=commons.wikimedia.org&utm_campaign=imageinfo&utm_content=thumbnail",
+   "artist": "KirkXWB",
+   "license": "CC BY-SA 4.0",
+   "source": "https://commons.wikimedia.org/wiki/File:Alaska_737_Max_9.jpg",
+   "article": "Boeing 737 MAX"
   }
  },
  "fleets": {
@@ -489,6 +992,144 @@ window.ATC_PHOTOS = {
    "N948UW",
    "N958UW"
   ],
+  "FDX|B763": [
+   "N107FE",
+   "N120FE",
+   "N145FE",
+   "N169FE",
+   "N284FE",
+   "N298FE"
+  ],
+  "FDX|B77L": [
+   "N852FD",
+   "N853FD",
+   "N862FD",
+   "N865FD",
+   "N869FD",
+   "N883FD"
+  ],
+  "FDX|MD11": [
+   "N602FE",
+   "N606FE",
+   "N607FE",
+   "N613FE",
+   "N618FE",
+   "N620FE"
+  ],
+  "SWA|B38M": [
+   "N8738K",
+   "N8753Q",
+   "N8758L",
+   "N8773Q",
+   "N8821S",
+   "N8858K"
+  ],
+  "SWA|B737": [
+   "N293WN",
+   "N465WN",
+   "N558WN",
+   "N570WN",
+   "N7752B",
+   "N7847A"
+  ],
+  "SWA|B738": [
+   "N8519R",
+   "N8531Q",
+   "N8574Z",
+   "N8581Z",
+   "N8657B",
+   "N8687A"
+  ],
+  "ASA|B38M": [
+   "N801AK",
+   "N803AK",
+   "N806AK",
+   "N809AK",
+   "N813AK"
+  ],
+  "ASA|B738": [
+   "N519AS",
+   "N524AS",
+   "N538AS",
+   "N548AS",
+   "N549AS",
+   "N556AS"
+  ],
+  "ASA|B739": [
+   "N268AK",
+   "N290AK",
+   "N433AS",
+   "N435AS",
+   "N457AS",
+   "N486AS"
+  ],
+  "UPS|A300": [
+   "N121UP",
+   "N136UP",
+   "N148UP",
+   "N162UP",
+   "N169UP",
+   "N172UP"
+  ],
+  "UPS|B752": [
+   "N413UP",
+   "N414UP",
+   "N428UP",
+   "N446UP",
+   "N454UP",
+   "N455UP"
+  ],
+  "UPS|B763": [
+   "N301UP",
+   "N314UP",
+   "N332UP",
+   "N336UP",
+   "N338UP",
+   "N352UP"
+  ],
+  "AFR|A319": [
+   "F-GRXF"
+  ],
+  "AFR|A320": [
+   "F-HEPB",
+   "F-HEPD",
+   "F-HEPE",
+   "F-HEPG",
+   "F-HEPH",
+   "F-HEPI"
+  ],
+  "BAW|A20N": [
+   "G-TTNL",
+   "G-TTNM",
+   "G-TTNT",
+   "G-TTNY",
+   "G-TTNZ",
+   "G-TTSA"
+  ],
+  "BAW|A21N": [
+   "G-NEOU",
+   "G-NEOV",
+   "G-NEOZ",
+   "G-TNEB",
+   "G-TNEC",
+   "G-TNEE"
+  ],
+  "BAW|A319": [
+   "G-DBCC",
+   "G-DBCH",
+   "G-EUPG",
+   "G-EUPJ",
+   "G-EUPK",
+   "G-EUPZ"
+  ],
+  "BAW|A320": [
+   "G-EUUP",
+   "G-EUYA",
+   "G-EUYE",
+   "G-EUYF",
+   "G-EUYG",
+   "G-GATU"
+  ],
   "DAL|A320": [
    "N329NW",
    "N334NW",
@@ -512,6 +1153,14 @@ window.ATC_PHOTOS = {
    "N815NW",
    "N816NW",
    "N824NW"
+  ],
+  "DAL|A339": [
+   "N403DX",
+   "N406DX",
+   "N410DZ",
+   "N412DX",
+   "N418DX",
+   "N422DZ"
   ],
   "DAL|A359": [
    "N502DN",
@@ -569,53 +1218,223 @@ window.ATC_PHOTOS = {
    "N835MH",
    "N840MH"
   ],
-  "FDX|B763": [
-   "N107FE",
-   "N120FE",
-   "N145FE",
-   "N169FE",
-   "N284FE",
-   "N298FE"
+  "DLH|A20N": [
+   "D-AINB",
+   "D-AINJ",
+   "D-AINP",
+   "D-AINQ",
+   "D-AINW",
+   "D-AINX"
   ],
-  "FDX|B77L": [
-   "N852FD",
-   "N853FD",
-   "N862FD",
-   "N865FD",
-   "N869FD",
-   "N883FD"
+  "DLH|A21N": [
+   "D-AIED",
+   "D-AIEH",
+   "D-AIEJ",
+   "D-AIEK",
+   "D-AIEO",
+   "D-AIOB"
   ],
-  "FDX|MD11": [
-   "N602FE",
-   "N606FE",
-   "N607FE",
-   "N613FE",
-   "N618FE",
-   "N620FE"
+  "DLH|A319": [
+   "D-AIBC",
+   "D-AIBF",
+   "D-AIBG",
+   "D-AILA",
+   "D-AILI",
+   "D-AILU"
   ],
-  "SWA|B38M": [
-   "N8738K",
-   "N8753Q",
-   "N8758L",
-   "N8773Q",
-   "N8821S",
-   "N8858K"
+  "DLH|A320": [
+   "D-AIQW",
+   "D-AIUA",
+   "D-AIUN",
+   "D-AIZE",
+   "D-AIZO",
+   "D-AIZW"
   ],
-  "SWA|B737": [
-   "N293WN",
-   "N465WN",
-   "N558WN",
-   "N570WN",
-   "N7752B",
-   "N7847A"
+  "KLM|A21N": [
+   "PH-AXA",
+   "PH-AXE",
+   "PH-AXH",
+   "PH-AXP",
+   "PH-AXR",
+   "PH-AXT"
   ],
-  "SWA|B738": [
-   "N8519R",
-   "N8531Q",
-   "N8574Z",
-   "N8581Z",
-   "N8657B",
-   "N8687A"
+  "KLM|A332": [
+   "PH-AOA",
+   "PH-AOB",
+   "PH-AOC",
+   "PH-AOD",
+   "PH-AOE",
+   "PH-AOF"
+  ],
+  "KLM|A333": [
+   "PH-AKA",
+   "PH-AKB",
+   "PH-AKD",
+   "PH-AKE",
+   "PH-AKF"
+  ],
+  "KLM|B737": [
+   "PH-BGF",
+   "PH-BGG",
+   "PH-BGH",
+   "PH-BGI",
+   "PH-BGM",
+   "PH-BGQ"
+  ],
+  "KLM|B738": [
+   "PH-BCB",
+   "PH-BCD",
+   "PH-BGB",
+   "PH-BXA",
+   "PH-BXB",
+   "PH-BXE"
+  ],
+  "KLM|B739": [
+   "PH-BXO",
+   "PH-BXP",
+   "PH-BXR",
+   "PH-BXS",
+   "PH-BXT"
+  ],
+  "KLM|B772": [
+   "PH-BQA",
+   "PH-BQB",
+   "PH-BQC",
+   "PH-BQD",
+   "PH-BQG",
+   "PH-BQO"
+  ],
+  "KLM|B77W": [
+   "PH-BVA",
+   "PH-BVD",
+   "PH-BVG",
+   "PH-BVI",
+   "PH-BVP",
+   "PH-BVS"
+  ],
+  "KLM|B789": [
+   "PH-BHC",
+   "PH-BHE",
+   "PH-BHH",
+   "PH-BHI",
+   "PH-BHM",
+   "PH-BHP"
+  ],
+  "KLM|B78X": [
+   "PH-BKA",
+   "PH-BKC",
+   "PH-BKD",
+   "PH-BKF",
+   "PH-BKH",
+   "PH-BKM"
+  ],
+  "MPH|B744": [
+   "PH-MPS"
+  ],
+  "QTR|B77L": [
+   "A7-BBG",
+   "A7-BFC",
+   "A7-BFI",
+   "A7-BFN",
+   "A7-BFR",
+   "A7-BFT"
+  ],
+  "SAS|A20N": [
+   "SE-DOX",
+   "SE-DOZ",
+   "SE-ROE",
+   "SE-ROL",
+   "SE-ROO",
+   "SE-RUE"
+  ],
+  "SAS|A320": [
+   "OY-KAP",
+   "OY-KAR",
+   "OY-KAS"
+  ],
+  "TFL|B38M": [
+   "PH-TFN",
+   "PH-TFO",
+   "PH-TFP",
+   "PH-TFT",
+   "PH-TFU"
+  ],
+  "TFL|B738": [
+   "C-FDBD",
+   "PH-TFA",
+   "PH-TFB",
+   "PH-TFC",
+   "PH-TFD",
+   "PH-TFF"
+  ],
+  "THY|A21N": [
+   "TC-LPE",
+   "TC-LPJ",
+   "TC-LSE",
+   "TC-LSS",
+   "TC-LTM",
+   "TC-LTO"
+  ],
+  "THY|A321": [
+   "TC-JRL",
+   "TC-JSB",
+   "TC-JSM",
+   "TC-JSO",
+   "TC-JSS",
+   "TC-LTM"
+  ],
+  "THY|A333": [
+   "TC-JNH",
+   "TC-JNJ",
+   "TC-JNZ",
+   "TC-JOA",
+   "TC-JOG",
+   "TC-JOI"
+  ],
+  "THY|B738": [
+   "TC-JHM",
+   "TC-JHN",
+   "TC-JHT",
+   "TC-JVD",
+   "TC-JVF",
+   "TC-JVM"
+  ],
+  "TRA|A21N": [
+   "PH-YHT",
+   "PH-YHY",
+   "PH-YHZ"
+  ],
+  "TRA|B737": [
+   "PH-XRC",
+   "PH-XRD",
+   "PH-XRE",
+   "PH-XRV",
+   "PH-XRW",
+   "PH-XRX"
+  ],
+  "TRA|B738": [
+   "PH-HBK",
+   "PH-HSI",
+   "PH-HXA",
+   "PH-HXO",
+   "PH-HZG",
+   "PH-HZL"
+  ],
+  "UAE|A388": [
+   "A6-EDS",
+   "A6-EEJ",
+   "A6-EEQ",
+   "A6-EEZ",
+   "A6-EUO",
+   "A6-EUW"
+  ],
+  "UAE|B77W": [
+   "A6-ECG",
+   "A6-EGU",
+   "A6-ENH",
+   "A6-ENI",
+   "A6-EPA",
+   "A6-EPC"
   ],
   "UAL|A320": [
    "N439UA",
@@ -641,52 +1460,142 @@ window.ATC_PHOTOS = {
    "N69835",
    "N72405"
   ],
-  "ASA|B38M": [
-   "N801AK",
-   "N803AK",
-   "N806AK",
-   "N809AK",
-   "N813AK"
+  "UAL|B763": [
+   "N642UA",
+   "N647UA",
+   "N655UA",
+   "N661UA",
+   "N667UA",
+   "N673UA"
   ],
-  "ASA|B738": [
-   "N519AS",
-   "N524AS",
-   "N538AS",
-   "N548AS",
-   "N549AS",
-   "N556AS"
+  "UAL|B772": [
+   "N214UA",
+   "N218UA",
+   "N219UA",
+   "N76010",
+   "N780UA",
+   "N798UA"
   ],
-  "ASA|B739": [
-   "N268AK",
-   "N290AK",
-   "N433AS",
-   "N435AS",
-   "N457AS",
-   "N486AS"
+  "UAL|B789": [
+   "N22995",
+   "N24974",
+   "N24976",
+   "N26952",
+   "N29961",
+   "N29968"
   ],
-  "UPS|A300": [
-   "N121UP",
-   "N136UP",
-   "N148UP",
-   "N162UP",
-   "N169UP",
-   "N172UP"
+  "CND|B39M": [
+   "PH-CDP",
+   "PH-CDQ"
   ],
-  "UPS|B752": [
-   "N413UP",
-   "N414UP",
-   "N428UP",
-   "N446UP",
-   "N454UP",
-   "N455UP"
+  "CND|B738": [
+   "PH-CDE",
+   "PH-CDF",
+   "PH-CDH"
   ],
-  "UPS|B763": [
-   "N301UP",
-   "N314UP",
-   "N332UP",
-   "N336UP",
-   "N338UP",
-   "N352UP"
+  "EJU|A20N": [
+   "OE-LSL",
+   "OE-LSM",
+   "OE-LSN",
+   "OE-LSR",
+   "OE-LUE",
+   "OE-LUH"
+  ],
+  "EJU|A21N": [
+   "OE-ISB",
+   "OE-ISC",
+   "OE-ISD",
+   "OE-ISH",
+   "OE-IUC",
+   "OE-IUL"
+  ],
+  "EJU|A319": [
+   "OE-LKD",
+   "OE-LKQ",
+   "OE-LKX",
+   "OE-LKY",
+   "OE-LQE",
+   "OE-LVG"
+  ],
+  "EJU|A320": [
+   "OE-IBF",
+   "OE-ICB",
+   "OE-ICL",
+   "OE-INA",
+   "OE-IVE",
+   "OE-IVT"
+  ],
+  "EZY|A20N": [
+   "G-UZHB",
+   "G-UZHD",
+   "G-UZHM",
+   "G-UZLA",
+   "G-UZLR",
+   "G-UZLX"
+  ],
+  "EZY|A319": [
+   "G-EZBJ",
+   "G-EZBY",
+   "G-EZBZ",
+   "G-EZDM",
+   "G-EZDN",
+   "G-EZGK"
+  ],
+  "EZY|A320": [
+   "G-EZOI",
+   "G-EZRX",
+   "G-EZTB",
+   "G-EZTJ",
+   "G-EZWL",
+   "G-EZWP"
+  ],
+  "KLC|E190": [
+   "PH-EXY",
+   "PH-EZD",
+   "PH-EZG",
+   "PH-EZM",
+   "PH-EZR",
+   "PH-EZX"
+  ],
+  "KLC|E295": [
+   "PH-NXB",
+   "PH-NXD",
+   "PH-NXG",
+   "PH-NXJ",
+   "PH-NXK",
+   "PH-NXU"
+  ],
+  "KLC|E75L": [
+   "PH-EXJ",
+   "PH-EXK",
+   "PH-EXO",
+   "PH-EXT",
+   "PH-EXX",
+   "PH-EXZ"
+  ],
+  "VLG|A20N": [
+   "EC-NAF",
+   "EC-NCG",
+   "EC-NCU",
+   "EC-NDC",
+   "EC-NIJ",
+   "EC-NIX"
+  ],
+  "VLG|A320": [
+   "EC-KLT",
+   "EC-MBF",
+   "EC-MDZ",
+   "EC-MFN",
+   "EC-MJB",
+   "EC-ODJ"
+  ],
+  "VLG|A321": [
+   "EC-MHA",
+   "EC-MHB",
+   "EC-MMU",
+   "EC-MOO",
+   "EC-NLX",
+   "EC-NLY"
   ]
  }
 };

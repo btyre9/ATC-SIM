@@ -1,4 +1,5 @@
-/* Weather presets, live NWS observation parsing, and storm cells extracted from NEXRAD radar pixels. */
+/* Weather presets, live observation parsing (NWS, or METARs from the Iowa Environmental Mesonet), preferential runway
+   choice, and storm cells extracted from NEXRAD or RainViewer radar pixels. */
 (function (root) {
     'use strict';
 
@@ -86,9 +87,16 @@
         return `${dir}${String(Math.round(wind.speed)).padStart(2, '0')}${wind.gust ? `G${Math.round(wind.gust)}` : ''}KT`;
     }
 
-    function atisText(airportId, presetKey, wind) {
+    // US METARs give visibility in statute miles; ICAO ones in metres, 9999 for 10 km or more.
+    function metricVisibility(statuteMiles) {
+        const metres = parseFloat(statuteMiles) * 1609.34;
+        return metres >= 10000 ? '9999' : String(Math.floor(metres / 100) * 100).padStart(4, '0');
+    }
+
+    function atisText(airportId, presetKey, wind, options = {}) {
         const preset = PRESETS[presetKey];
-        return [airportId, windCode(wind), preset.visibility, preset.weather, preset.clouds].filter(Boolean).join(' ');
+        const visibility = options.metric ? metricVisibility(preset.visibility) : preset.visibility;
+        return [airportId, windCode(wind), visibility, preset.weather, preset.clouds].filter(Boolean).join(' ');
     }
 
     const KMH_TO_KT = 0.539957;
@@ -114,6 +122,41 @@
         return { wind, raw: summary, description: p.textDescription || '', time: p.timestamp || null, thunder: /TS/.test(summary) };
     }
 
+    /* Reads the Iowa Environmental Mesonet's current observation (a decoded METAR) into wind and the METAR line. */
+    function parseIemObservation(json, airportId) {
+        const row = json && json.data && json.data[0];
+        if (!row) throw new Error('No observation was returned.');
+        let raw = String(row.raw || '').replace(/\s+RMK\s.*$/, '').trim();
+        if (raw.includes(airportId)) raw = raw.slice(raw.indexOf(airportId));
+        const number = value => (value === null || value === undefined || value === '' ? null : Number(value));
+        const variable = /\bVRB\d/.test(raw);
+        const speed = number(row.sknt) ?? 0;
+        const gust = number(row.gust);
+        const wind = { dir: variable ? null : number(row.drct), speed: Math.round(speed), gust: gust ? Math.round(gust) : 0 };
+        return { wind, raw: raw || [airportId, windCode(wind)].join(' '), description: '', time: row.utc_valid || null, thunder: /TS/.test(raw) };
+    }
+
+    /* Preferential runway use (Schiphol): the first combination, in preference order, whose runways all have at most
+       5 kt of tailwind (ICAO PANS-ATM 7.2.2, the limit for noise-preferential runways), at most 15 kt of crosswind on
+       the primary landing and departure runway (listed first) and 20 kt on the secondary ones (Schiphol's runway-use
+       rules). Gusts count once they are 10 kt above the mean wind (AIP AD 2.20 4.3.3). courseOf gives a runway's true
+       course. When none fits, the combination landing most into the wind. */
+    function preferredFlow(flows, wind, courseOf, period = null) {
+        const candidates = flows.map((flow, index) => ({ flow, index })).filter(({ flow }) => !period || !flow.period || flow.period === period);
+        if (!candidates.length) return 0;
+        if (wind.dir === null || wind.dir === undefined) return candidates[0].index;
+        const speed = wind.gust && wind.gust - wind.speed >= 10 ? wind.gust : wind.speed;
+        const fits = (runway, maxCrosswind) => {
+            const off = radians(wind.dir - courseOf(runway));
+            return speed * Math.cos(off) >= -5 && Math.abs(speed * Math.sin(off)) <= maxCrosswind;
+        };
+        const usable = ({ flow }) => [flow.arrRwys, flow.depRwys].every(runways =>
+            runways.every((runway, i) => fits(runway, i === 0 ? 15 : 20)));
+        const choice = candidates.find(usable);
+        if (choice) return choice.index;
+        return candidates[flowForWind(candidates.map(({ flow }) => flow), wind.dir)].index;
+    }
+
     /* The flow whose landing direction faces most into the wind. */
     function flowForWind(flows, windDir) {
         let best = 0, bestDiff = Infinity;
@@ -125,12 +168,13 @@
         return best;
     }
 
-    /* NEXRAD reflectivity colors: 0 none/very light, 1 green, 2 yellow-orange, 3 red/magenta. */
+    /* NEXRAD reflectivity colors: 0 none/very light, 1 green, 2 yellow-orange, 3 red/magenta. RainViewer's "Universal
+       Blue" works too: blues for light rain and all snow, yellow and orange from 35 dBZ, red from 45, pink from 55. */
     function classifyRadarPixel(r, g, b, a) {
         if (a < 40) return 0;
         const max = Math.max(r, g, b), min = Math.min(r, g, b);
         if (max > 200 && min > 200) return 3; // White core, extreme reflectivity.
-        if (r > 120 && b > 120 && g < r * 0.6) return 3; // Magenta and purple.
+        if (r > 120 && b > 120 && g < r * 0.7) return 3; // Magenta, purple and pink.
         if (b >= r && b >= g) return 0; // Blues and cyans: drizzle and clutter.
         if (g > r * 1.15 && g >= b) return 1; // Greens.
         if (r > 120 && b < r * 0.5) return g >= r * 0.5 ? 2 : 3; // Yellow and orange, or red.
@@ -176,7 +220,7 @@
 
     root.ATCWeatherControl = {
         PRESETS, generateCells, replacementCell, windCode, atisText,
-        parseObservation, flowForWind, classifyRadarPixel, extractStormCells
+        parseObservation, parseIemObservation, flowForWind, preferredFlow, classifyRadarPixel, extractStormCells
     };
     if (typeof module !== 'undefined') module.exports = root.ATCWeatherControl;
 })(typeof window !== 'undefined' ? window : globalThis);

@@ -167,6 +167,7 @@
                         <option value="KSAN">KSAN - SAN DIEGO (1 RWY)</option>
                         <option value="KCLT">KCLT - CHARLOTTE (3 RWY)</option>
                         <option value="KDTW">KDTW - DETROIT (6 RWY)</option>
+                        <option value="EHAM">EHAM - AMSTERDAM (6 RWY)</option>
                     </select>
                 </div>
 
@@ -260,7 +261,7 @@
                 <div class="text-slate-400 font-bold mb-1">Current conditions</div>
                 <code id="wx-atis" class="block text-green-300 break-words mb-2"></code>
                 <p id="wx-status" role="status" class="text-amber-300 mb-2"></p>
-                <p class="text-slate-500">LIVE uses the latest National Weather Service observation for wind and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes. Red echoes are heavy enough that pilots ask to deviate.</p>
+                <p id="wx-live-source" class="text-slate-500"></p>
             </div>
 
             <!-- Settings Panel -->
@@ -368,11 +369,12 @@
                 <li><b>Departures</b> (blue) wait at the hold-short line beside the runway. Tower (or you, in manual departure mode) lines them up and waits, then clears them for takeoff. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
                 <li>Once a departure is through 7,000 ft, climbing to at least 10,000, and on course to its fix, say <b>"contact center"</b>. Leaving the dashed 40 NM boundary without a handoff costs points.</li>
                 <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around.</li>
-                <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta, Charlotte and Detroit, 3,000 at San Diego), 210 kt. They hold that until you give new instructions, and come back to your frequency.</li>
+                <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta, Charlotte and Detroit, 3,000 at San Diego), 210 kt. At Schiphol they fly the published missed approach: 2,000 ft (3,000 on 27), 18R turning right to 299° and 22 left to 158°. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Runways:</b> one aircraft on a runway at a time, counting both ends (09 and 27 are one runway). Don't line up or clear a departure with an aircraft on the runway or an arrival inside about 2 minutes; tower waits for that. Entering a runway with an aircraft on it or an arrival inside 1 NM is a runway incursion (−200). An arrival finding the runway occupied goes around.</li>
                 <li><b>Runway changes:</b> when the wind swings, departures taxi to the new runway and approach clearances to the old one are cancelled (except arrivals established inside 5 NM). Re-clear those arrivals.</li>
                 <li><b>Emergencies</b> are rare: at most one in any 3 hours of play. The pilot declares a mayday (or pan-pan for a medical), squawks 7700 and goes red on the scope and strips. Give them priority: vectors and the approach to the runway they ask for. A departure with a problem turns back as an arrival. A hydraulic failure stops on the runway and closes it for about 8 minutes, so move other arrivals to another runway or hold them. Landing within 15 minutes earns +50 (+25 after that). Turn them off in SETTINGS.</li>
-                <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117); 160 kt minimum until established on final.</li>
+                <li><b>Speed:</b> 250 kt maximum below 10,000 ft (14 CFR 91.117; at Schiphol below FL100); 160 kt minimum until established on final.</li>
+                <li><b>Schiphol (EHAM)</b> uses ICAO rules: the transition altitude is 3,000 ft, so say flight levels above it ("descend to flight level seven zero"). Arrivals enter over ARTIP, RIVER or SUGOL between FL100 and FL070; departures climb to FL60 on their SID and call passing 2,000 ft; hand them to Amsterdam Radar. Runways follow the preferential system: by day land 06 and 36R, depart 36L and 36C (north), or land 18R and 18C, depart 24 and 18L (south); from 23:00 to 06:00 one runway each. Only 06, 18C, 18R, 22, 27, 36C and 36R have an ILS.</li>
                 <li><b>Separation:</b> 3 NM or 1,000 ft; 2.5 NM between aircraft on the same final.</li>
                 <li><b>Expect runway</b> tells an arrival which runway to plan for. On its own navigation it flies to that runway's final (a real approach fix 8 to 16 NM out, or a point 12 NM out) and turns onto the runway course; on vectors it keeps your heading. It still needs an approach clearance.</li>
                 <li><b>Holding:</b> "hold northeast of <i>fix</i>, left turns" puts the pattern on that side of the fix; "hold at <i>fix</i>" holds on the far side from the airport with right turns. The aircraft flies the FAA entry for its heading (direct, teardrop or parallel), 1-minute legs (1½ above 14,000 ft) and slows to the holding limit (200 kt to 6,000 ft, 230 kt to 14,000). Altitude and speed changes keep it holding; a heading, direct or approach clearance takes it out. Vector it to a 30° intercept before clearing the ILS.</li>
@@ -467,6 +469,7 @@
     <script src="weather-control.js"></script>
     <script src="fixes-data.js"></script>
     <script src="runways-data.js"></script>
+    <script src="eham-data.js"></script>
     <script src="photos-data.js"></script>
     <script src="aircraft-icons.js"></script>
     <script>
@@ -808,6 +811,265 @@
                         { origin: "KSDF", types: ["B752", "B763", "A300"], banks: ["MORNING", "NIGHT"] }
                     ]}
                 ]
+            },
+            // Procedures, frequencies and runways from the AIP Netherlands (LVNL eAIP, AIRAC AMDT 11-2026); see eham-data.js.
+            EHAM: {
+                id: "EHAM",
+                name: "Schiphol Approach",
+                // AD 2.18: each runway pair has its own tower frequency. ENR 2.1: Amsterdam Radar works the
+                // west (123.705), south (123.850) and east (124.880) sectors around the Schiphol TMA.
+                tower: { name: "Schiphol Tower", freq: "118.280", byRunway: {
+                    "18R": "118.280", "36L": "118.280", "18C": "118.105", "36C": "118.105", "06": "135.110", "24": "135.110",
+                    "18L": "119.230", "36R": "119.230", "04": "119.230", "22": "119.230", "09": "119.230", "27": "119.230" } },
+                center: { name: "Amsterdam Radar", freq: "123.705", byGate: {
+                    NE_GATE: "124.880", E_GATE: "124.880", SE_GATE: "123.850", SW_GATE: "123.850", W_GATE: "123.705", NW_GATE: "123.705" } },
+                lat: 52.308056,
+                lon: 4.764167,
+                elevation: -11,
+                // ICAO rules (ENR 1.7, AD 2.22): transition altitude 3,000 ft, so arrivals and departures work in flight
+                // levels above it; STARs cross the IAFs between FL100 and FL070; SIDs climb to FL60 and call
+                // departure passing 2,000 ft; first calls to Schiphol Approach are station and callsign only.
+                icao: true,
+                transitionAltitude: 3000,
+                entryAltitudes: [8000, 9000, 10000, 11000, 12000],
+                departureAltitude: 6000,
+                departureCallAltitude: 2000,
+                checkInCallsignOnly: true,
+                // Instrument approach charts: ILS on these ends only; missed approaches climb to 2,000 ft
+                // (27: 3,000), 18R turning right to track 299° and 22 left to 158° (magnetic; 2.5° E variation).
+                ilsRunways: ["06", "18C", "18R", "22", "27", "36C", "36R"],
+                missedApproach: { altitude: 2000, "18R": { heading: 301 }, "22": { heading: 160 }, "27": { altitude: 3000 } },
+                faaCharts: false,
+                // Live wind: Schiphol's METAR through the Iowa Environmental Mesonet. Radar: RainViewer.
+                liveWeather: { network: "NL__ASOS", radar: "RAINVIEWER" },
+                /* Preferential runway system (AD 2.20 4.3; table of the Alders runway-use rules, Bijlage 2 at
+                   zoek.officielebekendmakingen.nl/blg-76678.pdf). Day (06-23) combinations, most preferred first:
+                   two landing runways (L1, L2) and two departure runways (S1, S2); night (23-06) one of each.
+                   A combination is usable with at most 15 kt crosswind on L1 and S1, 20 kt on L2 and S2, and 5 kt
+                   tailwind (ICAO PANS-ATM 7.2.2). Kaagbaan and Polderbaan fly over the fewest homes, so they lead; 09/27 comes in with
+                   strong east or west winds. 18R and 36R never depart, 36L and 18L never land (AD 2.20 5.1). */
+                runwayPreference: true,
+                flows: [
+                    { name: "NORTH", period: "DAY", windDir: 20,  arrRwys: ["06", "36R"], depRwys: ["36L", "36C"] },
+                    { name: "SOUTH", period: "DAY", windDir: 210, arrRwys: ["18R", "18C"], depRwys: ["24", "18L"] },
+                    { name: "NORTHEAST", period: "DAY", windDir: 70, arrRwys: ["06", "36R"], depRwys: ["09", "36L"] },
+                    { name: "WEST", period: "DAY", windDir: 250, arrRwys: ["27", "18R"], depRwys: ["24", "18L"] },
+                    { name: "NORTH 2", period: "DAY", windDir: 350, arrRwys: ["36R", "36C"], depRwys: ["36L", "09"] },
+                    { name: "SOUTH 2", period: "DAY", windDir: 180, arrRwys: ["18R", "18C"], depRwys: ["18L", "24"] },
+                    { name: "NIGHT NORTH", period: "NIGHT", windDir: 30, arrRwys: ["06"], depRwys: ["36L"] },
+                    { name: "NIGHT SOUTH", period: "NIGHT", windDir: 210, arrRwys: ["18R"], depRwys: ["24"] },
+                    { name: "NIGHT NORTH 2", period: "NIGHT", windDir: 360, arrRwys: ["36C"], depRwys: ["36L"] },
+                    { name: "NIGHT SOUTH 2", period: "NIGHT", windDir: 180, arrRwys: ["18R"], depRwys: ["18C"] }
+                ],
+                runways: window.ATC_RUNWAYS?.EHAM || [],
+                secondaryAirports: [
+                    { name: "EHRD", lat: 51.957, lon: 4.437, rwyHeading: 237 },
+                    { name: "EHLE", lat: 52.453, lon: 5.514, rwyHeading: 228 },
+                    { name: "EHKD", lat: 52.924, lon: 4.781, rwyHeading: 214 }
+                ],
+                overflightAirlines: ["KLM", "DLH", "BAW", "AFR", "SAS", "THY", "UAE", "QTR", "EZY", "VLG", "DAL", "UAL"],
+                // KLM's hub: KLM and KLM Cityhopper fly over half of all movements (Schiphol, 2024). Then easyJet,
+                // Transavia, Delta, Vueling, TUI, British Airways, Air France, Turkish and Corendon. Fleets as of
+                // October 2026: KLM's first A350-900 arrived on 2 October; Martinair still flies 747-400 freighters.
+                schedule: [
+                    { airline: "KLM", weight: 33, routes: [
+                        { origin: "EGLL", types: ["B738", "B739", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "LFPG", types: ["B738", "B737", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "LEBL", types: ["B738", "B739", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEMD", types: ["B738", "B739", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIRF", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIMC", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LPPT", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEMG", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EKCH", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "ESSA", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "ENGM", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "EFHK", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EPWA", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LKPR", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LOWW", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LHBP", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LGAV", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LTFM", types: ["B738", "B739"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EIDW", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGPH", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGCC", types: ["B737", "B738"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "KJFK", types: ["B77W", "B789", "A333"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KLAX", types: ["B789", "B772"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KSFO", types: ["B789", "B78X"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KORD", types: ["B772", "B789"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KIAD", types: ["A333", "A332"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KBOS", types: ["A332", "A333"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KMIA", types: ["B772", "B789"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KIAH", types: ["B772", "B789"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "CYYZ", types: ["B78X", "A333"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "CYUL", types: ["A332", "A333"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "MMMX", types: ["B789", "B772"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "SBGR", types: ["B77W", "B78X"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "TNCC", types: ["B772", "B789"], banks: ["MORNING", "MIDDAY"] },
+                        { origin: "SMJP", types: ["B77W"], banks: ["MORNING", "MIDDAY"] },
+                        { origin: "RKSI", types: ["B789", "B77W"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "ZSPD", types: ["B77W", "B772"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "VHHH", types: ["B77W", "B789"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "WSSS", types: ["B77W", "B78X"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "VIDP", types: ["B789", "B78X"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "OMDB", types: ["B78X", "A359"], banks: ["MORNING", "AFTERNOON", "NIGHT"] },
+                        { origin: "HKJK", types: ["B789", "B772"], banks: ["MORNING", "MIDDAY"] },
+                        { origin: "FAOR", types: ["B77W", "B772"], banks: ["MORNING", "MIDDAY"] },
+                        { origin: "FACT", types: ["B77W", "A359"], banks: ["MORNING", "MIDDAY"] }
+                    ]},
+                    { airline: "KLC", weight: 22, routes: [
+                        { origin: "EGLC", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "EGBB", types: ["E75L", "E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGCC", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGNX", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGNT", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGSH", types: ["E75L"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "EGPD", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGPF", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EDDH", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "EDDB", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "EDDL", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "EDDS", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "EDDN", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EDDM", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "EDDF", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "EDDV", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EDDW", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LFSB", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LSGG", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "LSZH", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "LFLL", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LFBO", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LFRS", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "ESGG", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EKBI", types: ["E75L", "E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "ENBR", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "ENZV", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EVRA", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EYVI", types: ["E190", "E295"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "TRA", weight: 7, routes: [
+                        { origin: "LEMG", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "LEAL", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEPA", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEBL", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEVC", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "GCTS", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "GCRR", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "GCLP", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LPFR", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIRN", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LGIR", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "LGRP", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LTAI", types: ["B738", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "GMMX", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LFMN", types: ["B738", "B737"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "EJU", weight: 5, routes: [
+                        { origin: "LEMG", types: ["A320", "A20N", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LPPT", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LPPR", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIMC", types: ["A319", "A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LSGG", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LFMN", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LFBD", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEBL", types: ["A320", "A20N", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "LEPA", types: ["A320", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LGAV", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LHBP", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LKPR", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIPZ", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIRF", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "EZY", weight: 3, routes: [
+                        { origin: "EGKK", types: ["A319", "A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGGW", types: ["A319", "A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "EGCC", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGGD", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGPH", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGPF", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "EGAA", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "DAL", weight: 2.5, routes: [
+                        { origin: "KATL", types: ["A333", "A339", "A359"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KJFK", types: ["A333", "B764"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KDTW", types: ["A333", "A359"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KMSP", types: ["A333", "A339"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KBOS", types: ["B764", "A333"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KSEA", types: ["A333", "A339"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KSLC", types: ["A333", "A339"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KLAX", types: ["A333", "A339"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KPDX", types: ["A339"], banks: ["MORNING", "AFTERNOON"] }
+                    ]},
+                    { airline: "VLG", weight: 2, routes: [
+                        { origin: "LEBL", types: ["A320", "A20N", "A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "LEMG", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEAL", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEPA", types: ["A320", "A321"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEBB", types: ["A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEVC", types: ["A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LEZL", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LIRF", types: ["A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "BAW", weight: 2.5, routes: [
+                        { origin: "EGLL", types: ["A319", "A320", "A20N", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true }
+                    ]},
+                    { airline: "CFE", weight: 0.6, routes: [
+                        { origin: "EGLC", types: ["E190"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true }
+                    ]},
+                    { airline: "AFR", weight: 1.5, routes: [
+                        { origin: "LFPG", types: ["A319", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true }
+                    ]},
+                    { airline: "DLH", weight: 1.5, routes: [
+                        { origin: "EDDF", types: ["A320", "A20N", "A21N"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"], bizHeavy: true },
+                        { origin: "EDDM", types: ["A319", "A320", "A20N"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true }
+                    ]},
+                    { airline: "TFL", weight: 1.5, routes: [
+                        { origin: "LTAI", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "GCTS", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "GCRR", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "GCFV", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LGIR", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "HEGN", types: ["B738", "B38M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "TNCC", types: ["B789"], banks: ["MORNING", "MIDDAY"] },
+                        { origin: "TNCA", types: ["B789"], banks: ["MORNING", "MIDDAY"] },
+                        { origin: "MDPC", types: ["B789"], banks: ["MORNING", "MIDDAY"] }
+                    ]},
+                    { airline: "CND", weight: 1.5, routes: [
+                        { origin: "LTAI", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "LTBS", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LTBJ", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "HEGN", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] },
+                        { origin: "GCLP", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LGIR", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] },
+                        { origin: "LCLK", types: ["B738", "B39M"], banks: ["MORNING", "MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "SAS", weight: 1.5, routes: [
+                        { origin: "EKCH", types: ["A20N", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "ESSA", types: ["A20N", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true },
+                        { origin: "ENGM", types: ["A20N", "A320"], banks: ["MORNING", "MIDDAY", "AFTERNOON"], bizHeavy: true }
+                    ]},
+                    { airline: "THY", weight: 1.2, routes: [
+                        { origin: "LTFM", types: ["A321", "B738", "A21N", "A333"], banks: ["MORNING", "MIDDAY", "AFTERNOON", "NIGHT"] }
+                    ]},
+                    { airline: "UAE", weight: 0.6, routes: [
+                        { origin: "OMDB", types: ["A388", "B77W"], banks: ["MIDDAY", "AFTERNOON"] }
+                    ]},
+                    { airline: "UAL", weight: 0.8, routes: [
+                        { origin: "KEWR", types: ["B763", "B772"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KIAD", types: ["B763", "B772"], banks: ["MORNING", "AFTERNOON"] },
+                        { origin: "KORD", types: ["B772", "B789"], banks: ["MORNING", "AFTERNOON"] }
+                    ]},
+                    { airline: "MPH", weight: 0.6, routes: [
+                        { origin: "HKJK", types: ["B744"], banks: ["MORNING", "NIGHT"] },
+                        { origin: "SKBO", types: ["B744"], banks: ["MORNING", "NIGHT"] },
+                        { origin: "KMIA", types: ["B744"], banks: ["MORNING", "NIGHT"] }
+                    ]},
+                    { airline: "QTR", weight: 0.5, routes: [
+                        { origin: "OTHH", types: ["B77L"], banks: ["MORNING", "NIGHT"] }
+                    ]}
+                ]
             }
         };
 
@@ -854,10 +1116,28 @@
             { id: "FDX", name: "FedEx",       color: "#4d148c", text: "#ff6600" },
             { id: "UPS", name: "UPS",         color: "#351c15", text: "#d4af37" },
             { id: "BAW", name: "Speedbird",   color: "#075aaa", text: "#eb2226" },
-            { id: "AFR", name: "Air France",  color: "#002157", text: "#ffffff" },
+            { id: "AFR", name: "Airfrans",    color: "#002157", text: "#ffffff" },
             { id: "DLH", name: "Lufthansa",   color: "#ffb81c", text: "#000000" },
-            { id: "KAL", name: "Korean Air",  color: "#0065a1", text: "#ffffff" }
+            { id: "KAL", name: "Korean Air",  color: "#0065a1", text: "#ffffff" },
+            // Europe. Names are the radiotelephony callsigns: KLM Cityhopper is "City", easyJet Europe "Alpine".
+            { id: "KLM", name: "KLM",         color: "#00a1de", text: "#ffffff" },
+            { id: "KLC", name: "City",        color: "#00a1de", text: "#ffffff" },
+            { id: "TRA", name: "Transavia",   color: "#00b140", text: "#ffffff" },
+            { id: "EJU", name: "Alpine",      color: "#ff6600", text: "#ffffff" },
+            { id: "EZY", name: "Easy",        color: "#ff6600", text: "#ffffff" },
+            { id: "VLG", name: "Vueling",     color: "#ffcc00", text: "#333333" },
+            { id: "CFE", name: "Flyer",       color: "#075aaa", text: "#ffffff" },
+            { id: "TFL", name: "Orange",      color: "#092a5e", text: "#70cbf4" },
+            { id: "CND", name: "Dutch Corendon", color: "#e30613", text: "#ffffff" },
+            { id: "SAS", name: "Scandinavian", color: "#000c3d", text: "#ffffff" },
+            { id: "THY", name: "Turkish",     color: "#c70a0c", text: "#ffffff" },
+            { id: "UAE", name: "Emirates",    color: "#d71921", text: "#ffffff" },
+            { id: "QTR", name: "Qatari",      color: "#5c0632", text: "#ffffff" },
+            { id: "MPH", name: "Martinair",   color: "#00a1de", text: "#f7a823" }
         ];
+
+        // Background overflights over the US airports; other sectors list their own.
+        const US_OVERFLIGHT_AIRLINES = ["DAL", "SWA", "AAL", "UAL", "ASA", "JBU", "FFT", "NKS", "FDX", "UPS", "BAW", "AFR", "DLH", "KAL"];
 
         // Origin airports in the schedules (OurAirports, public domain), for estimating time in the air.
         const ORIGIN_AIRPORTS = { EGLL: [51.471, -0.460], KATL: [33.637, -84.428], KBOS: [42.362, -71.008], KBWI: [39.175, -76.668],
@@ -871,7 +1151,26 @@
             KIAH: [29.984, -95.341], KIND: [39.717, -86.294], KJAX: [30.494, -81.688], KMCI: [39.298, -94.714], KMSP: [44.882, -93.222],
             KMSY: [29.993, -90.258], KPIT: [40.492, -80.233], KRDU: [35.878, -78.788], KRSW: [26.536, -81.755], KSAT: [29.534, -98.470],
             KSAV: [32.128, -81.202], KSMF: [38.695, -121.591], KSTL: [38.749, -90.370], KTPA: [27.976, -82.533],
-            EDDF: [50.033, 8.571], RJTT: [35.553, 139.781], RKSI: [37.463, 126.441], ZSPD: [31.143, 121.805] };
+            EDDF: [50.033, 8.571], RJTT: [35.553, 139.781], RKSI: [37.463, 126.441], ZSPD: [31.143, 121.805],
+            LEBL: [41.297, 2.078], LEMD: [40.493, -3.572], LIRF: [41.805, 12.252], LIMC: [45.631, 8.728], LPPT: [38.781, -9.136],
+            EKCH: [55.618, 12.656], ESSA: [59.648, 17.929], ENGM: [60.194, 11.100], EFHK: [60.318, 24.963], EPWA: [52.166, 20.967],
+            LKPR: [50.101, 14.260], LOWW: [48.110, 16.570], LHBP: [47.430, 19.262], LGAV: [37.936, 23.945], EIDW: [53.429, -6.262],
+            EGPH: [55.950, -3.372], EGCC: [53.349, -2.280], LTFM: [41.275, 28.732], LEMG: [36.678, -4.500], KIAD: [38.944, -77.456],
+            CYYZ: [43.676, -79.629], CYUL: [45.468, -73.742], MMMX: [19.436, -99.070], SBGR: [-23.431, -46.470], TNCC: [12.189, -68.960],
+            SMJP: [5.453, -55.188], VHHH: [22.312, 113.915], WSSS: [1.350, 103.994], OMDB: [25.250, 55.371], HKJK: [-1.319, 36.928],
+            FAOR: [-26.140, 28.247], FACT: [-33.974, 18.604], VIDP: [28.556, 77.095], EGLC: [51.505, 0.055], EGBB: [52.454, -1.748],
+            EGNX: [52.831, -1.328], EGNT: [55.038, -1.690], EGSH: [52.676, 1.283], EGPD: [57.202, -2.198], EGPF: [55.872, -4.433],
+            EDDH: [53.630, 9.988], EDDB: [52.362, 13.502], EDDL: [51.290, 6.767], EDDS: [48.690, 9.222], EDDN: [49.499, 11.078],
+            EDDM: [48.354, 11.786], EDDV: [52.461, 9.685], EDDW: [53.047, 8.789], LFSB: [47.601, 7.521], LSGG: [46.238, 6.109],
+            LSZH: [47.458, 8.548], LFLL: [45.726, 5.090], LFBO: [43.629, 1.364], LFRS: [47.153, -1.611], LFMN: [43.658, 7.216],
+            ESGG: [57.663, 12.280], EKBI: [55.740, 9.157], ENBR: [60.293, 5.218], ENZV: [58.877, 5.638], EVRA: [56.921, 23.971],
+            EYVI: [54.634, 25.286], LEAL: [38.282, -0.558], LEPA: [39.552, 2.739], GCTS: [28.044, -16.573], GCRR: [28.945, -13.605],
+            GCLP: [27.932, -15.387], LPFR: [37.016, -7.971], LIRN: [40.886, 14.291], LGIR: [35.340, 25.180], LTAI: [36.899, 30.801],
+            GMMX: [31.605, -8.036], LGRP: [36.405, 28.086], LEVC: [39.489, -0.481], LPPR: [41.248, -8.681], LFBD: [44.829, -0.715],
+            LIPZ: [45.505, 12.352], EGKK: [51.149, -0.186], EGGW: [51.875, -0.368], EGGD: [51.382, -2.716], EGAA: [54.658, -6.216],
+            LEBB: [43.301, -2.911], LEZL: [37.418, -5.893], GCFV: [28.453, -13.864], HEGN: [27.177, 33.797], TNCA: [12.501, -70.014],
+            MDPC: [18.567, -68.365], LTBS: [36.713, 28.793], LTBJ: [38.292, 27.157], LCLK: [34.875, 33.625], OTHH: [25.273, 51.608],
+            SKBO: [4.702, -74.147] };
 
         const DAY_MODIFIERS = {
             0: { name: "SUN", rateMultiplier: 1.0,  bizBoost: 0.7 },
@@ -949,7 +1248,7 @@
         }
 
         const WEATHER_DESCRIPTIONS = {
-            LIVE: "Real wind and NEXRAD radar for this airport right now.",
+            LIVE: "Real wind and weather radar for this airport right now.",
             CLEAR: "No precipitation and light winds.",
             PARTLY_CLOUDY: "Scattered and broken cloud decks. Nothing shows on radar.",
             SHOWERS: "Light to moderate rain. Pilots will not need to deviate.",
@@ -957,8 +1256,8 @@
             SEVERE: "A line of heavy cells moving toward the field, with strong gusty winds."
         };
 
-        const TYPE_JUMBO = ["B748", "A388"];
-        const TYPE_WIDE = ["A333", "A343", "A359", "B763", "B764", "B772", "B77W", "B77L", "B789", "MD11", "A300"];
+        const TYPE_JUMBO = ["B744", "B748", "A388"];
+        const TYPE_WIDE = ["A332", "A333", "A339", "A343", "A359", "B763", "B764", "B772", "B77W", "B77L", "B789", "B78X", "MD11", "A300"];
         const HEAVY_TYPES = [...TYPE_JUMBO, ...TYPE_WIDE];
 
         const toRad = (deg) => deg * Math.PI / 180;
@@ -1040,8 +1339,10 @@
         }
 
         // FAA holding (AIM 5-3-8): maximum holding speed by altitude; one-minute legs at or below 14,000 ft,
-        // 1½ minutes above; turns at standard rate or 25° of bank.
+        // 1½ minutes above; turns at standard rate or 25° of bank. ICAO airports (PANS-OPS) allow 230 kt to
+        // 14,000 ft, 240 kt to 20,000 ft and 265 kt above, with the same leg times.
         function holdingSpeed(altitude) {
+            if (CONFIG.airport.icao) return altitude <= 14000 ? 230 : altitude <= 20000 ? 240 : 265;
             return altitude <= 6000 ? 200 : altitude <= 14000 ? 230 : 265;
         }
 
@@ -1063,11 +1364,14 @@
             return !!runway && runway === physicalRunway(b);
         }
 
-        // More than 90 degrees between the wind and the runway course.
+        // More than 90 degrees between the wind and the runway course. Where runways are chosen for noise
+        // (Schiphol), up to 5 kt of tailwind is accepted, as ICAO PANS-ATM 7.2.2 allows.
         function runwayHasTailwind(rwyName) {
             let angle = Math.abs(CONFIG.wind.dir - getRunwayDetails(rwyName).heading);
             if (angle > 180) angle = 360 - angle;
-            return angle > 90;
+            if (!CONFIG.airport.runwayPreference) return angle > 90;
+            const gust = CONFIG.wind.gust && CONFIG.wind.gust - CONFIG.wind.speed >= 10 ? CONFIG.wind.gust : CONFIG.wind.speed;
+            return -gust * Math.cos(toRad(angle)) > 5;
         }
 
         function distanceToRunwayNM(point, runway) {
@@ -1290,12 +1594,15 @@
             }
 
             // Published-style missed approach: runway heading, climb to about 3,000 ft above the field
-            // (nearest thousand), 210 kt, held until the controller says otherwise.
+            // (nearest thousand), 210 kt, held until the controller says otherwise. A sector can publish its
+            // own altitude and, per runway, the heading and altitude from its approach charts.
             missedApproach() {
                 const runway = this.clearedRunway && getRunwayDetails(this.clearedRunway);
-                const missedAltitude = Math.round((CONFIG.airport.elevation + 3000) / 1000) * 1000;
+                const published = CONFIG.airport.missedApproach || {};
+                const forRunway = (runway && published[runway.name]) || {};
+                const missedAltitude = forRunway.altitude ?? published.altitude ?? Math.round((CONFIG.airport.elevation + 3000) / 1000) * 1000;
                 return {
-                    heading: Math.round(runway ? runway.heading : this.heading) % 360,
+                    heading: Math.round(forRunway.heading ?? (runway ? runway.heading : this.heading)) % 360,
                     altitude: Math.max(missedAltitude, Math.round(this.altitude / 100) * 100),
                     runway: runway ? runway.name : null
                 };
@@ -1744,7 +2051,7 @@
                 this.playSaveClock = 0;
                 this.trailsOn = this.loadSetting('atcTrails', 'ON', ['ON', 'OFF']) === 'ON';
                 this.initMap();
-                this.activeFlowIndex = Math.random() > 0.5 ? 0 : 1;
+                this.activeFlowIndex = this.randomRegularFlow();
                 this.applyWeather(true);
                 this.resetSpawnTimer();
                 this.initWeatherPanel();
@@ -1791,7 +2098,8 @@
                 });
 
                 document.getElementById('wind-box').addEventListener('click', () => {
-                    this.applyWindFlow(this.activeFlowIndex === 0 ? 1 : 0);
+                    const [first, second = first] = this.regularFlows();
+                    this.applyWindFlow(this.activeFlowIndex === first ? second : first);
                     this.log(`Wind shifted! Active runways updated.`, 'system');
                 });
 
@@ -1828,7 +2136,7 @@
                 this.removeLiveRadar();
                 this.liveWeather = null;
                 this.liveUpdatedAt = null;
-                this.applyWindFlow(keepFlow ? this.activeFlowIndex : (Math.random() > 0.5 ? 0 : 1));
+                this.applyWindFlow(keepFlow ? this.activeFlowIndex : this.randomRegularFlow());
                 this.storms = window.ATCWeatherControl.generateCells(this.weatherMode, CONFIG.airport, CONFIG.wind.dir)
                     .map(cell => new StormCell(cell.lat, cell.lon, cell.radiusNM, cell.severity));
                 this.setWeatherStatus('');
@@ -1854,10 +2162,43 @@
                 }).filter(Boolean);
             }
 
+            // US airports: the National Weather Service. Elsewhere: the airport's METAR from the Iowa Environmental Mesonet.
             async fetchObservation(airport) {
-                const response = await fetch(`https://api.weather.gov/stations/${airport.id}/observations/latest`, { cache: 'no-store' });
+                const network = airport.liveWeather?.network;
+                const url = network ? `https://mesonet.agron.iastate.edu/api/1/currents.json?station=${airport.id}&network=${network}` :
+                    `https://api.weather.gov/stations/${airport.id}/observations/latest`;
+                const response = await fetch(url, { cache: 'no-store' });
                 if (!response.ok) throw new Error(`weather service returned ${response.status}`);
-                return window.ATCWeatherControl.parseObservation(await response.json(), airport.id);
+                const json = await response.json();
+                return network ? window.ATCWeatherControl.parseIemObservation(json, airport.id) :
+                    window.ATCWeatherControl.parseObservation(json, airport.id);
+            }
+
+            /* RainViewer's latest composite (zoom 7, its "Universal Blue" colors) cut to the same Web Mercator box as the
+               NEXRAD image. Outside the US there is no NEXRAD. */
+            async rainViewerCanvas(sw, ne, size) {
+                const R = 6378137, zoom = 7, world = 256 * 2 ** zoom;
+                const maps = await (await fetch('https://api.rainviewer.com/public/weather-maps.json', { cache: 'no-store' })).json();
+                const frame = maps.radar?.past?.at(-1);
+                if (!frame) throw new Error('no radar frame available');
+                const pixel = point => ({ x: (point.x + Math.PI * R) / (2 * Math.PI * R) * world, y: (Math.PI * R - point.y) / (2 * Math.PI * R) * world });
+                const from = pixel({ x: sw.x, y: ne.y }), to = pixel({ x: ne.x, y: sw.y });
+                const canvas = document.createElement('canvas');
+                canvas.width = canvas.height = size;
+                const context = canvas.getContext('2d');
+                const scaleX = size / (to.x - from.x), scaleY = size / (to.y - from.y);
+                const tiles = [];
+                for (let tx = Math.floor(from.x / 256); tx <= Math.floor(to.x / 256); tx++) {
+                    for (let ty = Math.floor(from.y / 256); ty <= Math.floor(to.y / 256); ty++) {
+                        tiles.push(fetch(`${maps.host}${frame.path}/256/${zoom}/${tx}/${ty}/2/1_1.png`).then(async response => {
+                            if (!response.ok) throw new Error(`radar server returned ${response.status}`);
+                            const bitmap = await createImageBitmap(await response.blob());
+                            context.drawImage(bitmap, (tx * 256 - from.x) * scaleX, (ty * 256 - from.y) * scaleY, 256 * scaleX, 256 * scaleY);
+                        }));
+                    }
+                }
+                await Promise.all(tiles);
+                return canvas;
             }
 
             // Fetches NEXRAD reflectivity around the airport and turns moderate and heavy echoes into storm cells.
@@ -1867,16 +2208,21 @@
                 const mercator = (lat, lon) => ({ x: R * toRad(lon), y: R * Math.log(Math.tan(Math.PI / 4 + toRad(lat) / 2)) });
                 const sw = mercator(airport.lat - latSpan, airport.lon - lonSpan);
                 const ne = mercator(airport.lat + latSpan, airport.lon + lonSpan);
-                const url = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1' +
-                    `&LAYERS=nexrad-n0q-900913&SRS=EPSG:3857&BBOX=${sw.x},${sw.y},${ne.x},${ne.y}&WIDTH=${size}&HEIGHT=${size}&FORMAT=image/png&TRANSPARENT=true`;
-                const response = await fetch(url, { cache: 'no-store' });
-                if (!response.ok) throw new Error(`radar server returned ${response.status}`);
-                const blob = await response.blob();
-                const bitmap = await createImageBitmap(blob);
-                const canvas = document.createElement('canvas');
-                canvas.width = canvas.height = size;
+                let canvas, blob;
+                if (airport.liveWeather?.radar === 'RAINVIEWER') {
+                    canvas = await this.rainViewerCanvas(sw, ne, size);
+                    blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                } else {
+                    const url = 'https://mesonet.agron.iastate.edu/cgi-bin/wms/nexrad/n0q.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.1.1' +
+                        `&LAYERS=nexrad-n0q-900913&SRS=EPSG:3857&BBOX=${sw.x},${sw.y},${ne.x},${ne.y}&WIDTH=${size}&HEIGHT=${size}&FORMAT=image/png&TRANSPARENT=true`;
+                    const response = await fetch(url, { cache: 'no-store' });
+                    if (!response.ok) throw new Error(`radar server returned ${response.status}`);
+                    blob = await response.blob();
+                    canvas = document.createElement('canvas');
+                    canvas.width = canvas.height = size;
+                    canvas.getContext('2d').drawImage(await createImageBitmap(blob), 0, 0);
+                }
                 const context = canvas.getContext('2d');
-                context.drawImage(bitmap, 0, 0);
                 const pixels = context.getImageData(0, 0, size, size).data;
 
                 // Sample onto a 1 NM grid out to 60 NM.
@@ -1917,8 +2263,7 @@
                     this.liveWeather = observation.value;
                     const wind = observation.value.wind;
                     // Calm or variable wind keeps the current runways.
-                    const flow = wind.dir === null || wind.speed < 4 ? this.activeFlowIndex :
-                        window.ATCWeatherControl.flowForWind(airport.flows, wind.dir);
+                    const flow = wind.dir === null || wind.speed < 4 ? this.activeFlowIndex : this.flowForWind(wind);
                     this.applyWindFlow(flow, wind);
                 } else problems.push(`observation (${observation.reason.message})`);
                 if (radar.status === 'fulfilled') {
@@ -1938,8 +2283,10 @@
             showLiveRadar(radar) {
                 this.removeLiveRadar();
                 this.liveRadarUrl = radar.url;
-                this.liveRadarOverlay = L.imageOverlay(radar.url, radar.bounds, { opacity: 0.7, interactive: false,
-                    attribution: 'NEXRAD radar: <a href="https://mesonet.agron.iastate.edu/">Iowa Environmental Mesonet</a>' }).addTo(this.map);
+                const attribution = CONFIG.airport.liveWeather?.radar === 'RAINVIEWER' ?
+                    'Radar: <a href="https://www.rainviewer.com/">RainViewer</a>; METAR: <a href="https://mesonet.agron.iastate.edu/">Iowa Environmental Mesonet</a>' :
+                    'NEXRAD radar: <a href="https://mesonet.agron.iastate.edu/">Iowa Environmental Mesonet</a>';
+                this.liveRadarOverlay = L.imageOverlay(radar.url, radar.bounds, { opacity: 0.7, interactive: false, attribution }).addTo(this.map);
             }
 
             removeLiveRadar() {
@@ -1967,7 +2314,8 @@
                 const levels = course < 180 ? [310, 330, 350, 370, 390] : [300, 320, 340, 360, 380, 400];
                 const used = new Set(this.overflights.map(plane => plane.altitude));
                 const free = levels.filter(level => !used.has(level * 100));
-                const airline = AIRLINES[Math.floor(Math.random() * AIRLINES.length)].id;
+                const pool = CONFIG.airport.overflightAirlines || US_OVERFLIGHT_AIRLINES;
+                const airline = pool[Math.floor(Math.random() * pool.length)];
                 const id = this.newFlightId(airline);
                 if (!free.length || !id) return;
                 const types = ['B738', 'B739', 'A320', 'A321', 'B752', 'B763', 'B772', 'B789', 'A359', 'A333', 'B748'];
@@ -2011,9 +2359,13 @@
                 const live = this.weatherMode === 'LIVE';
                 const preset = window.ATCWeatherControl.PRESETS[this.weatherMode];
                 document.getElementById('wx-btn').textContent = `WX: ${live ? 'LIVE' : preset.short}`;
-                document.getElementById('wx-legend-title').textContent = live ? 'NEXRAD LIVE' : 'SIM WX RADAR';
+                const rainViewer = CONFIG.airport.liveWeather?.radar === 'RAINVIEWER';
+                document.getElementById('wx-legend-title').textContent = live ? (rainViewer ? 'RADAR LIVE' : 'NEXRAD LIVE') : 'SIM WX RADAR';
+                document.getElementById('wx-live-source').textContent = CONFIG.airport.liveWeather ?
+                    `LIVE uses ${CONFIG.airport.id}'s latest METAR from the Iowa Environmental Mesonet for wind and RainViewer radar, refreshed every 5 minutes. Red echoes are heavy enough that pilots ask to deviate.` :
+                    'LIVE uses the latest National Weather Service observation for wind and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes. Red echoes are heavy enough that pilots ask to deviate.';
                 const atis = live ? (this.liveWeather ? this.liveWeather.raw : `${CONFIG.airport.id} loading live observation…`) :
-                    window.ATCWeatherControl.atisText(CONFIG.airport.id, this.weatherMode, CONFIG.wind);
+                    window.ATCWeatherControl.atisText(CONFIG.airport.id, this.weatherMode, CONFIG.wind, { metric: CONFIG.airport.icao });
                 document.getElementById('atis-line').textContent = `WX ${atis}`;
                 document.getElementById('wx-atis').textContent = atis;
                 document.getElementById('wx-description').textContent = WEATHER_DESCRIPTIONS[this.weatherMode];
@@ -2215,13 +2567,60 @@
                 this.updateStrips();
             }
 
-            updateClock() {
+            // Seconds past local midnight on the sim clock.
+            localSeconds() {
                 const bank = BANK_MODIFIERS[this.currentBank] || BANK_MODIFIERS.AFTERNOON;
-                const seconds = Math.floor(bank.startHour * 3600 + this.stats.simSeconds) % 86400;
+                return Math.floor(bank.startHour * 3600 + this.stats.simSeconds) % 86400;
+            }
+
+            updateClock() {
+                const seconds = this.localSeconds();
                 const pad = n => String(n).padStart(2, '0');
                 const text = `${pad(Math.floor(seconds / 3600))}:${pad(Math.floor(seconds / 60) % 60)}:${pad(seconds % 60)}`;
                 const clock = document.getElementById('sim-clock');
                 if (clock.textContent !== text) clock.textContent = text;
+                this.checkRunwayPeriod();
+            }
+
+            // Airports with separate night runway combinations (Schiphol: 23:00-06:00 local); null elsewhere.
+            runwayPeriod() {
+                if (!CONFIG.airport.flows.some(flow => flow.period)) return null;
+                const hour = this.localSeconds() / 3600;
+                return hour >= 23 || hour < 6 ? 'NIGHT' : 'DAY';
+            }
+
+            // The everyday pair, one each way, for this time of day: what the weather presets and the wind box use.
+            regularFlows() {
+                const period = this.runwayPeriod();
+                return CONFIG.airport.flows.map((flow, index) => ({ flow, index }))
+                    .filter(({ flow }) => !period || flow.period === period).slice(0, 2).map(({ index }) => index);
+            }
+
+            randomRegularFlow() {
+                const flows = this.regularFlows();
+                return flows[Math.floor(Math.random() * flows.length)];
+            }
+
+            // The runways for a real wind: Schiphol's preferential system picks the first usable combination in its
+            // preference order; elsewhere the flow landing most into the wind.
+            flowForWind(wind) {
+                if (!CONFIG.airport.runwayPreference) return window.ATCWeatherControl.flowForWind(CONFIG.airport.flows, wind.dir);
+                return window.ATCWeatherControl.preferredFlow(CONFIG.airport.flows, wind,
+                    runway => getRunwayDetails(runway).heading, this.runwayPeriod());
+            }
+
+            // At 23:00 Schiphol goes to its night combinations and at 06:00 back to day ones, keeping the wind.
+            checkRunwayPeriod() {
+                const period = this.runwayPeriod();
+                const flow = CONFIG.airport.flows[this.activeFlowIndex];
+                if (!period || !flow || flow.period === period) return;
+                const wind = { dir: CONFIG.wind.dir, speed: CONFIG.wind.speed, gust: CONFIG.wind.gust };
+                const candidates = this.regularFlows().map(index => CONFIG.airport.flows[index]);
+                const index = this.weatherMode === 'LIVE' && wind.speed >= 4 ? this.flowForWind(wind) :
+                    CONFIG.airport.flows.indexOf(candidates[window.ATCWeatherControl.flowForWind(candidates, wind.dir)]);
+                this.applyWindFlow(index, wind);
+                const next = CONFIG.airport.flows[index];
+                this.log(`${period === 'NIGHT' ? 'Night' : 'Day'} runway use: landing ${next.arrRwys.join(', ')}, departing ${next.depRwys.join(', ')}.`, 'system');
             }
 
             newShift() {
@@ -2271,6 +2670,7 @@
                 this.clearTraffic();
                 this.resetShift();
                 this.applyWeather();
+                if (MAP_STYLES[this.mapStyle]?.chart) this.setMapTiles();
                 this.setZoom(this.currentZoom);
                 this.log(`Switched sector to ${newSector.id} (${newSector.name}).`, 'system');
 
@@ -2378,8 +2778,16 @@
 
             updateMapStyleNote() {
                 const style = MAP_STYLES[this.mapStyle];
-                document.getElementById('map-style-note').textContent = style.note;
+                const outsideCharts = style.chart && this.shownMapStyle() !== style;
+                document.getElementById('map-style-note').textContent = outsideCharts ?
+                    `${style.note} FAA charts cover the US only, so ${CONFIG.airport.id} shows the light gray map.` : style.note;
                 document.getElementById('carto-key-btn').classList.toggle('hidden', this.mapStyle !== 'CARTO');
+            }
+
+            // FAA charts only cover the US; elsewhere a chart choice shows the light gray map.
+            shownMapStyle() {
+                const style = MAP_STYLES[this.mapStyle] || MAP_STYLES.LIGHT;
+                return style.chart && CONFIG.airport.faaCharts === false ? MAP_STYLES.LIGHT : style;
             }
 
             setMapTiles() {
@@ -2387,7 +2795,7 @@
                 this.tileLayer = null;
                 if (this.mapAttribution) this.map.attributionControl.removeAttribution(this.mapAttribution);
                 this.mapAttribution = null;
-                const style = MAP_STYLES[this.mapStyle] || MAP_STYLES.LIGHT;
+                const style = this.shownMapStyle();
                 const mapLayer = document.getElementById('map-layer');
                 this.applyMapTheme();
                 mapLayer.classList.toggle('radar-grid', !style.raster && this.mapStyle !== 'CARTO');
@@ -2421,7 +2829,7 @@
 
             // Dims the basemap; a bright map gets dark scope lines, a dim one gets light lines.
             applyMapTheme() {
-                const style = MAP_STYLES[this.mapStyle] || MAP_STYLES.LIGHT;
+                const style = this.shownMapStyle();
                 const level = this.mapBrightness / 100;
                 const lightScope = Boolean(style.light) && level >= 0.75;
                 this.map.getPane('tilePane').style.filter = `brightness(${level})${style.chart ? ' saturate(0.85)' : ''}`;
@@ -2635,7 +3043,8 @@
                 const gateOffset = gate => Math.abs(((gate.angle - preferredGate.angle) % 360 + 540) % 360 - 180);
                 const orderedGates = CONFIG.entryGates.filter(gate => gateOffset(gate) <= 45).sort((a, b) => gateOffset(a) - gateOffset(b));
                 // Vary the usual STAR crossing altitudes, keeping higher ones as overflow levels.
-                const altitudes = [...CONFIG.entryAltitudes.slice(0, 3).sort(() => Math.random() - 0.5), ...CONFIG.entryAltitudes.slice(3)];
+                const entryAltitudes = CONFIG.airport.entryAltitudes || CONFIG.entryAltitudes;
+                const altitudes = [...entryAltitudes.slice(0, 3).sort(() => Math.random() - 0.5), ...entryAltitudes.slice(3)];
                 const airborne = this.aircraft.filter(ac => !ac.onGround);
 
                 for (const gate of orderedGates) {
@@ -2744,8 +3153,18 @@
                 return { name: `${runwayName} FINAL`, lat: point.lat, lon: point.lon, type: 'FINAL' };
             }
 
+            // ICAO says "decimal", the FAA "point".
             radioFrequency(freq) {
-                return String(freq).split('').map(c => c === '.' ? 'point' : this.radioDigits(c)).join(' ');
+                const dot = CONFIG.airport.icao ? 'decimal' : 'point';
+                return String(freq).split('').map(c => c === '.' ? dot : this.radioDigits(c)).join(' ');
+            }
+
+            // Tower or center for this aircraft: some airports have a tower frequency per runway, and a center
+            // frequency for each side of the airspace.
+            handoffFacility(plane, to) {
+                const facility = CONFIG.airport[to === 'TOWER' ? 'tower' : 'center'];
+                const freq = to === 'TOWER' ? facility.byRunway?.[plane.clearedRunway] : facility.byGate?.[plane.exitGate?.name];
+                return { name: facility.name, freq: freq || facility.freq };
             }
 
             // A departure goes to center once climbing to at least 10,000 ft, through 7,000, and on course to its fix.
@@ -2764,7 +3183,7 @@
             }
 
             completeHandoff(plane, to) {
-                const facility = CONFIG.airport[to === 'TOWER' ? 'tower' : 'center'];
+                const facility = this.handoffFacility(plane, to);
                 plane.handedOff = to;
                 plane.lastStatus = `WITH ${to}`;
                 this.stats.handedOff++;
@@ -2790,7 +3209,7 @@
             startTakeoff(plane) {
                 plane.linedUp = false;
                 plane.takeoffCleared = true;
-                if (plane.targetAltitude <= CONFIG.airport.elevation) plane.targetAltitude = CONFIG.departureAltitude;
+                if (plane.targetAltitude <= CONFIG.airport.elevation) plane.targetAltitude = CONFIG.airport.departureAltitude ?? CONFIG.departureAltitude;
                 plane.lastStatus = `TAKEOFF ${plane.departureRunway}`;
                 this.lastTakeoff[physicalRunway(plane.departureRunway).name] = this.stats.simSeconds;
             }
@@ -3087,13 +3506,19 @@
                 return `${airline ? airline.name : plane.id.slice(0, 3)} ${this.radioDigits(plane.id.slice(3))}${HEAVY_TYPES.includes(plane.type) ? ' heavy' : ''}`;
             }
 
+            // Flight levels above the transition altitude: 18,000 ft in the US, 3,000 ft in the Netherlands, where
+            // FL70 is "flight level seven zero" and altitudes below it are said in feet.
             radioAltitude(altitude) {
-                if (altitude >= 18000 && altitude % 100 === 0) return `flight level ${this.radioDigits(altitude / 100, 3)}`;
+                const transition = CONFIG.airport.transitionAltitude ?? 17999;
+                if (altitude > transition && altitude % 100 === 0) {
+                    return `flight level ${this.radioDigits(altitude / 100, altitude >= 10000 || !CONFIG.airport.icao ? 3 : 2)}`;
+                }
                 if (altitude % 100 !== 0) return `${altitude} feet`;
                 // ATC style: 11,000 is "one one thousand", 2,500 is "two thousand five hundred".
                 const thousands = Math.floor(altitude / 1000), hundreds = (altitude % 1000) / 100;
                 return [thousands ? `${this.radioDigits(thousands)} thousand` : '',
-                    hundreds ? `${this.radioDigits(hundreds)} hundred` : ''].filter(Boolean).join(' ');
+                    hundreds ? `${this.radioDigits(hundreds)} hundred` : '',
+                    CONFIG.airport.icao ? 'feet' : ''].filter(Boolean).join(' ');
             }
 
             radioRunway(runway) {
@@ -3545,7 +3970,7 @@
                                 if (spd > 250 && plane.altitude < 9950) {
                                     // 14 CFR 91.117: 250 knots maximum below 10,000 ft MSL.
                                     this.log(`${id}: 250 kt is the limit below 10,000 ft.`, 'error');
-                                    readback('Unable, two five zero knots is our limit below one zero thousand');
+                                    readback(`Unable, two five zero knots is our limit below ${this.radioAltitude(10000)}`);
                                 } else if (spd < 160 && !plane.ilsCaptured) {
                                     this.log(`${id}: keep speed at 160 kt or more until established on final.`, 'error');
                                     readback('Unable, minimum one six zero knots until established');
@@ -3564,6 +3989,12 @@
                                 break;
                             }
                             
+                            if (CONFIG.airport.ilsRunways && !CONFIG.airport.ilsRunways.includes(rwyInfo.name)) {
+                                this.log(`${id}: runway ${rwyInfo.name} has no ILS. ILS runways: ${CONFIG.airport.ilsRunways.join(', ')}.`, 'error');
+                                readback(`Unable, no I L S runway ${this.radioRunway(rwyInfo.name)}`);
+                                break;
+                            }
+
                             const dLat = (plane.lat - rwyInfo.lat) * 60; 
                             const dLon = (plane.lon - rwyInfo.lon) * 60 * Math.cos(toRad(plane.lat));
                             if (Math.sqrt(dLat*dLat + dLon*dLon) > 30) {
@@ -3579,14 +4010,12 @@
                                 break;
                             }
 
-                            let diff = Math.abs(CONFIG.wind.dir - rwyInfo.heading);
-                            if (diff > 180) diff = 360 - diff;
                             // FAA JO 7110.65 5-9-1: intercept at 30 degrees or less, from at or below the glideslope.
                             const heading = assignedHeading ?? plane.targetHeading;
                             const intercept = Math.abs(((heading - rwyInfo.heading) % 360 + 540) % 360 - 180);
                             const glideslope = CONFIG.airport.elevation + Math.sqrt(dLat*dLat + dLon*dLon) * 318;
                             const altitudeAfter = assignedAltitude ?? plane.targetAltitude;
-                            if (diff > 90) {
+                            if (runwayHasTailwind(val)) {
                                 this.log(`${id}: Unable ${val} (Tailwind).`, 'error');
                                 readback(`Unable runway ${this.radioRunway(val)} due tailwind`);
                             } else if (intercept > 35) {
@@ -3645,7 +4074,7 @@
                             }
                             plane.lastStatus = `TAKEOFF ${runway}`;
                             this.log(`${id} cleared for takeoff runway ${runway}.`);
-                            const climbTo = plane.targetAltitude > CONFIG.airport.elevation ? plane.targetAltitude : CONFIG.departureAltitude;
+                            const climbTo = plane.targetAltitude > CONFIG.airport.elevation ? plane.targetAltitude : CONFIG.airport.departureAltitude ?? CONFIG.departureAltitude;
                             readback(`Runway ${this.radioRunway(runway)}, cleared for takeoff` +
                                 (altitudeInTransmission ? '' : `, climbing to ${this.radioAltitude(climbTo)}`));
                             break;
@@ -3842,7 +4271,7 @@
                 const airline = AIRLINES.find(item => item.id === ac.id.substring(0, 3));
                 const spokenCallsign = `${airline ? airline.name : ac.id.substring(0, 3)} ${ac.id.substring(3)}`;
                 const exitBearing = ac.exitFix ? String(Math.round(calculateBearing(CONFIG.airport.lat, CONFIG.airport.lon, ac.exitFix.lat, ac.exitFix.lon))).padStart(3, '0') : '';
-                const exit = ac.exitFix ? `<div class="text-[10px] text-sky-300">SID to ${ac.exitFix.name} (${exitBearing}°). Climb to ${CONFIG.handoffAltitude.toLocaleString('en-US')}+, then contact center.</div>` : '';
+                const exit = ac.exitFix ? `<div class="text-[10px] text-sky-300">SID to ${ac.exitFix.name} (${exitBearing}°). Climb to ${CONFIG.handoffAltitude.toLocaleString('en-US')}+, then contact ${CONFIG.airport.center.name}.</div>` : '';
                 const via = ac.isArrival ? (ac.arrivalFix ? ` via ${ac.arrivalFix}` : '') : (ac.exitFix ? ` via ${ac.exitFix.name}` : '');
                 el.innerHTML = `
                     <div class="flex items-start gap-3">
@@ -4309,13 +4738,15 @@
                     // Cleared for takeoff from the hold-short line: rolls as soon as it is lined up.
                     if (ac.linedUp && ac.departureClearance === 'CTO') this.startTakeoff(ac);
                     // Arrivals call on handoff; departures call tower while holding short, or call you once airborne.
-                    const readyToCall = !towerDeparture || (!ac.onGround && ac.altitude - CONFIG.airport.elevation >= 1200);
+                    const callAltitude = CONFIG.airport.departureCallAltitude ?? CONFIG.airport.elevation + 1200;
+                    const readyToCall = !towerDeparture || (!ac.onGround && ac.altitude >= callAltitude);
                     if (!ac.contactEstablished && !ac.hasCheckedIn && readyToCall && timestamp > ac.nextAnnounceTime) {
                         ac.hasCheckedIn = true;
                         ac.checkedInAt = ac.simAge;
                         const passing = this.radioAltitude(Math.round(ac.altitude / 100) * 100);
+                        // Schiphol asks for station and callsign only on first contact (AIP AD 2.22 2.5.5.4).
                         const checkin = ac.isArrival ?
-                            `${this.radioFacility()}, ${this.radioCallsign(ac)} with you at ${passing}.` :
+                            `${this.radioFacility()}, ${this.radioCallsign(ac)}${CONFIG.airport.checkInCallsignOnly ? '' : ` with you at ${passing}`}.` :
                             towerDeparture ? `${this.radioFacility('Departure')}, ${this.radioCallsign(ac)}, ${passing} climbing ${this.radioAltitude(ac.targetAltitude)}.` :
                             `${this.radioCallsign(ac)}, holding short runway ${this.radioRunway(ac.departureRunway)}, ready for departure.`;
                         this.log(`${ac.id}: "${checkin}"`, 'system');

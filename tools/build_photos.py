@@ -30,6 +30,9 @@ ARTICLES = {
     'B763': 'Boeing 767', 'B764': 'Boeing 767', 'A333': 'Airbus A330', 'A359': 'Airbus A350',
     'B772': 'Boeing 777', 'B77L': 'Boeing 777', 'B77W': 'Boeing 777', 'B789': 'Boeing 787 Dreamliner',
     'MD11': 'McDonnell Douglas MD-11', 'A343': 'Airbus A340', 'B748': 'Boeing 747-8', 'A388': 'Airbus A380',
+    'E75L': 'Embraer E-Jet family', 'E295': 'Embraer E-Jet E2 family', 'A20N': 'Airbus A320neo family',
+    'A21N': 'Airbus A321neo', 'A332': 'Airbus A330', 'A339': 'Airbus A330neo', 'B78X': 'Boeing 787 Dreamliner',
+    'B744': 'Boeing 747-400', 'B39M': 'Boeing 737 MAX',
 }
 # How Commons names each type in its "<Type> of <Airline>" fleet categories, most likely first.
 COMMONS_TYPES = {
@@ -47,12 +50,22 @@ COMMONS_TYPES = {
     'B77W': ['Boeing 777-300ER'], 'B789': ['Boeing 787-9'],
     'MD11': ['McDonnell Douglas MD-11F', 'McDonnell Douglas MD-11(F)', 'McDonnell Douglas MD-11'], 'A343': ['Airbus A340-300'],
     'B748': ['Boeing 747-8F', 'Boeing 747-8I', 'Boeing 747-8'], 'A388': ['Airbus A380-800', 'Airbus A380'],
+    'E75L': ['Embraer 175', 'Embraer ERJ-175', 'Embraer E175'], 'E295': ['Embraer E195-E2', 'Embraer 195-E2'],
+    'A20N': ['Airbus A320neo', 'Airbus A320-251N'], 'A21N': ['Airbus A321neo', 'Airbus A321-271NX'],
+    'A332': ['Airbus A330-200'], 'A339': ['Airbus A330-900', 'Airbus A330-900neo'], 'B78X': ['Boeing 787-10'],
+    'B744': ['Boeing 747-400ERF', 'Boeing 747-400F', 'Boeing 747-400BCF', 'Boeing 747-400'],
+    'B39M': ['Boeing 737-9 MAX', 'Boeing 737 MAX 9'],
 }
 AIRLINES = {
     'DAL': ['Delta Air Lines'], 'SWA': ['Southwest Airlines'], 'AAL': ['American Airlines'],
     'UAL': ['United Airlines'], 'ASA': ['Alaska Airlines'], 'FDX': ['FedEx Express', 'FedEx'],
     'UPS': ['UPS Airlines'], 'JBU': ['JetBlue'], 'FFT': ['Frontier Airlines'], 'NKS': ['Spirit Airlines'],
     'BAW': ['British Airways'], 'AFR': ['Air France'], 'DLH': ['Lufthansa'], 'KAL': ['Korean Air'],
+    'KLM': ['KLM'], 'KLC': ['KLM cityhopper', 'KLM Cityhopper'], 'TRA': ['Transavia'], 'EJU': ['EasyJet Europe'],
+    'EZY': ['EasyJet', 'EasyJet UK'], 'VLG': ['Vueling Airlines', 'Vueling'], 'CFE': ['BA CityFlyer'],
+    'TFL': ['TUI fly Netherlands', 'TUI Airlines Netherlands'], 'CND': ['Corendon Dutch Airlines'],
+    'SAS': ['Scandinavian Airlines', 'SAS Scandinavian Airlines'], 'THY': ['Turkish Airlines'], 'UAE': ['Emirates'],
+    'QTR': ['Qatar Airways Cargo', 'Qatar Airways'], 'MPH': ['Martinair', 'Martinair Cargo'],
 }
 # Skip close-ups and interiors; prefer whole-aircraft shots in the air.
 SKIP = re.compile(r'cabin|interior|cockpit|flight.?deck|seat|galley|lavator|engine|winglet|tail|wing\b|logo|nose|gear|panel|window|'
@@ -80,11 +93,15 @@ EXCLUDE_FILES = {
 }
 API = 'https://commons.wikimedia.org/w/api.php'
 PLANESPOTTERS = 'https://api.planespotters.net/pub/photos/reg/'
-# Per-aircraft Commons categories are named like "N8538V (aircraft)" or "N1776R (Boeing 737-8 MAX)".
-REGISTRATION_CATEGORY = re.compile(r'^Category:(N\d{1,5}[A-Z]{0,2}) \(')
+# Per-aircraft Commons categories are named like "N8538V (aircraft)", "N1776R (Boeing 737-8 MAX)" or "PH-BXA (aircraft)".
+REGISTRATION_CATEGORY = re.compile(r'^Category:(N\d{1,5}[A-Z]{0,2}|[A-Z][A-Z0-9]?-[A-Z0-9]{3,5}) \(')
 # Planespotters photo pages are named like "n915us-american-airlines-airbus-a321-231".
 AIRLINE_SLUGS = {'DAL': 'delta', 'SWA': 'southwest', 'AAL': 'american', 'UAL': 'united',
-                 'ASA': 'alaska', 'FDX': 'fedex', 'UPS': 'ups'}
+                 'ASA': 'alaska', 'FDX': 'fedex', 'UPS': 'ups', 'BAW': 'british-airways', 'AFR': 'air-france',
+                 'DLH': 'lufthansa', 'KLM': 'klm-royal-dutch', 'KLC': 'klm-cityhopper', 'TRA': 'transavia',
+                 'EJU': 'easyjet-europe', 'EZY': 'easyjet', 'VLG': 'vueling', 'CFE': 'cityflyer', 'TFL': 'tui',
+                 'CND': 'corendon-dutch', 'SAS': 'scandinavian', 'THY': 'turkish-airlines', 'UAE': 'emirates',
+                 'QTR': 'qatar-airways', 'MPH': 'martinair'}
 TYPE_SLUGS = {
     'B737': r'737-7\w\w', 'B738': r'737-8\w\w', 'B739': r'737-9\w\w', 'B38M': r'737-8-max|737-max-8',
     'B717': r'717', 'B752': r'757-2', 'B763': r'767-3', 'B764': r'767-4', 'B772': r'777-2',
@@ -92,6 +109,8 @@ TYPE_SLUGS = {
     'A319': r'a319', 'A320': r'a320', 'A321': r'a321', 'A333': r'a330-3', 'A359': r'a350-9', 'A343': r'a340-3',
     'E190': r'erj-190|e190|embraer-190', 'CRJ7': r'crj-?7|cl-600-2c10', 'CRJ9': r'crj-?9|cl-600-2d24',
     'MD11': r'md-11', 'B748': r'747-8', 'A388': r'a380', 'A300': r'a300',
+    'E75L': r'erj-170-200|erj-175|e175|embraer-175', 'E295': r'e195-e2|erj-190-400|190-400', 'A20N': r'a320-2\d\dn\b|a320neo',
+    'A21N': r'a321-2\d\dnx?\b|a321neo', 'A332': r'a330-2', 'A339': r'a330-9', 'B78X': r'787-10', 'B744': r'747-4', 'B39M': r'737-9-max|737-max-9',
 }
 FLEET_SIZE = 6        # Registrations kept per airline and type.
 FLEET_CHECKS = 14     # Planespotters lookups tried per airline and type.
@@ -279,6 +298,11 @@ def main():
         # Partial rebuild: keep other airlines' entries and the type photos, redo the named airlines.
         existing = load_existing()
         types = existing['types']
+        for icao, article in ARTICLES.items():
+            if icao not in types:
+                photo = type_photo(article)
+                if photo:
+                    types[icao] = photo
         keep = lambda entries: {key: value for key, value in entries.items() if key.split('|')[0] not in only}
         liveries, fleets = keep(existing['liveries']), keep(existing['fleets'])
     else:

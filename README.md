@@ -1,6 +1,6 @@
 # OpenATC Simulator
 
-A browser-based approach and departure control simulator for Atlanta (KATL), San Diego (KSAN), Charlotte (KCLT) and Detroit (KDTW). It has voice commands, spoken pilot readbacks, real FAA fixes, live or simulated weather, and FAA-style procedures and separation rules.
+A browser-based approach and departure control simulator for Atlanta (KATL), San Diego (KSAN), Charlotte (KCLT), Detroit (KDTW) and Amsterdam Schiphol (EHAM). It has voice commands, spoken pilot readbacks, real FAA and Dutch AIP fixes, live or simulated weather, and FAA-style procedures and separation rules (ICAO ones at Schiphol).
 
 ## Play online
 
@@ -18,7 +18,7 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 
 | Typed | Spoken example | Meaning |
 |---|---|---|
-| `A 3000` | "Descend and maintain three thousand" or "flight level three thousand" | Altitude |
+| `A 3000` | "Descend and maintain three thousand" or "flight level three thousand"; at Schiphol "descend to flight level seven zero" | Altitude |
 | `H 270` / `TR 270` / `TL 240` | "Turn right heading two seven zero" | Heading |
 | `S 210` | "Reduce speed to two one zero" | Speed |
 | `C CHPPR` | "Proceed direct chopper", "direct Rome VOR" | Direct to a fix or navaid, tracked until overhead; sound-alikes and navaid place names work |
@@ -93,9 +93,9 @@ Once a departure has been handed to center and read back the frequency, it is dr
 
 ### Settings
 
-- **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Each airport flies its hub's real network (66 routes at Atlanta, 64 at Detroit, 41 at Charlotte, 28 at San Diego), with arrivals entering from the side facing their origin, and a city that just had a flight is unlikely to come up again soon. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
-- **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes.
-- **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), overflights on or off, and emergencies on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
+- **SCHED:** day of the week and time of day (morning rush, midday, PM rush, cargo/red-eye). Each sets the airlines, routes and traffic rate. Each airport flies its hub's real network (159 routes to 110 cities at Schiphol, 66 at Atlanta, 64 at Detroit, 41 at Charlotte, 28 at San Diego), with arrivals entering from the side facing their origin, and a city that just had a flight is unlikely to come up again soon. Changing either starts a new shift with traffic from that schedule, as switching sectors does.
+- **WX:** clear, partly cloudy, showers, thunderstorms, severe squall line, or **LIVE**. Live mode uses the latest National Weather Service observation and NEXRAD radar from the Iowa Environmental Mesonet, refreshed every 5 minutes. At Schiphol it uses the airport's METAR (also from the Iowa Environmental Mesonet) and [RainViewer](https://www.rainviewer.com/) radar, since NEXRAD stops at the US border.
+- **SETTINGS:** map style (light gray, streets, FAA IFR low chart, FAA VFR sectional, dark, CARTO, grid; the FAA charts cover the US only, so Schiphol shows the light gray map instead), map brightness, map detail (minimal, standard, full), workload (training, standard, busy), departure mode (tower or manual), overflights on or off, and emergencies on or off. **RESET ALL SETTINGS** restores every default (best scores and any CARTO key are kept).
 - **TRAILS** shows the whole track of the aircraft you select as one line, colored by altitude: white on the ground, then turquoise, blue and purple as it climbs. **1× / 2× / 4×** set sim speed.
 - **WIDE / APP / TWR** set the scope range. Hold Ctrl and scroll over the scope to zoom in steps between them, centered on the airport: no farther out than WIDE and no closer than TWR. A trackpad pinch works too.
 - **LCL** is the sim clock, in the airport's local time. It starts at the start of the chosen time of day (07:00, 11:00, 15:00 or 21:00), runs at sim speed, stops when paused and restarts with each new shift.
@@ -113,6 +113,7 @@ Once a departure has been handed to center and read back the frequency, it is dr
 | `aircraft-icons.js` | Type-specific silhouettes from real dimensions and engine layouts |
 | `fixes-data.js` | Real FAA navaids (VOR, VORTAC, TACAN, DME, NDB) and fixes with display tiers (generated) |
 | `runways-data.js` | Surveyed runway ends, headings and widths from FAA data (generated) |
+| `eham-data.js` | Schiphol's runway thresholds, navaids, fixes and gates from the AIP Netherlands (kept by hand) |
 | `photos-data.js` | Real registrations per airline and type, plus freely licensed fallback photos with credit (generated) |
 | `voice-commands.js` | Speech transcript to command parser |
 | `pilot-radio.js`, `kokoro-radio.js`, `kokoro-worker.js` | Spoken pilot transmissions; Kokoro runs in a background worker |
@@ -135,6 +136,8 @@ python3 tools/build_runways.py
 
 Both take airport codes to rebuild just those airports and keep the rest, for example `python3 tools/build_fixes.py KDTW`.
 
+The FAA datasets stop at the US border, so Schiphol's data lives in `eham-data.js` and is checked by hand against the [AIP Netherlands](https://eaip.lvnl.nl/) (LVNL eAIP). The eAIP sits behind a browser check that scripts can't pass, so there is no build script for it. The current data is from AIRAC AMDT 11-2026, effective 29 October 2026.
+
 ### Airports
 
 | Airport | Flows | Notes |
@@ -143,6 +146,19 @@ Both take airport codes to rebuild just those airports and keep the rest, for ex
 | Charlotte (KCLT) | South or north: land 19R/19L, depart 18/19L | American's hub |
 | Detroit (KDTW) | South or north: land 22R/21L, depart 22L/21R (north: land 04L/03R, depart 04R/03L) | Delta hub with Europe and Asia flights; arrivals use the outer runways, departures the inner ones next to the terminals |
 | San Diego (KSAN) | West or east on its single runway 27/09 | Southwest and Alaska focus |
+| Amsterdam (EHAM) | Preferential runway system: by day land 06/36R and depart 36L/36C, or land 18R/18C and depart 24/18L; four more combinations for strong winds; one runway each way from 23:00 to 06:00 | KLM's hub, with KLM Cityhopper, Transavia, easyJet, Delta, Vueling, TUI, Corendon and others |
+
+#### Schiphol
+
+Schiphol follows the AIP Netherlands (LVNL eAIP, AIRAC AMDT 11-2026) and ICAO rules rather than the FAA's:
+
+- **Runways:** all six, Polderbaan 18R/36L, Kaagbaan 06/24, Aalsmeerbaan 18L/36R, Zwanenburgbaan 18C/36C, Buitenveldertbaan 09/27 and Oostbaan 04/22, at their surveyed thresholds and true bearings (AD 2.12). Field elevation is −11 ft.
+- **Runway choice:** the preferential system (AD 2.20) from the runway-use rules' preference table. The day table (06:00–23:00) has six combinations, each with two landing and two departure runways; the night table (23:00–06:00) has one of each. With live weather the sim picks the first combination with no more than 15 kt of crosswind on the main runways, 20 kt on the second ones and 5 kt of tailwind (ICAO PANS-ATM 7.2.2). Gusts count when they're 10 kt over the wind. 18R and 36R never take departures and 36L and 18L never take arrivals. At 23:00 and 06:00 on the sim clock it switches table.
+- **Arrivals** come in on the real STARs to the three IAFs, ARTIP (from BLUFA, NORKU and RKN), RIVER (DENUT, HELEN, PESER) and SUGOL (LAMSO, MOLIX, REDFA, TOPPA), between FL100 and FL070 at 250 kt. They call "Schiphol Approach" with their callsign only, as the AIP asks. ILS approaches exist for 06, 18C, 18R, 22, 27, 36C and 36R only; pilots refuse an ILS to any other runway.
+- **Missed approaches** follow the charts: 2,000 ft (3,000 ft on 27), with 18R turning right to 299° and 22 left to 158°.
+- **Departures** fly SIDs toward ANDIK, ARNEM, LOPIK, KUDAD, VALKO or BERGI, climb to FL60, and call Schiphol Departure passing 2,000 ft. Hand them to Amsterdam Radar on its west (123.705), south (123.850) or east (124.880) frequency.
+- **Phraseology:** the transition altitude is 3,000 ft, so levels above it are flight levels ("flight level seven zero"). Frequencies are read with "decimal". Each runway pair has its own tower frequency: 118.280 for 18R/36L, 118.105 for 18C/36C, 135.110 for 06/24, and 119.230 for the rest. Holding speeds are ICAO's: 230 kt to 14,000 ft, 240 kt to 20,000 ft.
+- **Traffic:** KLM and KLM Cityhopper ("City") fly over half the movements, on 737s, A321neos, E175s, E190s and E195-E2s, plus 777s, 787s, A330s and the first A350 on long-haul routes. Then come Transavia, easyJet Europe ("Alpine") and easyJet UK ("Easy"), Delta, Vueling, British Airways and BA CityFlyer ("Flyer"), Air France ("Airfrans"), Lufthansa, TUI fly ("Orange"), Corendon ("Dutch Corendon"), SAS ("Scandinavian"), Turkish, Emirates and United, with Martinair 747-400 and Qatar 777 freighters at night.
 
 ## Photo credits
 

@@ -100,6 +100,12 @@
             aliases.push(name, [...name, 'AIRLINES']);
             if (name.length === 1) aliases.push(name[0].split(''));
             if (code === 'SWA') aliases.push(['SOUTH', 'WEST']);
+            // How speech recognition tends to write some radio callsigns.
+            const heardAs = {
+                AFR: [['AIR', 'FRANCE'], ['AIRFRANCE'], ['AIR', 'FRANS']], TRA: [['TRANS', 'AVIA']],
+                CND: [['CORENDON']], QTR: [['QATAR']]
+            };
+            aliases.push(...(heardAs[code] || []));
         }
         return aliases;
     }
@@ -145,18 +151,19 @@
         const flightLevel = words[0] === 'FLIGHT' && words[1] === 'LEVEL';
         if (flightLevel) words = words.slice(2);
         else if (words[0] === 'FL') words = words.slice(1);
-        words = words.filter(word => !['FEET', 'FOOT', 'AT', 'TO', 'THE', 'AND'].includes(word));
+        words = words.filter(word => !['FEET', 'FOOT', 'AT', 'TO', 'THE', 'AND', 'ALTITUDE'].includes(word));
         const number = numberFromWords(words);
         if (number === null) return { error: 'I could not understand the altitude.' };
         if (flightLevel || phrase.startsWith('FL ')) {
             // This simulator also accepts a full altitude after "flight level":
-            // "flight level 3000" means 3,000 feet; "flight level 300" remains FL300.
+            // "flight level 3000" means 3,000 feet; "flight level 300" remains FL300. Where the transition
+            // altitude is low (Europe), "flight level seven zero" is FL70, 7,000 feet.
             if (number >= 1000 && number <= 60000) {
                 if (number < elevation) return { error: `I heard ${number.toLocaleString('en-US')} feet, below this sector’s usable range. Please repeat the altitude.` };
                 return { value: number };
             }
-            if (number >= 180 && number <= 600) return { value: number * 100 };
-            return { error: 'Say a full altitude such as flight level three thousand, or a standard flight level such as flight level three zero zero.' };
+            if (number >= 10 && number <= 600) return { value: number * 100 };
+            return { error: 'Say a full altitude such as flight level three thousand, or a flight level such as flight level seven zero or three zero zero.' };
         }
         if (number < elevation || number > 60000) {
             return { error: `I heard ${number.toLocaleString('en-US')} feet, outside this sector’s usable range. Please repeat the altitude.` };
