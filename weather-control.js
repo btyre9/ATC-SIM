@@ -157,6 +157,29 @@
         return candidates[flowForWind(candidates.map(({ flow }) => flow), wind.dir)].index;
     }
 
+    /* FAA runway use where a flow is kept for strong winds (Detroit's west flow on 27L and 27R, about 5% of the year):
+       the everyday flow landing most into the wind, unless that leaves more than 15 kt of crosswind, gusts included,
+       on one of its runways (FAA Order 8400.9, clear and dry runways). Then the flow with the least crosswind and at
+       most 5 kt of tailwind. A strong-wind flow already in use (current) stays until the everyday flow is 3 kt inside
+       the limit, so a wind hovering at the limit doesn't flip the runways every observation. */
+    function flowForCrosswind(flows, wind, courseOf, current = null, maxCrosswind = 15) {
+        const everyday = flows.map((flow, index) => ({ flow, index })).filter(({ flow }) => !flow.strongWind);
+        const main = everyday[flowForWind(everyday.map(({ flow }) => flow), wind.dir)].index;
+        const speed = Math.max(wind.speed, wind.gust || 0);
+        const worst = flow => [...flow.arrRwys, ...flow.depRwys].reduce((worst, runway) => {
+            const off = radians(wind.dir - courseOf(runway));
+            return { cross: Math.max(worst.cross, Math.abs(speed * Math.sin(off))), tail: Math.max(worst.tail, -speed * Math.cos(off)) };
+        }, { cross: 0, tail: -Infinity });
+        const limit = flows[current]?.strongWind ? maxCrosswind - 3 : maxCrosswind;
+        if (worst(flows[main]).cross <= limit) return main;
+        let best = main, bestCross = worst(flows[main]).cross;
+        flows.forEach((flow, index) => {
+            const { cross, tail } = worst(flow);
+            if (tail <= 5 && cross < bestCross) { best = index; bestCross = cross; }
+        });
+        return best;
+    }
+
     /* The flow whose landing direction faces most into the wind. */
     function flowForWind(flows, windDir) {
         let best = 0, bestDiff = Infinity;
@@ -220,7 +243,7 @@
 
     root.ATCWeatherControl = {
         PRESETS, generateCells, replacementCell, windCode, atisText,
-        parseObservation, parseIemObservation, flowForWind, preferredFlow, classifyRadarPixel, extractStormCells
+        parseObservation, parseIemObservation, flowForWind, preferredFlow, flowForCrosswind, classifyRadarPixel, extractStormCells
     };
     if (typeof module !== 'undefined') module.exports = root.ATCWeatherControl;
 })(typeof window !== 'undefined' ? window : globalThis);

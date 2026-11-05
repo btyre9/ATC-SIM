@@ -240,6 +240,8 @@
                 ARR RWYS: <span id="active-rwy-list" class="text-green-400 font-bold">--</span>
                 <span class="text-slate-600 mx-1">|</span>
                 DEP RWYS: <span id="active-dep-list" class="text-sky-400 font-bold">--</span>
+                <span class="text-slate-600 mx-1">|</span>
+                FIELD ELEV: <span id="field-elevation" class="text-amber-300 font-bold">--</span>
                 <div id="atis-line" class="text-slate-400 mt-0.5"></div>
             </div>
             <div class="absolute top-3 right-3 bg-slate-900/85 border border-slate-700 px-2 py-1.5 rounded text-[10px] font-mono text-slate-300 z-30 pointer-events-none">
@@ -368,7 +370,7 @@
                 <li>Once an arrival is established on the localizer, say <b>"contact tower"</b>. Landing without a handoff costs points.</li>
                 <li><b>Departures</b> (blue) wait at the hold-short line beside the runway. Tower (or you, in manual departure mode) lines them up and waits, then clears them for takeoff. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
                 <li>Once a departure is through 7,000 ft, climbing to at least 10,000, and on course to its fix, say <b>"contact center"</b>. Leaving the dashed 40 NM boundary without a handoff costs points.</li>
-                <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around.</li>
+                <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. Altitudes are above sea level, so the glideslope is the field elevation (top left of the scope: Atlanta 1,026 ft, Charlotte 748, Detroit 645, San Diego 17, Schiphol −11) plus about 300 ft per NM out: at Detroit about 2,200 ft at 5 NM and 3,800 ft at 10 NM. When you clear the ILS, the assigned altitude must be at or below the glideslope where the aircraft will join the localizer (FAA JO 7110.65 5-9-1), not just where it is now. There's no need to go lower. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around.</li>
                 <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta, Charlotte and Detroit, 3,000 at San Diego), 210 kt. At Schiphol they fly the published missed approach: 2,000 ft (3,000 on 27), 18R turning right to 299° and 22 left to 158°. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Runways:</b> one aircraft on a runway at a time, counting both ends (09 and 27 are one runway). Don't line up or clear a departure with an aircraft on the runway or an arrival inside about 2 minutes; tower waits for that. Entering a runway with an aircraft on it or an arrival inside 1 NM is a runway incursion (−200). An arrival finding the runway occupied goes around.</li>
                 <li><b>Runway changes:</b> when the wind swings, departures taxi to the new runway and approach clearances to the old one are cancelled (except arrivals established inside 5 NM). Re-clear those arrivals.</li>
@@ -718,9 +720,13 @@
                 lon: -83.3534,
                 elevation: 645,
                 // The terminals sit between the runway pairs: arrivals use the outer runways, departures the inner ones.
+                // South flow runs about 70% of the year, north 25%. West flow, landing and departing 27L and 27R, is
+                // for strong west winds only (FAA DTW operating configurations, 2006): live wind brings it in once 21/22
+                // would have more than 15 kt of crosswind.
                 flows: [
                     { name: "SOUTH", windDir: 210, arrRwys: ["22R", "21L"], depRwys: ["22L", "21R"] },
-                    { name: "NORTH", windDir: 30,  arrRwys: ["04L", "03R"], depRwys: ["04R", "03L"] }
+                    { name: "NORTH", windDir: 30,  arrRwys: ["04L", "03R"], depRwys: ["04R", "03L"] },
+                    { name: "WEST", windDir: 270, strongWind: true, arrRwys: ["27L", "27R"], depRwys: ["27R", "27L"] }
                 ],
                 // Surveyed runway ends from FAA data (runways-data.js).
                 runways: window.ATC_RUNWAYS?.KDTW || [],
@@ -1574,6 +1580,7 @@
                 this.simAge = 0;
                 this.checkedInAt = 0;
                 this.pendingActions = [];
+                this.pendingAltitude = null;
                 this.directTo = null;
                 this.exitFix = null;
                 this.arrivalFix = null;
@@ -2602,11 +2609,15 @@
             }
 
             // The runways for a real wind: Schiphol's preferential system picks the first usable combination in its
-            // preference order; elsewhere the flow landing most into the wind.
+            // preference order; Detroit goes to its west flow when the crosswind is too strong; elsewhere the flow
+            // landing most into the wind.
             flowForWind(wind) {
+                const courseOf = runway => getRunwayDetails(runway).heading;
+                if (CONFIG.airport.flows.some(flow => flow.strongWind)) {
+                    return window.ATCWeatherControl.flowForCrosswind(CONFIG.airport.flows, wind, courseOf, this.activeFlowIndex);
+                }
                 if (!CONFIG.airport.runwayPreference) return window.ATCWeatherControl.flowForWind(CONFIG.airport.flows, wind.dir);
-                return window.ATCWeatherControl.preferredFlow(CONFIG.airport.flows, wind,
-                    runway => getRunwayDetails(runway).heading, this.runwayPeriod());
+                return window.ATCWeatherControl.preferredFlow(CONFIG.airport.flows, wind, courseOf, this.runwayPeriod());
             }
 
             // At 23:00 Schiphol goes to its night combinations and at 06:00 back to day ones, keeping the wind.
@@ -2698,6 +2709,7 @@
                 document.getElementById('wind-arrow').style.transform = `rotate(${CONFIG.wind.dir + 180}deg)`;
                 document.getElementById('active-rwy-list').textContent = flow.arrRwys.join(', ');
                 document.getElementById('active-dep-list').textContent = flow.depRwys.join(', ');
+                document.getElementById('field-elevation').textContent = `${CONFIG.airport.elevation.toLocaleString('en-US')} FT`;
                 this.updateWeatherDisplay();
 
                 // Departures not yet rolling, lined up or not, taxi to a hold-short line in the new flow.
@@ -3783,9 +3795,13 @@
                 // An altitude assigned to an aircraft already cleared for the approach cancels that clearance,
                 // unless this same transmission clears it again ("descend and maintain 3000, cleared ILS").
                 const reclearsApproach = tokens.includes('L') || tokens.includes('ILS');
+                // pendingAltitude is the altitude just assigned, before the pilot acts on it, so an approach clearance
+                // sent right after "descend and maintain 2000" is checked against 2,000.
                 const assignAltitude = alt => {
                     const cancelsApproach = plane.clearedForILS && !reclearsApproach;
+                    plane.pendingAltitude = alt;
                     act(() => {
+                        if (plane.pendingAltitude === alt) plane.pendingAltitude = null;
                         plane.targetAltitude = alt;
                         plane.expediteVertical = expedite;
                         if (cancelsApproach) { plane.clearedForILS = false; plane.ilsCaptured = false; }
@@ -3838,6 +3854,7 @@
                             plane.lastStatus = "GO AROUND";
                             // A go-around is urgent and supersedes anything still queued.
                             plane.pendingActions = [];
+                            plane.pendingAltitude = null;
                             plane.pendingActions.push({ at: plane.simAge + 2, apply: () => plane.goAround() });
                             this.log(`${id} going around: runway heading ${String(missed.heading).padStart(3, '0')}, climbing to ${missed.altitude.toLocaleString('en-US')} ft, 210 kt until your next instruction.`, 'error');
                             readback(`Going around, runway heading, ${this.altitudeReadback(plane, missed.altitude)}`);
@@ -4012,9 +4029,15 @@
 
                             // FAA JO 7110.65 5-9-1: intercept at 30 degrees or less, from at or below the glideslope.
                             const heading = assignedHeading ?? plane.targetHeading;
-                            const intercept = Math.abs(((heading - rwyInfo.heading) % 360 + 540) % 360 - 180);
-                            const glideslope = CONFIG.airport.elevation + Math.sqrt(dLat*dLat + dLon*dLon) * 318;
-                            const altitudeAfter = assignedAltitude ?? plane.targetAltitude;
+                            const relative = ((heading - rwyInfo.heading) % 360 + 540) % 360 - 180;
+                            const intercept = Math.abs(relative);
+                            // The glideslope where it will join the localizer: on this heading if it closes at 10° or
+                            // more, otherwise on the 20° intercept it takes (see the ILS logic in Aircraft.update).
+                            const { along, cross } = window.ATCTraffic.localizerOffset(plane, rwyInfo);
+                            const closing = cross * Math.sin(toRad(relative)) < 0 && intercept >= 10 && intercept <= 90;
+                            const joinAlong = along - Math.abs(cross) / Math.tan(toRad(closing ? intercept : 20));
+                            const glideslope = CONFIG.airport.elevation + Math.max(0, joinAlong) * 318;
+                            const altitudeAfter = assignedAltitude ?? plane.pendingAltitude ?? plane.targetAltitude;
                             if (runwayHasTailwind(val)) {
                                 this.log(`${id}: Unable ${val} (Tailwind).`, 'error');
                                 readback(`Unable runway ${this.radioRunway(val)} due tailwind`);
@@ -4022,7 +4045,7 @@
                                 this.log(`${id}: intercept angle ${Math.round(intercept)}°. Vector to within 30° of the ${String(Math.round(rwyInfo.heading) % 360).padStart(3, '0')}° final course first.`, 'error');
                                 readback('Unable the approach from this heading, request vectors to final');
                             } else if (altitudeAfter > glideslope + 300) {
-                                this.log(`${id}: too high for the glideslope here (about ${(Math.round(glideslope / 100) * 100).toLocaleString('en-US')} ft). Descend first.`, 'error');
+                                this.log(`${id}: too high. It would join the localizer about ${Math.max(0, Math.round(joinAlong))} NM out, where the glideslope is about ${(Math.round(glideslope / 100) * 100).toLocaleString('en-US')} ft (the ${CONFIG.airport.elevation.toLocaleString('en-US')} ft field elevation plus about 300 ft per NM). Descend first.`, 'error');
                                 readback("Unable, we're too high for the approach, request lower");
                             } else {
                                 // Shown as cleared from the moment it is said, before the pilot acts on it.

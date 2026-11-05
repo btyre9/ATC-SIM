@@ -49,7 +49,7 @@ Climbs and descents follow the aircraft type and altitude:
 ### Procedures
 
 - **Arrivals** (amber strips) enter over a real STAR fix at 10,000–14,000 ft and 250 kt. Descend them, vector them to intercept the localizer at 30° or less from at or below the glideslope, clear them for the ILS, then hand them to tower.
-- **On the ILS**, an arrival holds your intercept heading until it reaches the localizer, tracks the centerline, follows the 3° glideslope and lands. If it isn't established by 1 NM out, or is still off the centerline or high at 1.5 NM, it goes around (stabilized-approach rule).
+- **On the ILS**, an arrival holds your intercept heading until it reaches the localizer, tracks the centerline, follows the 3° glideslope and lands. Altitudes are above sea level: the glideslope is the field elevation (shown top left of the scope, and in the airport table below) plus about 300 ft per NM out, so Detroit's is about 2,200 ft at 5 NM and 3,800 ft at 10 NM. When you clear the ILS, the assigned altitude must be at or below the glideslope where the aircraft will join the localizer (FAA JO 7110.65 5-9-1). Otherwise the pilot answers "unable, too high". If it isn't established by 1 NM out, or is still off the centerline or high at 1.5 NM, it goes around (stabilized-approach rule).
 - **Departures** (blue strips) wait at the hold-short line beside the runway. Tower lines them up and clears them for takeoff (or you do, in manual departure mode). They fly their SID: runway heading to 1,000 ft, then direct to a real departure fix toward their destination, climbing to 5,000. Climb them to 10,000 ft or higher, then hand them to center once through 7,000 and on course.
 - **Holding** follows the FAA's rules (AIM 5-3-8). The aircraft flies to the fix and enters the way its heading calls for (direct, teardrop or parallel), then flies 1-minute legs (1½ minutes above 14,000 ft) with turns at standard rate or 25° of bank (whichever is less), slowed to the maximum holding speed (200 kt up to 6,000 ft, 230 kt up to 14,000 ft, 265 kt above). The pattern is drawn on the scope. Altitude and speed changes keep it in the hold; a heading, direct-to or approach clearance takes it out. A hold at a boundary fix may spill up to 8 NM outside your airspace without counting as lost.
 - **Rules:** 250 kt maximum below 10,000 ft (14 CFR 91.117) and 160 kt minimum until established. Separation is 3 NM or 1,000 ft, or 2.5 NM on the same final; parallel ILS approaches are exempt. Pilots refuse clearances that break these rules and say why.
@@ -140,13 +140,13 @@ The FAA datasets stop at the US border, so Schiphol's data lives in `eham-data.j
 
 ### Airports
 
-| Airport | Flows | Notes |
-|---|---|---|
-| Atlanta (KATL) | West or east: land 26R/27L/28, depart 26L/27R | Delta's main hub |
-| Charlotte (KCLT) | South or north: land 19R/19L, depart 18/19L | American's hub |
-| Detroit (KDTW) | South or north: land 22R/21L, depart 22L/21R (north: land 04L/03R, depart 04R/03L) | Delta hub with Europe and Asia flights; arrivals use the outer runways, departures the inner ones next to the terminals |
-| San Diego (KSAN) | West or east on its single runway 27/09 | Southwest and Alaska focus |
-| Amsterdam (EHAM) | Preferential runway system: by day land 06/36R and depart 36L/36C, or land 18R/18C and depart 24/18L; four more combinations for strong winds; one runway each way from 23:00 to 06:00 | KLM's hub, with KLM Cityhopper, Transavia, easyJet, Delta, Vueling, TUI, Corendon and others |
+| Airport | Field elevation | Flows | Notes |
+|---|---|---|---|
+| Atlanta (KATL) | 1,026 ft | West or east: land 26R/27L/28, depart 26L/27R | Delta's main hub |
+| Charlotte (KCLT) | 748 ft | South or north: land 19R/19L, depart 18/19L | American's hub |
+| Detroit (KDTW) | 645 ft | South or north: land 22R/21L, depart 22L/21R (north: land 04L/03R, depart 04R/03L). With live weather, a crosswind over 15 kt on 21/22, gusts included (FAA Order 8400.9), brings in the west flow: land and depart 27L/27R. It stays until the crosswind is under 12 kt | Delta hub with Europe and Asia flights; arrivals use the outer runways, departures the inner ones next to the terminals |
+| San Diego (KSAN) | 17 ft | West or east on its single runway 27/09 | Southwest and Alaska focus |
+| Amsterdam (EHAM) | −11 ft | Preferential runway system: by day land 06/36R and depart 36L/36C, or land 18R/18C and depart 24/18L; four more combinations for strong winds; one runway each way from 23:00 to 06:00 | KLM's hub, with KLM Cityhopper, Transavia, easyJet, Delta, Vueling, TUI, Corendon and others |
 
 #### Schiphol
 

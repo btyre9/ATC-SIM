@@ -54,6 +54,29 @@ test('the runway flow faces into the wind', () => {
     assert.equal(W.flowForWind(flows, 110), 1);
 });
 
+test('Detroit goes to its west flow only when 21/22 would have too much crosswind', () => {
+    // True courses from runways-data.js.
+    const headings = { '03L': 28.6, '03R': 28.6, '04L': 28.6, '04R': 28.6, '09L': 88.7, '09R': 88.7 };
+    const recip = { '21R': '03L', '21L': '03R', '22R': '04L', '22L': '04R', '27R': '09L', '27L': '09R' };
+    const courseOf = runway => headings[runway] ?? (headings[recip[runway]] + 180) % 360;
+    const flows = [
+        { name: 'SOUTH', windDir: 210, arrRwys: ['22R', '21L'], depRwys: ['22L', '21R'] },
+        { name: 'NORTH', windDir: 30, arrRwys: ['04L', '03R'], depRwys: ['04R', '03L'] },
+        { name: 'WEST', windDir: 270, strongWind: true, arrRwys: ['27L', '27R'], depRwys: ['27R', '27L'] }
+    ];
+    const pick = (dir, speed, gust = 0, current = null) => flows[W.flowForCrosswind(flows, { dir, speed, gust }, courseOf, current)].name;
+    assert.equal(pick(270, 8), 'SOUTH', 'a light westerly is about 7 kt across 21/22');
+    assert.equal(pick(270, 17), 'SOUTH');
+    assert.equal(pick(270, 18), 'WEST', 'about 16 kt across 21/22');
+    assert.equal(pick(270, 10, 22), 'WEST', 'gusts count');
+    assert.equal(pick(300, 22), 'WEST');
+    assert.equal(pick(230, 30), 'SOUTH', 'a strong wind down 21/22 keeps them');
+    assert.equal(pick(20, 25), 'NORTH');
+    assert.equal(pick(90, 25), 'NORTH', 'no east flow: 9L/9R stay closed');
+    assert.equal(pick(270, 15, 0, 2), 'WEST', 'west flow holds until the wind is well inside the limit');
+    assert.equal(pick(270, 13, 0, 2), 'SOUTH');
+});
+
 test('radar colors classify by reflectivity band', () => {
     assert.equal(W.classifyRadarPixel(0, 0, 0, 0), 0);
     assert.equal(W.classifyRadarPixel(1, 159, 244, 255), 0);
