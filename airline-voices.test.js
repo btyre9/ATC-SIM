@@ -4,11 +4,14 @@ const V = require('./airline-voices');
 const KokoroRadio = require('./kokoro-radio');
 
 const AIRLINES = [
+    { id: 'THY', name: 'Turkish', company: 'Turkish Airlines' },
     { id: 'KLM', name: 'KLM' },
     { id: 'KLC', name: 'City', company: 'KLM Cityhopper' },
     { id: 'TRA', name: 'Transavia' },
     { id: 'DLH', name: 'Lufthansa' },
-    { id: 'BAW', name: 'Speedbird', company: 'British Airways' }
+    { id: 'BAW', name: 'Speedbird', company: 'British Airways' },
+    { id: 'DAL', name: 'Delta', company: 'Delta Air Lines', region: 'us' },
+    { id: 'JBU', name: 'JetBlue', region: 'us' }
 ];
 
 test('VoiceStudio voices belong to an airline by code, callsign or company name, then "pilot"', () => {
@@ -26,6 +29,22 @@ test('VoiceStudio voices belong to an airline by code, callsign or company name,
     ], AIRLINES), { KLM: ['a', 'b'] });
 });
 
+test('every pilot voice joins the US or international group', () => {
+    assert.equal(V.pilotVoiceRegion('Delta-Pilot3', AIRLINES), 'us');
+    assert.equal(V.pilotVoiceRegion('KLM-Pilot1', AIRLINES), 'intl');
+    assert.equal(V.pilotVoiceRegion('Iberia-Pilot2', AIRLINES), 'intl', 'an airline the sim does not fly');
+    assert.equal(V.pilotVoiceRegion('Aer Lingus-Pilot1', AIRLINES), 'intl');
+    assert.equal(V.pilotVoiceRegion('Hawaiian-Pilot1', AIRLINES), 'us');
+    assert.equal(V.pilotVoiceRegion('Pilot Voice 1', AIRLINES), 'us', 'no airline named');
+    assert.equal(V.pilotVoiceRegion('Pilot1`-Voice', AIRLINES), 'us');
+    assert.equal(V.pilotVoiceRegion('Ramp-Agent-Male1_AA', AIRLINES), null);
+    assert.equal(V.pilotVoiceRegion('Heather', AIRLINES), null);
+    assert.deepEqual(V.voicesByRegion([
+        { id: 'a', name: 'Delta-Pilot1' }, { id: 'b', name: 'Finnair-Pilot1' }, { id: 'c', name: 'Pilot1-Voice' },
+        { id: 'd', name: 'Heather' }, { id: 'e', name: 'KLM-Pilot1' }
+    ], AIRLINES), { us: ['a', 'c'], intl: ['b', 'e'] });
+});
+
 test('16-bit PCM becomes samples', () => {
     const pcm = new Int16Array([0, 16384, -32768]);
     assert.deepEqual([...V.pcmToFloat(pcm.buffer)], [0, 0.5, -1]);
@@ -38,7 +57,7 @@ test('a flight keeps one voice: VoiceStudio first, then the airline Kokoro voice
     voices.random = () => 0;
     assert.deepEqual(voices.voiceFor('KLM643'), { engine: 'voicestudio', id: 's2' }, 'kept for the flight');
     assert.deepEqual(voices.voiceFor('TRA5121'), { engine: 'kokoro', voice: 'tra-1', lang: 'b' });
-    assert.equal(voices.voiceFor('DAL228'), null);
+    assert.equal(voices.voiceFor('DAL228'), null, 'not an airline the voices know, nothing to borrow');
     voices.useStudio = false;
     voices.clear();
     assert.deepEqual(voices.voiceFor('KLM643'), { engine: 'kokoro', voice: 'klm-1', lang: 'b' });
@@ -59,6 +78,24 @@ function radioWith(airlineVoices, kokoroCalls) {
         } })
     });
 }
+
+test('flights without their own voices borrow one from their part of the world, the least used first', () => {
+    const studio = new V.VoiceStudioVoices(AIRLINES);
+    studio.available = true;
+    studio.byAirline = { DAL: ['d1'] };
+    studio.byRegion = { us: ['d1', 'p1', 'p2'], intl: ['i1'] };
+    const kokoro = { DAL: [{ voice: 'delta-1', lang: 'a' }], BAW: [{ voice: 'ba-1', lang: 'b' }] };
+    const voices = new V.AirlineVoices(studio, kokoro, () => 0, AIRLINES);
+    assert.deepEqual(voices.voiceFor('DAL1'), { engine: 'voicestudio', id: 'd1' });
+    assert.deepEqual(voices.voiceFor('JBU2'), { engine: 'voicestudio', id: 'p1' }, 'd1 is taken');
+    assert.deepEqual(voices.voiceFor('JBU3'), { engine: 'voicestudio', id: 'p2' });
+    assert.deepEqual(voices.voiceFor('KLM4'), { engine: 'voicestudio', id: 'i1' });
+    voices.useStudio = false;
+    voices.clear();
+    assert.deepEqual(voices.voiceFor('JBU2'), { engine: 'kokoro', voice: 'delta-1', lang: 'a' });
+    assert.deepEqual(voices.voiceFor('THY5'), { engine: 'kokoro', voice: 'ba-1', lang: 'b' });
+    assert.equal(voices.voiceFor('N172SP'), null, 'general aviation borrows nothing');
+});
 
 test('Kokoro radio speaks airline voices and falls back to Kokoro when VoiceStudio stops', async () => {
     const studioCalls = [];

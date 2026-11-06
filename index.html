@@ -392,8 +392,8 @@
             </div>
             <label for="pilot-voice-engine" class="block text-slate-300 mb-2">Voice engine</label>
             <select id="pilot-voice-engine" class="w-full bg-slate-800 border border-slate-600 rounded p-2 text-white mb-3">
+                <option value="kokoro">AI pilot voices: Kokoro, and VoiceStudio on this Mac</option>
                 <option value="browser">Chrome voices</option>
-                <option value="kokoro">Kokoro neural voices (free)</option>
             </select>
             <div id="browser-voice-settings">
                 <label for="pilot-voice-select" class="block text-slate-300 mb-2">Choose a voice installed in Chrome</label>
@@ -1124,16 +1124,16 @@
 
         // company: the airline's own name where the radio callsign differs, to match VoiceStudio voice names.
         const AIRLINES = [
-            { id: "DAL", name: "Delta",       company: "Delta Air Lines", color: "#003a70", text: "#ffffff" },
-            { id: "SWA", name: "Southwest",   color: "#1b4596", text: "#fcb514" },
-            { id: "AAL", name: "American",    company: "American Airlines", color: "#36495d", text: "#ffffff" },
-            { id: "UAL", name: "United",      company: "United Airlines", color: "#005da4", text: "#ffffff" },
-            { id: "ASA", name: "Alaska",      company: "Alaska Airlines", color: "#01426a", text: "#4cde80" },
-            { id: "JBU", name: "JetBlue",     color: "#0033a0", text: "#ffffff" },
-            { id: "FFT", name: "Frontier",    color: "#006643", text: "#ffffff" },
-            { id: "NKS", name: "Spirit",      color: "#fff200", text: "#000000" },
-            { id: "FDX", name: "FedEx",       color: "#4d148c", text: "#ff6600" },
-            { id: "UPS", name: "UPS",         color: "#351c15", text: "#d4af37" },
+            { id: "DAL", name: "Delta",       company: "Delta Air Lines", region: "us", color: "#003a70", text: "#ffffff" },
+            { id: "SWA", name: "Southwest",   region: "us", color: "#1b4596", text: "#fcb514" },
+            { id: "AAL", name: "American",    company: "American Airlines", region: "us", color: "#36495d", text: "#ffffff" },
+            { id: "UAL", name: "United",      company: "United Airlines", region: "us", color: "#005da4", text: "#ffffff" },
+            { id: "ASA", name: "Alaska",      company: "Alaska Airlines", region: "us", color: "#01426a", text: "#4cde80" },
+            { id: "JBU", name: "JetBlue",     region: "us", color: "#0033a0", text: "#ffffff" },
+            { id: "FFT", name: "Frontier",    region: "us", color: "#006643", text: "#ffffff" },
+            { id: "NKS", name: "Spirit",      region: "us", color: "#fff200", text: "#000000" },
+            { id: "FDX", name: "FedEx",       region: "us", color: "#4d148c", text: "#ff6600" },
+            { id: "UPS", name: "UPS",         region: "us", color: "#351c15", text: "#d4af37" },
             { id: "BAW", name: "Speedbird",   company: "British Airways", color: "#075aaa", text: "#eb2226" },
             { id: "AFR", name: "Airfrans",    company: "Air France", color: "#002157", text: "#ffffff" },
             { id: "DLH", name: "Lufthansa",   color: "#ffb81c", text: "#000000" },
@@ -2017,7 +2017,8 @@
                 this.browserPilotRadio = new window.PilotRadio(window.speechSynthesis, window.SpeechSynthesisUtterance,
                     message => this.log(message, 'error'), this.radioEffect);
                 this.voiceStudio = new window.ATCAirlineVoices.VoiceStudioVoices(AIRLINES);
-                this.airlineVoices = new window.ATCAirlineVoices.AirlineVoices(this.voiceStudio, window.ATC_KOKORO_VOICES || {});
+                this.airlineVoices = new window.ATCAirlineVoices.AirlineVoices(this.voiceStudio, window.ATC_KOKORO_VOICES || {},
+                    Math.random, AIRLINES);
                 this.kokoroRadio = new window.KokoroRadio(
                     message => { document.getElementById('kokoro-status').textContent = message; },
                     (message, item) => {
@@ -3408,8 +3409,15 @@
                     document.getElementById('browser-voice-settings').classList.toggle('hidden', neural);
                     document.getElementById('kokoro-voice-settings').classList.toggle('hidden', !neural);
                 };
-                try { engineSelect.value = localStorage.getItem('atcPilotVoiceEngine') || 'browser'; }
-                catch (_) { /* Engine choice stays available for this session. */ }
+                // AI voices (Kokoro, and VoiceStudio on this Mac) are the default, so pilots get their airline voices.
+                // A Chrome-voices choice saved before airline voices existed is switched over once.
+                try {
+                    const saved = localStorage.getItem('atcPilotVoiceEngine');
+                    const switched = localStorage.getItem('atcAirlineVoicesDefault') === 'done';
+                    engineSelect.value = saved === 'browser' && switched ? 'browser' : 'kokoro';
+                    localStorage.setItem('atcAirlineVoicesDefault', 'done');
+                    localStorage.setItem('atcPilotVoiceEngine', engineSelect.value);
+                } catch (_) { engineSelect.value = 'kokoro'; }
                 updateEnginePanel();
 
                 const populate = () => {
@@ -3462,25 +3470,37 @@
                 const airlineName = id => AIRLINES.find(item => item.id === id)?.company || AIRLINES.find(item => item.id === id)?.name || id;
                 const ownVoices = Object.keys(window.ATC_KOKORO_VOICES || {});
                 document.getElementById('airline-kokoro-voices').textContent = ownVoices.length ?
-                    `Kokoro voices for ${ownVoices.map(airlineName).join(', ')}.` : 'No airline Kokoro voices yet.';
+                    `Kokoro voices for ${ownVoices.map(airlineName).join(', ')}; other flights borrow one from their part of the world.` :
+                    'No airline Kokoro voices yet.';
                 const studioToggle = document.getElementById('voicestudio-toggle');
                 const studioStatus = document.getElementById('voicestudio-status');
                 try { studioToggle.checked = localStorage.getItem('atcVoiceStudio') !== 'off'; }
                 catch (_) { /* The choice still applies for this session. */ }
-                const refreshVoiceStudio = async () => {
+                const refreshVoiceStudio = async (quiet = false) => {
                     this.airlineVoices.useStudio = studioToggle.checked;
-                    this.airlineVoices.clear();
-                    if (!studioToggle.checked) { studioStatus.textContent = ''; return; }
-                    studioStatus.textContent = 'Looking for VoiceStudio…';
-                    if (!await this.voiceStudio.refresh()) {
-                        studioStatus.textContent = 'VoiceStudio not found. Open it, and run the sim with start-atc.';
+                    if (!studioToggle.checked) { this.airlineVoices.clear(); studioStatus.textContent = ''; return; }
+                    const wasAvailable = this.voiceStudio.available;
+                    if (!quiet) studioStatus.textContent = 'Looking for VoiceStudio…';
+                    const found = await this.voiceStudio.refresh();
+                    if (found !== wasAvailable || !quiet) this.airlineVoices.clear();
+                    if (!found) {
+                        studioStatus.textContent = 'VoiceStudio not found. Open it, and run the sim with start-atc. ' +
+                            'The sim keeps looking while it runs.';
                         return;
                     }
+                    if (!wasAvailable && quiet) this.log('VoiceStudio found: pilots now use your VoiceStudio voices.', 'system');
                     const airlines = Object.keys(this.voiceStudio.byAirline);
-                    studioStatus.textContent = airlines.length ?
-                        `VoiceStudio voices for ${airlines.map(id => `${airlineName(id)} (${this.voiceStudio.byAirline[id].length})`).join(', ')}.` :
-                        'VoiceStudio is running, but no voice is named for an airline yet.';
+                    const { us, intl } = this.voiceStudio.byRegion;
+                    studioStatus.textContent = `VoiceStudio: ${us.length + intl.length} pilot voices (${us.length} US, ` +
+                        `${intl.length} international). ` + (airlines.length ? `Airline voices for ${airlines.map(id =>
+                            `${airlineName(id)} (${this.voiceStudio.byAirline[id].length})`).join(', ')}; ` : '') +
+                        'other flights borrow one from their part of the world.';
                 };
+                // VoiceStudio may be opened after the sim: when the sim runs on this computer (start-atc), look again every
+                // 20 seconds until it answers. Online there is no way to reach it.
+                if (['127.0.0.1', 'localhost'].includes(location.hostname)) {
+                    setInterval(() => { if (!this.voiceStudio.available) refreshVoiceStudio(true); }, 20000);
+                }
                 studioToggle.addEventListener('change', () => {
                     try { localStorage.setItem('atcVoiceStudio', studioToggle.checked ? 'on' : 'off'); }
                     catch (_) { /* The choice still applies for this session. */ }
