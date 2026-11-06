@@ -410,7 +410,17 @@
                     <option value="bf_emma">Emma · feminine, UK</option>
                     <option value="bm_george">George · masculine, UK</option>
                 </select>
-                <p class="text-slate-400 mb-2">Each aircraft keeps its assigned voice throughout the session.</p>
+                <p class="text-slate-400 mb-2">Each aircraft keeps its assigned voice throughout the session. Airlines with their own voices use those instead.</p>
+                <div class="border border-slate-700 rounded p-2 mb-2">
+                    <div class="font-bold text-slate-200 mb-1">Airline voices</div>
+                    <p id="airline-kokoro-voices" class="text-slate-400 mb-2"></p>
+                    <label class="flex items-center gap-2 text-slate-300 mb-1 cursor-pointer">
+                        <input id="voicestudio-toggle" type="checkbox" class="accent-emerald-500" checked>
+                        Use VoiceStudio voices when it's running
+                    </label>
+                    <p class="text-slate-400 mb-1">Runs the sim with start-atc (serve.py) and VoiceStudio open on this computer. Name a voice after the airline, then "Pilot": KLM-Pilot1, Lufthansa-Pilot2, DLH-Pilot.</p>
+                    <p id="voicestudio-status" role="status" class="text-amber-300"></p>
+                </div>
                 <button id="kokoro-load" type="button" class="bg-cyan-800 hover:bg-cyan-700 text-white px-3 py-2 rounded font-bold mb-2">START KOKORO</button>
                 <p class="text-slate-400 mb-2">First use downloads about 100 MB. Chrome keeps the model and voices in its site cache; later visits load them into memory from there. If you clear site data or use another browser address, they may download again.</p>
                 <p id="kokoro-status" role="status" class="text-amber-300 mb-3">Press START KOKORO, or turn PILOTS on.</p>
@@ -464,6 +474,8 @@
     <script src="voice-commands.js"></script>
     <script src="radio-effect.js"></script>
     <script src="pilot-radio.js"></script>
+    <script src="airline-voices.js"></script>
+    <script src="kokoro-voices.js"></script>
     <script src="kokoro-radio.js"></script>
     <script src="weather-logic.js"></script>
     <script src="traffic-logic.js"></script>
@@ -1110,35 +1122,36 @@
             zoomLevels: { WIDE: 65, APP: 20, TWR: 6 }
         };
 
+        // company: the airline's own name where the radio callsign differs, to match VoiceStudio voice names.
         const AIRLINES = [
-            { id: "DAL", name: "Delta",       color: "#003a70", text: "#ffffff" },
+            { id: "DAL", name: "Delta",       company: "Delta Air Lines", color: "#003a70", text: "#ffffff" },
             { id: "SWA", name: "Southwest",   color: "#1b4596", text: "#fcb514" },
-            { id: "AAL", name: "American",    color: "#36495d", text: "#ffffff" },
-            { id: "UAL", name: "United",      color: "#005da4", text: "#ffffff" },
-            { id: "ASA", name: "Alaska",      color: "#01426a", text: "#4cde80" },
+            { id: "AAL", name: "American",    company: "American Airlines", color: "#36495d", text: "#ffffff" },
+            { id: "UAL", name: "United",      company: "United Airlines", color: "#005da4", text: "#ffffff" },
+            { id: "ASA", name: "Alaska",      company: "Alaska Airlines", color: "#01426a", text: "#4cde80" },
             { id: "JBU", name: "JetBlue",     color: "#0033a0", text: "#ffffff" },
             { id: "FFT", name: "Frontier",    color: "#006643", text: "#ffffff" },
             { id: "NKS", name: "Spirit",      color: "#fff200", text: "#000000" },
             { id: "FDX", name: "FedEx",       color: "#4d148c", text: "#ff6600" },
             { id: "UPS", name: "UPS",         color: "#351c15", text: "#d4af37" },
-            { id: "BAW", name: "Speedbird",   color: "#075aaa", text: "#eb2226" },
-            { id: "AFR", name: "Airfrans",    color: "#002157", text: "#ffffff" },
+            { id: "BAW", name: "Speedbird",   company: "British Airways", color: "#075aaa", text: "#eb2226" },
+            { id: "AFR", name: "Airfrans",    company: "Air France", color: "#002157", text: "#ffffff" },
             { id: "DLH", name: "Lufthansa",   color: "#ffb81c", text: "#000000" },
             { id: "KAL", name: "Korean Air",  color: "#0065a1", text: "#ffffff" },
             // Europe. Names are the radiotelephony callsigns: KLM Cityhopper is "City", easyJet Europe "Alpine".
             { id: "KLM", name: "KLM",         color: "#00a1de", text: "#ffffff" },
-            { id: "KLC", name: "City",        color: "#00a1de", text: "#ffffff" },
+            { id: "KLC", name: "City",        company: "KLM Cityhopper", color: "#00a1de", text: "#ffffff" },
             { id: "TRA", name: "Transavia",   color: "#00b140", text: "#ffffff" },
-            { id: "EJU", name: "Alpine",      color: "#ff6600", text: "#ffffff" },
-            { id: "EZY", name: "Easy",        color: "#ff6600", text: "#ffffff" },
+            { id: "EJU", name: "Alpine",      company: "easyJet Europe", color: "#ff6600", text: "#ffffff" },
+            { id: "EZY", name: "Easy",        company: "easyJet", color: "#ff6600", text: "#ffffff" },
             { id: "VLG", name: "Vueling",     color: "#ffcc00", text: "#333333" },
-            { id: "CFE", name: "Flyer",       color: "#075aaa", text: "#ffffff" },
-            { id: "TFL", name: "Orange",      color: "#092a5e", text: "#70cbf4" },
-            { id: "CND", name: "Dutch Corendon", color: "#e30613", text: "#ffffff" },
+            { id: "CFE", name: "Flyer",       company: "BA CityFlyer", color: "#075aaa", text: "#ffffff" },
+            { id: "TFL", name: "Orange",      company: "TUI", color: "#092a5e", text: "#70cbf4" },
+            { id: "CND", name: "Dutch Corendon", company: "Corendon", color: "#e30613", text: "#ffffff" },
             { id: "SAS", name: "Scandinavian", color: "#000c3d", text: "#ffffff" },
-            { id: "THY", name: "Turkish",     color: "#c70a0c", text: "#ffffff" },
+            { id: "THY", name: "Turkish",     company: "Turkish Airlines", color: "#c70a0c", text: "#ffffff" },
             { id: "UAE", name: "Emirates",    color: "#d71921", text: "#ffffff" },
-            { id: "QTR", name: "Qatari",      color: "#5c0632", text: "#ffffff" },
+            { id: "QTR", name: "Qatari",      company: "Qatar Airways", color: "#5c0632", text: "#ffffff" },
             { id: "MPH", name: "Martinair",   color: "#00a1de", text: "#f7a823" }
         ];
 
@@ -2003,13 +2016,15 @@
                 catch (_) { /* Static stays on for this session. */ }
                 this.browserPilotRadio = new window.PilotRadio(window.speechSynthesis, window.SpeechSynthesisUtterance,
                     message => this.log(message, 'error'), this.radioEffect);
+                this.voiceStudio = new window.ATCAirlineVoices.VoiceStudioVoices(AIRLINES);
+                this.airlineVoices = new window.ATCAirlineVoices.AirlineVoices(this.voiceStudio, window.ATC_KOKORO_VOICES || {});
                 this.kokoroRadio = new window.KokoroRadio(
                     message => { document.getElementById('kokoro-status').textContent = message; },
                     (message, item) => {
                         this.log(`${message} Switched to Chrome voices.`, 'error');
                         this.usePilotEngine('browser');
                         if (item && this.pilotRadio.enabled) this.pilotRadio.say(item.text, item.callsign, true);
-                    }, { effect: this.radioEffect });
+                    }, { effect: this.radioEffect, airlineVoices: this.airlineVoices });
                 this.pilotRadio = this.browserPilotRadio;
                 this.initPilotAudio();
                 this.initCommandHelp();
@@ -3442,9 +3457,40 @@
                 };
                 this.loadKokoro = loadKokoro;
                 loadButton.addEventListener('click', loadKokoro);
+
+                // Airline voices: our own Kokoro voices, and VoiceStudio's when it answers (checked when the panel opens).
+                const airlineName = id => AIRLINES.find(item => item.id === id)?.company || AIRLINES.find(item => item.id === id)?.name || id;
+                const ownVoices = Object.keys(window.ATC_KOKORO_VOICES || {});
+                document.getElementById('airline-kokoro-voices').textContent = ownVoices.length ?
+                    `Kokoro voices for ${ownVoices.map(airlineName).join(', ')}.` : 'No airline Kokoro voices yet.';
+                const studioToggle = document.getElementById('voicestudio-toggle');
+                const studioStatus = document.getElementById('voicestudio-status');
+                try { studioToggle.checked = localStorage.getItem('atcVoiceStudio') !== 'off'; }
+                catch (_) { /* The choice still applies for this session. */ }
+                const refreshVoiceStudio = async () => {
+                    this.airlineVoices.useStudio = studioToggle.checked;
+                    this.airlineVoices.clear();
+                    if (!studioToggle.checked) { studioStatus.textContent = ''; return; }
+                    studioStatus.textContent = 'Looking for VoiceStudio…';
+                    if (!await this.voiceStudio.refresh()) {
+                        studioStatus.textContent = 'VoiceStudio not found. Open it, and run the sim with start-atc.';
+                        return;
+                    }
+                    const airlines = Object.keys(this.voiceStudio.byAirline);
+                    studioStatus.textContent = airlines.length ?
+                        `VoiceStudio voices for ${airlines.map(id => `${airlineName(id)} (${this.voiceStudio.byAirline[id].length})`).join(', ')}.` :
+                        'VoiceStudio is running, but no voice is named for an airline yet.';
+                };
+                studioToggle.addEventListener('change', () => {
+                    try { localStorage.setItem('atcVoiceStudio', studioToggle.checked ? 'on' : 'off'); }
+                    catch (_) { /* The choice still applies for this session. */ }
+                    refreshVoiceStudio();
+                });
+                refreshVoiceStudio();
                 button.addEventListener('click', () => {
                     document.getElementById('command-help').classList.add('hidden');
                     panel.classList.toggle('hidden');
+                    if (!panel.classList.contains('hidden')) refreshVoiceStudio();
                 });
                 document.getElementById('close-voice-settings').addEventListener('click', () => panel.classList.add('hidden'));
                 document.getElementById('pilot-voice-test').addEventListener('click', async () => {
@@ -3452,7 +3498,9 @@
                     if (engineSelect.value === 'kokoro' && !this.kokoroRadio.ready) return;
                     if (!this.pilotRadio.enabled) this.setPilotAudioEnabled(true, false);
                     this.pilotRadio.clear();
-                    const plane = this.aircraft[0];
+                    // An aircraft from an airline with its own voice, if there is one, to hear it.
+                    const hasOwnVoice = id => this.voiceStudio.voicesFor(id.slice(0, 3)).length || (window.ATC_KOKORO_VOICES || {})[id.slice(0, 3)];
+                    const plane = this.aircraft.find(item => hasOwnVoice(item.id)) || this.aircraft[0];
                     const sample = plane ? `Radio check, ${this.radioCallsign(plane)}. Descending to three thousand feet.` :
                         'Radio check. Descending to three thousand feet.';
                     this.pilotRadio.say(sample, plane?.id || '', true);

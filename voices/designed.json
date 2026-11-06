@@ -1,0 +1,114 @@
+[
+ {
+  "name": "Delta-Pilot9",
+  "voicestudio_id": "0c7f603e",
+  "designed_with": "VoxCPM2",
+  "description": "A middle-aged American male airline captain from Georgia with a warm Southern accent, deep, unhurried and calm, speaking over the radio.",
+  "sample": "Atlanta Approach, good afternoon, Delta twelve thirty-four, descending through one two thousand for one one thousand, with information Charlie."
+ },
+ {
+  "name": "Delta-Pilot10",
+  "voicestudio_id": "79369d25",
+  "designed_with": "VoxCPM2",
+  "description": "A woman in her thirties, an American airline first officer from the Midwest, crisp, clear and confident General American accent, speaking over the radio.",
+  "sample": "Left heading two four zero, descend and maintain four thousand, reduce speed to two one zero, Delta eight eighty-two."
+ },
+ {
+  "name": "Delta-Pilot3",
+  "voicestudio_id": "6a18dc50",
+  "designed_with": "VoxCPM2",
+  "description": "A man in his fifties, an American airline captain with a neutral General American accent, steady, relaxed and authoritative, speaking over the radio.",
+  "sample": "Detroit Approach, Delta fifteen twenty, level one zero thousand, with information Golf."
+ },
+ {
+  "name": "Delta-Pilot11",
+  "voicestudio_id": "e85db557",
+  "designed_with": "VoxCPM2",
+  "description": "A young American male airline first officer from North Carolina with a light Southern accent, friendly and quick, speaking over the radio.",
+  "sample": "Two four zero, maintain three thousand till established, cleared ILS two six right, Delta twenty-one oh five."
+ },
+ {
+  "name": "American-Pilot1",
+  "voicestudio_id": "de92bcc2",
+  "designed_with": "VoxCPM2",
+  "description": "A middle-aged American male airline captain from Texas with a relaxed Texas drawl, easygoing but precise, speaking over the radio.",
+  "sample": "Charlotte Approach, American eighteen fifty-two, descending through one one thousand for one zero thousand, information Bravo."
+ },
+ {
+  "name": "American-Pilot5",
+  "voicestudio_id": "15bb3aae",
+  "designed_with": "VoxCPM2",
+  "description": "A man in his thirties, an American airline first officer from New York with a quick, clipped New York accent, speaking over the radio.",
+  "sample": "Right heading three six zero, descend and maintain five thousand, American twenty-six forty."
+ },
+ {
+  "name": "American-Pilot4",
+  "voicestudio_id": "4b523e77",
+  "designed_with": "VoxCPM2",
+  "description": "A middle-aged American woman, an airline captain with a neutral General American accent, calm, warm and professional, speaking over the radio.",
+  "sample": "Maintain three thousand till established, cleared ILS one niner right, American thirteen oh two."
+ },
+ {
+  "name": "Southwest-Pilot1",
+  "voicestudio_id": "7723a667",
+  "designed_with": "VoxCPM2",
+  "description": "A middle-aged American male airline captain from West Texas, friendly, cheerful and laid back, speaking over the radio.",
+  "sample": "San Diego Approach, Southwest twenty-two fifteen, descending through one zero thousand for eight thousand, information Echo."
+ },
+ {
+  "name": "Southwest-Pilot2",
+  "voicestudio_id": "f492a0f3",
+  "designed_with": "VoxCPM2",
+  "description": "A young American woman, an airline first officer from California, easygoing, bright and clear, speaking over the radio.",
+  "sample": "Left heading two niner zero, descend and maintain four thousand, Southwest thirty-one eighteen."
+ },
+ {
+  "name": "Southwest-Pilot3",
+  "voicestudio_id": "b3bd88a2",
+  "designed_with": "VoxCPM2",
+  "description": "A man in his forties, an American airline captain from Oklahoma with a mild Southern twang, calm and good-humored, speaking over the radio.",
+  "sample": "Cleared ILS two seven, Southwest nineteen forty-four."
+ },
+ {
+  "name": "United-Pilot1",
+  "voicestudio_id": "0efbc6aa",
+  "designed_with": "VoxCPM2",
+  "description": "A middle-aged American male airline captain from Chicago with a flat Midwestern accent, businesslike and steady, speaking over the radio.",
+  "sample": "Atlanta Approach, United eleven twenty-eight, level one one thousand, information Charlie."
+ },
+ {
+  "name": "United-Pilot2",
+  "voicestudio_id": "04369d17",
+  "designed_with": "VoxCPM2",
+  "description": "A woman in her thirties, an American airline first officer from Colorado, clear, upbeat and precise, speaking over the radio.",
+  "sample": "Descend and maintain six thousand, reduce speed two one zero, United twenty-four sixty."
+ },
+ {
+  "name": "BritishAirways-Pilot1",
+  "voicestudio_id": "494da5f5",
+  "designed_with": "VoxCPM2",
+  "description": "An older British male airline captain with a polished Received Pronunciation accent, formal, courteous and unflappable, speaking over the radio.",
+  "sample": "Schiphol Approach, good afternoon, Speedbird four two eight, passing flight level niner zero, descending flight level seven zero, information Foxtrot."
+ },
+ {
+  "name": "BritishAirways-Pilot2",
+  "voicestudio_id": "edcbc6d4",
+  "designed_with": "VoxCPM2",
+  "description": "A British woman in her thirties, an airline first officer with a modern southern English accent, crisp and friendly, speaking over the radio.",
+  "sample": "Left heading two two zero, descend two thousand feet, cleared ILS runway one eight right, Speedbird four three two."
+ },
+ {
+  "name": "Lufthansa-Pilot5",
+  "voicestudio_id": "607ec333",
+  "designed_with": "VoxCPM2",
+  "description": "A middle-aged German male airline captain speaking English with a clear German accent, deep, calm, precise and methodical, speaking over the radio.",
+  "sample": "Schiphol Approach, Lufthansa niner niner six, passing flight level one one zero, descending flight level seven zero, information Delta."
+ },
+ {
+  "name": "Lufthansa-Pilot6",
+  "voicestudio_id": "0cea8c05",
+  "designed_with": "VoxCPM2",
+  "description": "A German woman in her thirties, an airline first officer speaking English with a light German accent, exact and composed, speaking over the radio.",
+  "sample": "Left heading one niner zero, descend two thousand feet, cleared ILS runway one eight centre, Lufthansa niner niner eight."
+ }
+]

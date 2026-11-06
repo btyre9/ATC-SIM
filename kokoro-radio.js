@@ -27,7 +27,8 @@
             pending.clear();
         };
         return request({ type: 'load' }).then(() => ({
-            generate: (text, { voice }) => request({ type: 'generate', text, voice })
+            // lang marks one of our own voices (kokoro-voices.js), loaded from voices/ beside the page.
+            generate: (text, { voice, lang }) => request({ type: 'generate', text, voice, lang })
                 .then(data => ({ audio: data.audio, sampling_rate: data.samplingRate }))
         }));
     }
@@ -41,6 +42,8 @@
             this.random = options.random || Math.random;
             // Radio band, grit and static (radio-effect.js).
             this.effect = options.effect || null;
+            // Voices by airline (airline-voices.js): VoiceStudio or our own Kokoro voices, ahead of the choice below.
+            this.airlineVoices = options.airlineVoices || null;
             this.enabled = false;
             this.listening = false;
             this.queue = [];
@@ -65,6 +68,25 @@
                 this.voiceBag = [];
             }
             this.voice = next;
+        }
+
+        /* An airline's VoiceStudio voice; if VoiceStudio has stopped, that flight changes to Kokoro from now on. */
+        async generate(item) {
+            const airlineVoice = this.airlineVoices?.voiceFor(item.callsign);
+            if (airlineVoice?.engine === 'voicestudio') {
+                try {
+                    this.onStatus(`VoiceStudio speaking ${item.callsign}…`);
+                    return await this.airlineVoices.studio.generate(item.text, airlineVoice.id);
+                } catch (error) {
+                    this.airlineVoices.studio.available = false;
+                    this.airlineVoices.clear();
+                    this.onStatus(`VoiceStudio stopped answering (${error.message}). Pilots use Kokoro voices.`);
+                    return this.generate(item);
+                }
+            }
+            this.onStatus(`Kokoro speaking ${item.callsign || 'pilot'}…`);
+            if (airlineVoice?.engine === 'kokoro') return this.model.generate(item.text, { voice: airlineVoice.voice, lang: airlineVoice.lang });
+            return this.model.generate(item.text, { voice: this.voiceForCallsign(item.callsign) });
         }
 
         voiceForCallsign(callsign) {
@@ -161,8 +183,7 @@
             const token = ++this.generation;
             this.active = item;
             try {
-                this.onStatus(`Kokoro speaking ${item.callsign || 'pilot'}…`);
-                const result = await this.model.generate(item.text, { voice: this.voiceForCallsign(item.callsign) });
+                const result = await this.generate(item);
                 if (token !== this.generation || this.active !== item || !this.enabled || this.listening) return;
                 if (this.preemptAfterGeneration) {
                     this.preemptAfterGeneration = false;

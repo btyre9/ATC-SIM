@@ -33,6 +33,13 @@ Click an aircraft strip, then type, or click MIC and speak. Pauses are fine: the
 
 Pilots read back right away and act 3–6 seconds later, like setting the autopilot. Turns follow the autopilot too: 25° of bank, capped at standard rate (3° per second), with a few seconds to roll in and out. That is about 2° per second at 250 kt and the full 3° per second at 180 kt or slower, so a 90° turn takes 35–50 seconds. Transmissions sound like a VHF radio: a mic click, a light hiss while the pilot talks and a squelch tail at the end. Kokoro voices also get the radio's narrow band. Turn it off with **Radio static** in the pilot voice settings.
 
+**Airline voices.** With Kokoro on, airlines can have their own pilot voices, and each flight keeps one voice while it's on your frequency:
+
+- **The sim's own Kokoro voices** (`voices/`, listed in `kokoro-voices.js`) work for every player, including on GitHub Pages. They're built by `tools/build_kokoro_voices.py`, described below, only from designed voices: made from a written description, not cloned from a real person. They match a voice's pitch, tone and pace, but Kokoro speaks standard US or British English sounds, so they carry little of its accent.
+- **[VoiceStudio](https://voicestudio.sh/) voices**, with their full accent, when VoiceStudio is open on your computer and you run the sim locally with `serve.py` (start-atc). The sim finds a VoiceStudio voice by its name: the airline's code, callsign or company name, then "Pilot", for example `KLM-Pilot1`, `Lufthansa Pilot 2` or `DLH-Pilot`. Several voices for one airline are shared out among its flights. Each readback is generated as the pilot answers, in about 3–4 seconds on an Apple Silicon Mac. Turn it off with **Use VoiceStudio voices** in the pilot voice settings. If VoiceStudio stops answering, pilots carry on with Kokoro voices.
+
+Airlines with neither use the Kokoro voice chosen in the settings.
+
 Climbs and descents follow the aircraft type and altitude:
 
 | | Climb near the ground | Climb at 10,000 ft | Takeoff |
@@ -117,12 +124,13 @@ Once a departure has been handed to center and read back the frequency, it is dr
 | `photos-data.js` | Real registrations per airline and type, plus freely licensed fallback photos with credit (generated) |
 | `voice-commands.js` | Speech transcript to command parser |
 | `pilot-radio.js`, `kokoro-radio.js`, `kokoro-worker.js` | Spoken pilot transmissions; Kokoro runs in a background worker |
+| `airline-voices.js`, `kokoro-voices.js`, `voices/` | Pilot voices by airline: VoiceStudio's when it runs, otherwise the sim's own Kokoro voices |
 | `radio-effect.js` | Radio sound: mic click, hiss, squelch tail, and the radio band for Kokoro voices |
 | `serve.py`, `start-atc.command` | Local server and launcher |
 | `tools/build_fixes.py` | Regenerates `fixes-data.js` from the FAA Designated Points dataset |
 | `tools/build_runways.py` | Regenerates `runways-data.js` from the FAA Runways dataset |
 | `tools/build_photos.py` | Regenerates `photos-data.js`: registrations from Commons fleet categories, checked against Planespotters.net, and fallback photos. `python3 tools/build_photos.py UPS` redoes one airline and keeps the rest |
-| `vendor/` | Kokoro JS browser bundle (Apache 2.0) |
+| `vendor/` | Kokoro JS browser bundle (Apache 2.0), with one added export for the sim's own voices |
 
 FAA fixes change on the 56-day chart cycle, and runways are occasionally renumbered as magnetic north drifts (Charlotte's are now 01L/19R, 01R/19L and 18/36). Refresh both with:
 
@@ -135,6 +143,14 @@ python3 tools/build_runways.py
 ```
 
 Both take airport codes to rebuild just those airports and keep the rest, for example `python3 tools/build_fixes.py KDTW`.
+
+The sim's own airline voices are built from designed VoiceStudio voices named for airlines (see **Airline voices** above), with VoiceStudio open. Designed means VoiceStudio's own designed voices, or voices listed in `voices/designed.json`, which records each one's description (made with VoiceStudio's VoxCPM2 engine). Cloned voices are skipped: they stay in VoiceStudio on your computer. It needs [uv](https://docs.astral.sh/uv/), which installs PyTorch, Kokoro and Resemblyzer on first use:
+
+```bash
+uv run --python 3.12 tools/build_kokoro_voices.py
+```
+
+For each voice it records a few ATC phrases from VoiceStudio and keeps them in `~/.cache/openatc-voices`, never in the repo. It then finds the mix of Kokoro's English voices that a speaker-similarity model (Resemblyzer) rates closest, fine-tunes it, and writes `voices/<name>.bin` and `kokoro-voices.js`. `voices/manifest.json` records each voice's source and how close it came. Give airline codes to build only those, for example `KLM TRA`, and `--steps 400` for a longer search. Voices already built are kept, so if VoiceStudio closes partway, running it again carries on; `--rebuild` builds them again. US airlines speak with US English sounds, the rest with British English.
 
 The FAA datasets stop at the US border, so Schiphol's data lives in `eham-data.js` and is checked by hand against the [AIP Netherlands](https://eaip.lvnl.nl/) (LVNL eAIP). The eAIP sits behind a browser check that scripts can't pass, so there is no build script for it. The current data is from AIRAC AMDT 11-2026, effective 29 October 2026.
 

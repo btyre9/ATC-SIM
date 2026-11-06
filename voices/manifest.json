@@ -1,0 +1,130 @@
+[
+ {
+  "airline": "DLH",
+  "voice": "lufthansa-pilot6",
+  "lang": "b",
+  "source": "Lufthansa-Pilot6",
+  "similarity": 0.928,
+  "unseenSimilarity": 0.922
+ },
+ {
+  "airline": "DLH",
+  "voice": "lufthansa-pilot5",
+  "lang": "b",
+  "source": "Lufthansa-Pilot5",
+  "similarity": 0.901,
+  "unseenSimilarity": 0.914
+ },
+ {
+  "airline": "AAL",
+  "voice": "american-pilot5",
+  "lang": "a",
+  "source": "American-Pilot5",
+  "similarity": 0.94,
+  "unseenSimilarity": 0.937
+ },
+ {
+  "airline": "DAL",
+  "voice": "delta-pilot11",
+  "lang": "a",
+  "source": "Delta-Pilot11",
+  "similarity": 0.869,
+  "unseenSimilarity": 0.869
+ },
+ {
+  "airline": "DAL",
+  "voice": "delta-pilot10",
+  "lang": "a",
+  "source": "Delta-Pilot10",
+  "similarity": 0.85,
+  "unseenSimilarity": 0.865
+ },
+ {
+  "airline": "DAL",
+  "voice": "delta-pilot9",
+  "lang": "a",
+  "source": "Delta-Pilot9",
+  "similarity": 0.863,
+  "unseenSimilarity": 0.865
+ },
+ {
+  "airline": "BAW",
+  "voice": "britishairways-pilot2",
+  "lang": "b",
+  "source": "BritishAirways-Pilot2",
+  "similarity": 0.854,
+  "unseenSimilarity": 0.849
+ },
+ {
+  "airline": "BAW",
+  "voice": "britishairways-pilot1",
+  "lang": "b",
+  "source": "BritishAirways-Pilot1",
+  "similarity": 0.809,
+  "unseenSimilarity": 0.781
+ },
+ {
+  "airline": "UAL",
+  "voice": "united-pilot2",
+  "lang": "a",
+  "source": "United-Pilot2",
+  "similarity": 0.809,
+  "unseenSimilarity": 0.808
+ },
+ {
+  "airline": "UAL",
+  "voice": "united-pilot1",
+  "lang": "a",
+  "source": "United-Pilot1",
+  "similarity": 0.883,
+  "unseenSimilarity": 0.883
+ },
+ {
+  "airline": "SWA",
+  "voice": "southwest-pilot3",
+  "lang": "a",
+  "source": "Southwest-Pilot3",
+  "similarity": 0.863,
+  "unseenSimilarity": 0.847
+ },
+ {
+  "airline": "SWA",
+  "voice": "southwest-pilot2",
+  "lang": "a",
+  "source": "Southwest-Pilot2",
+  "similarity": 0.799,
+  "unseenSimilarity": 0.808
+ },
+ {
+  "airline": "SWA",
+  "voice": "southwest-pilot1",
+  "lang": "a",
+  "source": "Southwest-Pilot1",
+  "similarity": 0.798,
+  "unseenSimilarity": 0.798
+ },
+ {
+  "airline": "AAL",
+  "voice": "american-pilot4",
+  "lang": "a",
+  "source": "American-Pilot4",
+  "similarity": 0.894,
+  "unseenSimilarity": 0.902
+ },
+ {
+  "airline": "AAL",
+  "voice": "american-pilot1",
+  "lang": "a",
+  "source": "American-Pilot1",
+  "similarity": 0.877,
+  "unseenSimilarity": 0.883
+ },
+ {
+  "airline": "DAL",
+  "voice": "delta-pilot3",
+  "lang": "a",
+  "source": "Delta-Pilot3",
+  "similarity": 0.859,
+  "unseenSimilarity": 0.833
+ }
+]
