@@ -146,6 +146,29 @@
         });
     }
 
-    root.ATCTraffic = { offsetNM, distanceNM, localizerOffset, performanceFor, verticalRateFpm, altitudeAfter, separationFor, predictLoss, findConflicts, entryIsClear };
+    /* Whether an airborne aircraft may turn yet. Departures fly runway heading until 1,000 ft above the field; arrivals
+       and go-arounds turn from 400 ft above it, the lowest a missed approach turns (FAA TERPS). Altitudes are above sea
+       level, so at Atlanta (1,026 ft) an arrival at 2,000 ft is 974 ft above the field and still turns. On the ILS the
+       autopilot steers it all the way down. */
+    function canTurn(plane, fieldElevation) {
+        if (plane.onGround) return false;
+        if (String(plane.lastStatus || '').includes('ILS')) return true;
+        return plane.altitude - fieldElevation >= (plane.isArrival ? 400 : 1000);
+    }
+
+    /* The first leg of a departure route. Real RNAV departures fly 4 to 8 NM out on or near the runway heading,
+       climbing and accelerating to 250 kt (ATL's NASSA TWO: tracks of 249 to 287 degrees off the west runways),
+       before turning toward a fix behind them. A fix within 45 degrees of the runway heading is flown to directly
+       once the aircraft can turn; otherwise the first leg diverges 20 degrees toward the fix's side for 7 NM from
+       the runway, and the aircraft turns toward the fix from there. Returns { course, distanceNM } or null. */
+    function sidFirstLeg(runway, fix) {
+        const offset = offsetNM(runway, fix);
+        const bearing = (Math.atan2(offset.east, offset.north) * 180 / Math.PI + 360) % 360;
+        const relative = ((bearing - runway.heading) % 360 + 540) % 360 - 180;
+        if (Math.abs(relative) <= 45) return null;
+        return { course: (runway.heading + (relative < 0 ? -20 : 20) + 360) % 360, distanceNM: 7 };
+    }
+
+    root.ATCTraffic = { canTurn, sidFirstLeg, offsetNM, distanceNM, localizerOffset, performanceFor, verticalRateFpm, altitudeAfter, separationFor, predictLoss, findConflicts, entryIsClear };
     if (typeof module !== 'undefined') module.exports = root.ATCTraffic;
 })(typeof window !== 'undefined' ? window : globalThis);

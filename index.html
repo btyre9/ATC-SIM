@@ -368,9 +368,9 @@
             <ul class="list-disc pl-5 space-y-1 text-slate-300">
                 <li><b>Arrivals</b> (amber) enter over the arrival fix on their strip at 10,000 to 14,000 ft and 250 kt. Descend them, vector them to join the localizer at 30° or less, from at or below the glideslope, then clear them for the ILS.</li>
                 <li>Once an arrival is established on the localizer, say <b>"contact tower"</b>. Landing without a handoff costs points.</li>
-                <li><b>Departures</b> (blue) wait at the hold-short line beside the runway. Tower (or you, in manual departure mode) lines them up and waits, then clears them for takeoff. They fly their SID: runway heading to 1,000 ft, then direct to their departure fix, climbing to 5,000. Climb them to 10,000 ft or higher.</li>
+                <li><b>Departures</b> (blue) wait at the hold-short line beside the runway. Tower (or you, in manual departure mode) lines them up and waits, then clears them for takeoff. They fly their SID: runway heading to 1,000 ft, then toward their departure fix, climbing to 5,000 and accelerating to 250 kt. A fix more than 45° off the runway heading is turned toward only after a first leg 7 NM out, 20° off runway heading, as real RNAV departures do, so nobody makes a tight U-turn over the airport. Climb them to 10,000 ft or higher.</li>
                 <li>Once a departure is through 7,000 ft, climbing to at least 10,000, and on course to its fix, say <b>"contact center"</b>. Leaving the dashed 40 NM boundary without a handoff costs points.</li>
-                <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. Altitudes are above sea level, so the glideslope is the field elevation (top left of the scope: Atlanta 1,026 ft, Charlotte 748, Detroit 645, San Diego 17, Schiphol −11) plus about 300 ft per NM out: at Detroit about 2,200 ft at 5 NM and 3,800 ft at 10 NM. When you clear the ILS, the assigned altitude must be at or below the glideslope where the aircraft will join the localizer (FAA JO 7110.65 5-9-1), not just where it is now. There's no need to go lower. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around.</li>
+                <li><b>On the ILS</b> an arrival holds your heading until it reaches the localizer (or takes a 20° intercept if your heading never would), tracks the centerline, joins the 3° glideslope from below or descends to it from above, and lands. Altitudes are above sea level, so the glideslope is the field elevation (top left of the scope: Atlanta 1,026 ft, Charlotte 748, Detroit 645, San Diego 17, Schiphol −11) plus about 300 ft per NM out: at Detroit about 2,200 ft at 5 NM and 3,800 ft at 10 NM. When you clear the ILS, the assigned altitude must be at or below the glideslope where the aircraft will join the localizer (FAA JO 7110.65 5-9-1), not just where it is now. There's no need to go lower. If it is not on the localizer by 1 NM out, or is still well off the centerline or high at 1.5 NM, it goes around. Faint marks on each landing runway's final show the distance out: a tick every NM and a number every 5, to 20 NM. Arrivals usually join the final 7 to 12 NM out.</li>
                 <li><b>Go-arounds</b> fly the missed approach: runway heading, climb to about 3,000 ft above the field (4,000 ft at Atlanta, Charlotte and Detroit, 3,000 at San Diego), 210 kt. At Schiphol they fly the published missed approach: 2,000 ft (3,000 on 27), 18R turning right to 299° and 22 left to 158°. They hold that until you give new instructions, and come back to your frequency.</li>
                 <li><b>Runways:</b> one aircraft on a runway at a time, counting both ends (09 and 27 are one runway). Don't line up or clear a departure with an aircraft on the runway or an arrival inside about 2 minutes; tower waits for that. Entering a runway with an aircraft on it or an arrival inside 1 NM is a runway incursion (−200). An arrival finding the runway occupied goes around.</li>
                 <li><b>Runway changes:</b> when the wind swings, departures taxi to the new runway and approach clearances to the old one are cancelled (except arrivals established inside 5 NM). Re-clear those arrivals.</li>
@@ -1244,11 +1244,13 @@
             dark: { runway: '#ffffff', runwayText: '#f8fafc', rings: 'rgba(226, 232, 240, 0.4)', ringText: 'rgba(241, 245, 249, 0.85)',
                 boundary: 'rgba(241, 245, 249, 0.85)', backing: 'rgba(15, 23, 42, 0.55)', gate: 'rgba(203, 213, 225, 0.7)', airport: '#94a3b8', airportText: '#cbd5e1',
                 waypoint: '#22d3ee', halo: 'black', leader: 'rgba(255, 255, 255, 0.5)',
-                aircraft: '#facc15', handedOff: '#d1d5db', aircraftEdge: 'rgba(0, 0, 0, 0.85)', overflight: 'rgba(203, 213, 225, 0.55)' },
+                aircraft: '#facc15', handedOff: '#d1d5db', aircraftEdge: 'rgba(0, 0, 0, 0.85)', overflight: 'rgba(203, 213, 225, 0.55)',
+                finalMarks: 'rgba(226, 232, 240, 0.3)', finalText: 'rgba(226, 232, 240, 0.5)' },
             light: { runway: '#1e293b', runwayText: '#0f172a', rings: 'rgba(30, 41, 59, 0.3)', ringText: 'rgba(30, 41, 59, 0.75)',
                 boundary: 'rgba(30, 41, 59, 0.7)', backing: 'rgba(255, 255, 255, 0.5)', gate: 'rgba(30, 41, 59, 0.8)', airport: '#475569', airportText: '#1e293b',
                 waypoint: '#0e7490', halo: 'white', leader: 'rgba(15, 23, 42, 0.6)',
-                aircraft: '#facc15', handedOff: '#d1d5db', aircraftEdge: 'rgba(15, 23, 42, 0.9)', overflight: 'rgba(71, 85, 105, 0.6)' }
+                aircraft: '#facc15', handedOff: '#d1d5db', aircraftEdge: 'rgba(15, 23, 42, 0.9)', overflight: 'rgba(71, 85, 105, 0.6)',
+                finalMarks: 'rgba(30, 41, 59, 0.28)', finalText: 'rgba(30, 41, 59, 0.5)' }
         };
 
         // Trail colors by altitude, FlightRadar24 style: white on the ground, then turquoise to blue to purple.
@@ -1759,8 +1761,7 @@
                         this.lastStatus = `LUAW ${this.departureRunway}`;
                     }
                 }
-                const agl = this.altitude - CONFIG.airport.elevation;
-                const canTurn = !this.onGround && (agl >= 1000 || this.lastStatus.includes("ILS"));
+                const canTurn = window.ATCTraffic.canTurn(this, CONFIG.airport.elevation);
 
                 // Direct-to keeps tracking the fix until the aircraft passes over it.
                 if (this.directTo && canTurn && !this.clearedForILS) {
@@ -1771,7 +1772,8 @@
                             this.alignHeading = null;
                             this.lastStatus = `ON FINAL COURSE ${this.expectedRunway}`;
                         }
-                        this.directTo = null;
+                        // The end of a departure route's first leg: on to the exit fix.
+                        this.directTo = this.directTo.then || null;
                     }
                     else {
                         this.targetHeading = Math.round(calculateBearing(this.lat, this.lon, this.directTo.lat, this.directTo.lon)) % 360;
@@ -3130,6 +3132,15 @@
                 plane.lon = hold.lon;
                 plane.heading = plane.targetHeading = hold.heading;
                 plane.departureRunway = runway;
+                // The departure route from this runway: its first leg (see ATCTraffic.sidFirstLeg), then the exit fix.
+                // A route the controller already changed stays as it is.
+                if (plane.exitFix && (!plane.directTo || plane.directTo === plane.exitFix || plane.directTo.then)) {
+                    const threshold = getRunwayDetails(runway);
+                    const leg = window.ATCTraffic.sidFirstLeg(threshold, plane.exitFix);
+                    const end = leg && moveLatLng(threshold.lat, threshold.lon, leg.course, leg.distanceNM);
+                    plane.directTo = leg ? { name: plane.exitFix.name, lat: end.lat, lon: end.lon, type: 'SID', then: plane.exitFix } :
+                        plane.exitFix;
+                }
                 plane.holdingShort = true;
                 plane.lineUp = null;
                 plane.linedUp = false;
@@ -3201,7 +3212,7 @@
                 if (plane.targetAltitude < CONFIG.handoffAltitude) return `climb it to ${CONFIG.handoffAltitude.toLocaleString('en-US')} ft or higher first`;
                 if (plane.altitude < CONFIG.handoffAltitude - 3000) return `wait until it is through ${(CONFIG.handoffAltitude - 3000).toLocaleString('en-US')} ft`;
                 const fix = plane.exitFix;
-                if (plane.directTo === fix) return null;
+                if (plane.directTo === fix || plane.directTo?.then === fix) return null;
                 const toFix = calculateBearing(plane.lat, plane.lon, fix.lat, fix.lon);
                 const outbound = calculateBearing(CONFIG.airport.lat, CONFIG.airport.lon, fix.lat, fix.lon);
                 const offBy = bearing => Math.abs(((plane.heading - bearing) % 360 + 540) % 360 - 180);
@@ -4013,7 +4024,12 @@
                             } else {
                                 const wp = window.ATCVoice.matchFix(val, CONFIG.waypoints, plane);
                                 if (wp) {
-                                    act(() => { plane.directTo = wp; plane.hold = null; plane.onVectors = false; plane.alignHeading = null; plane.expediteTurn = expedite; });
+                                    // Like a heading, a direct-to cancels an approach clearance (an ILS clearance later in the
+                                    // same transmission is carried out after it, so it still applies).
+                                    act(() => {
+                                        plane.directTo = wp; plane.hold = null; plane.onVectors = false; plane.alignHeading = null;
+                                        plane.expediteTurn = expedite; plane.clearedForILS = false; plane.ilsCaptured = false;
+                                    });
                                     plane.lastStatus = `DCT ${wp.name}`;
                                     this.log(`${id} proceeding direct ${wp.name}.`);
                                     readback(`Direct ${wp.navaid && wp.title ? wp.title : wp.name}`); // Pilots say a navaid by name: "direct Rome".
@@ -4728,13 +4744,76 @@
 
                 // Ring the selected aircraft's arrival or departure fix.
                 const selected = this.aircraft.find(ac => ac.id === this.selectedAircraftId);
-                const routeFix = selected && (selected.directTo || selected.exitFix || CONFIG.waypoints.find(w => w.name === selected.arrivalFix));
+                const routeFix = selected && (selected.directTo?.then || selected.directTo || selected.exitFix || CONFIG.waypoints.find(w => w.name === selected.arrivalFix));
                 if (routeFix) {
                     const pt = this.map.latLngToContainerPoint([routeFix.lat, routeFix.lon]);
                     ctx.strokeStyle = ctx.fillStyle = '#38bdf8'; ctx.lineWidth = 2;
                     ctx.beginPath(); ctx.arc(pt.x, pt.y, 13, 0, Math.PI * 2); ctx.stroke();
                     if (routeFix.type === 'FINAL') { ctx.font = 'bold 10px monospace'; ctx.fillText(routeFix.name, pt.x, pt.y + 26); }
                 }
+            }
+
+            // Faint mile marks on the final of each runway arrivals are landing on: the extended centerline out to
+            // 20 NM, a tick across it every mile and a longer, numbered one every 5. Arrivals usually join the final
+            // 7 to 12 NM out, so the controller can see how far out an aircraft is before clearing the approach.
+            drawFinalMarks(colors) {
+                const flow = CONFIG.airport.flows?.[this.activeFlowIndex];
+                const runways = (flow?.arrRwys || []).map(getRunwayDetails).filter(Boolean);
+                if (!runways.length) return;
+                const ctx = this.ctx;
+                const lengthNM = 20;
+                const toScreen = p => this.map.latLngToContainerPoint([p.lat, p.lon]);
+                // Numbers go on the outer side of the outer finals of each set of parallel runways, so they don't
+                // overlap; a final between two others gets ticks only.
+                const middle = toScreen({ lat: runways.reduce((sum, r) => sum + r.lat, 0) / runways.length,
+                    lon: runways.reduce((sum, r) => sum + r.lon, 0) / runways.length });
+                const parallel = (a, b) => Math.abs(((a.heading - b.heading) % 360 + 540) % 360 - 180) < 15;
+                const sideOf = (rwy, base) => {
+                    const course = toRad(base.heading);
+                    const offset = window.ATCTraffic.offsetNM(base, rwy);
+                    return offset.east * Math.cos(course) - offset.north * Math.sin(course);
+                };
+                const labelled = new Set(runways.filter(rwy => {
+                    const set = runways.filter(other => parallel(rwy, other));
+                    const sides = set.map(other => sideOf(other, set[0]));
+                    const side = sideOf(rwy, set[0]);
+                    return side === Math.min(...sides) || side === Math.max(...sides);
+                }));
+                const everyMile = CONFIG.scale >= 4;
+                ctx.save();
+                ctx.lineCap = 'butt';
+                ctx.font = '9px monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                runways.forEach(rwy => {
+                    const outbound = (rwy.heading + 180) % 360;
+                    const start = toScreen(rwy);
+                    const end = toScreen(moveLatLng(rwy.lat, rwy.lon, outbound, lengthNM));
+                    const length = Math.hypot(end.x - start.x, end.y - start.y) || 1;
+                    const ux = (end.x - start.x) / length, uy = (end.y - start.y) / length;
+                    let nx = -uy, ny = ux;
+                    if (runways.length > 1 && (start.x - middle.x) * nx + (start.y - middle.y) * ny < 0) { nx = -nx; ny = -ny; }
+                    ctx.strokeStyle = colors.finalMarks;
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([2, 4]);
+                    ctx.beginPath(); ctx.moveTo(start.x, start.y); ctx.lineTo(end.x, end.y); ctx.stroke();
+                    ctx.setLineDash([]);
+                    for (let nm = 1; nm <= lengthNM; nm++) {
+                        const major = nm % 5 === 0;
+                        if (!major && !everyMile) continue;
+                        const pt = toScreen(moveLatLng(rwy.lat, rwy.lon, outbound, nm));
+                        const half = major ? 6 : 3;
+                        ctx.lineWidth = major ? 1.5 : 1;
+                        ctx.beginPath();
+                        ctx.moveTo(pt.x - nx * half, pt.y - ny * half); ctx.lineTo(pt.x + nx * half, pt.y + ny * half);
+                        ctx.stroke();
+                        if (major && labelled.has(rwy)) {
+                            ctx.fillStyle = colors.finalText;
+                            ctx.fillText(String(nm), pt.x + nx * 14, pt.y + ny * 14);
+                        }
+                    }
+                });
+                ctx.restore();
             }
 
             loop(timestamp) {
@@ -4785,6 +4864,7 @@
 
                 const centerPt = this.map.latLngToContainerPoint([CONFIG.airport.lat, CONFIG.airport.lon]);
                 this.drawScope(centerPt);
+                this.drawFinalMarks(colors);
 
                 this.ctx.strokeStyle = colors.runway; this.ctx.lineWidth = 2.5;
                 // Runways sit on their surveyed ends, so they line up with the map at every zoom.

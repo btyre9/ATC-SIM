@@ -1,6 +1,6 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { distanceNM, separationFor, predictLoss, findConflicts, entryIsClear, performanceFor, verticalRateFpm } = require('./traffic-logic');
+const { canTurn, sidFirstLeg, distanceNM, separationFor, predictLoss, findConflicts, entryIsClear, performanceFor, verticalRateFpm } = require('./traffic-logic');
 
 const airport = { lat: 33, lon: -84, elevation: 1000 };
 const standard = { lateralNM: 3, verticalFt: 1000 };
@@ -104,4 +104,22 @@ test('slowing down flattens a descent, less so with speedbrakes', () => {
 test('an emergency descent is much faster than a normal one', () => {
     const plane = { altitude: 30000, targetAltitude: 10000, speed: 280, targetSpeed: 280, emergency: { descendTo: 10000 } };
     assert.ok(verticalRateFpm(plane) >= 4000);
+});
+
+test('arrivals turn at any normal approach altitude; departures fly runway heading to 1,000 ft above the field', () => {
+    const atlanta = 1026;
+    assert.equal(canTurn({ isArrival: true, altitude: 2000, lastStatus: 'DCT DEJAA' }, atlanta), true, '974 ft above Atlanta');
+    assert.equal(canTurn({ isArrival: true, altitude: 1300, lastStatus: 'GO AROUND' }, atlanta), false, 'go-around below 400 ft');
+    assert.equal(canTurn({ isArrival: false, altitude: 1800, lastStatus: 'AIRBORNE' }, atlanta), false);
+    assert.equal(canTurn({ isArrival: false, altitude: 2100, lastStatus: 'AIRBORNE' }, atlanta), true);
+    assert.equal(canTurn({ isArrival: true, altitude: 1100, lastStatus: 'ILS 26R LOCALIZER' }, atlanta), true);
+    assert.equal(canTurn({ isArrival: true, onGround: true, altitude: 1026, lastStatus: 'ROLLOUT' }, atlanta), false);
+});
+
+test('a departure turns toward a fix behind it only after a first leg away from the airport', () => {
+    const runway26L = { lat: 33.6347, lon: -84.4049, heading: 264 };
+    const west = { lat: 33.6, lon: -85.2 }, northeast = { lat: 34.2, lon: -83.9 }, southeast = { lat: 33.1, lon: -83.9 };
+    assert.equal(sidFirstLeg(runway26L, west), null, 'ahead of the runway: direct');
+    assert.deepEqual(sidFirstLeg(runway26L, northeast), { course: 284, distanceNM: 7 }, 'diverges right, to the north side');
+    assert.deepEqual(sidFirstLeg(runway26L, southeast), { course: 244, distanceNM: 7 }, 'diverges left, to the south side');
 });
